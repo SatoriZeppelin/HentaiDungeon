@@ -58,6 +58,33 @@
   }
 
   /**
+   * 开局难度 → 敌方最终数值在「基准×档位倍率」之后再乘的系数（与 begining.js 文案一致）。
+   * 休闲：生命100%、伤害(攻击)60%；普通：均衡 100%；困难：生命与伤害(攻击)+20%（防御不变）。
+   */
+  function getDifficultyMonsterMult(difficultyId) {
+    var id = (difficultyId != null ? String(difficultyId) : '').trim();
+    if (id === '休闲') return { hp: 1.0, atk: 0.6, def: 1.0 };
+    if (id === '困难') return { hp: 1.2, atk: 1.2, def: 1.0 };
+    return { hp: 1.0, atk: 1.0, def: 1.0 };
+  }
+
+  /** 在 computeStatsForRank 结果上再乘难度系数（整数化，至少为 1） */
+  function applyDifficultyMultipliersToStats(st, mult) {
+    if (!st || !mult) return st;
+    var hpM = mult.hp != null ? Number(mult.hp) : 1;
+    var atkM = mult.atk != null ? Number(mult.atk) : 1;
+    var defM = mult.def != null ? Number(mult.def) : 1;
+    if (hpM !== hpM || hpM <= 0) hpM = 1;
+    if (atkM !== atkM || atkM <= 0) atkM = 1;
+    if (defM !== defM || defM <= 0) defM = 1;
+    st.hp = Math.max(1, Math.round(st.hp * hpM));
+    st.maxHp = st.hp;
+    st.atk = Math.max(1, Math.round(st.atk * atkM));
+    st.def = Math.max(1, Math.round(st.def * defM));
+    return st;
+  }
+
+  /**
    * 对单只怪：在指定区域基准内各掷一次整数，再乘档位倍率。
    * @returns {{ baseHp, baseAtk, baseDef, hp, maxHp, atk, def, rank, score, hpMultUsed, atkMultUsed, defMultUsed, regionId }}
    */
@@ -120,20 +147,40 @@
     if (ri == null && options.nodeId != null) ri = regionIndexFromNodeId(options.nodeId);
     if (ri == null) ri = 0;
 
+    var difficulty = options.difficulty;
+    if (difficulty == null && typeof getVariables === 'function') {
+      try {
+        var v0 = getVariables({ type: 'chat' });
+        if (v0 && v0.difficulty != null) difficulty = v0.difficulty;
+      } catch (e0) {}
+    }
+    var diffMult = getDifficultyMonsterMult(difficulty);
+
     plan.regionIndex = ri;
     plan.regionId = REGION_BASE[ri] && REGION_BASE[ri].id;
     plan.major = options.major != null ? options.major : majorFromNodeId(options.nodeId);
+    plan.difficulty = difficulty != null ? difficulty : '普通';
+    plan.difficultyMonsterMult = diffMult;
 
     for (var i = 0; i < plan.units.length; i++) {
       var u = plan.units[i];
       u.stats = computeStatsForRank(u.rank, ri, rng);
+      applyDifficultyMultipliersToStats(u.stats, diffMult);
     }
     plan.statsNote =
       '基准来自区域' +
       (REGION_BASE[ri] && REGION_BASE[ri].id) +
       '（大层' +
       (plan.major != null ? plan.major : '?') +
-      '）；各怪独立掷基准再乘档位倍率。';
+      '）；各怪独立掷基准再乘档位倍率；再乘开局难度系数（当前「' +
+      (difficulty != null && String(difficulty) !== '' ? difficulty : '普通') +
+      '」：生命×' +
+      diffMult.hp +
+      '、攻击×' +
+      diffMult.atk +
+      '、防御×' +
+      diffMult.def +
+      '）。';
     return plan;
   }
 
@@ -146,6 +193,8 @@
       regionIndexFromNodeId: regionIndexFromNodeId,
       computeStatsForRank: computeStatsForRank,
       applySpawnPlanStats: applySpawnPlanStats,
+      getDifficultyMonsterMult: getDifficultyMonsterMult,
+      applyDifficultyMultipliersToStats: applyDifficultyMultipliersToStats,
       randomIntInclusive: randomIntInclusive,
     };
   }

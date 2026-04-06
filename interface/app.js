@@ -11,6 +11,7 @@
       '.game-frame.ornate-frame{position:relative;display:flex;flex-direction:column;height:100vh;margin:0;background:linear-gradient(135deg,#4a3728 0%,#2d1f14 50%,#4a3728 100%);border:3px solid var(--ornate-dark);box-shadow:0 0 0 1px var(--ornate-gold),0 0 0 4px var(--ornate-dark),0 0 0 5px var(--ornate-gold),0 0 20px rgba(0,0,0,.7),inset 0 0 40px rgba(0,0,0,.4);padding:18px;overflow:hidden}',
       '.game-frame.ornate-frame::before{content:"";position:absolute;top:8px;left:8px;right:8px;bottom:8px;border:1px solid rgba(201,162,39,.25);pointer-events:none}',
       '.corner-ornament{position:absolute;width:50px;height:50px;pointer-events:none;z-index:10}.corner-ornament svg{width:100%;height:100%;fill:var(--ornate-gold);filter:drop-shadow(0 0 2px rgba(201,162,39,.4))}.corner-tl{top:-3px;left:-3px}.corner-tr{top:-3px;right:-3px;transform:scaleX(-1)}.corner-bl{bottom:-3px;left:-3px;transform:scaleY(-1)}.corner-br{bottom:-3px;right:-3px;transform:scale(-1,-1)}',
+      '.game-frame.ornate-frame>.hentai-fs-btn{position:absolute;top:10px;right:10px;z-index:2100;width:44px;height:44px;padding:0;border-radius:50%;border:2px solid rgba(201,162,39,0.85);background:rgba(45,31,20,0.92);color:rgba(232,224,208,0.95);cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.45);transition:background .2s,border-color .2s}.game-frame.ornate-frame>.hentai-fs-btn:hover{background:rgba(60,45,30,0.95);border-color:rgba(232,224,208,0.5)}.game-frame.ornate-frame>.hentai-fs-btn:focus-visible{outline:2px solid rgba(201,162,39,0.6);outline-offset:2px}.hentai-fs-btn-inner{display:flex;align-items:center;justify-content:center}',
       '.edge-decoration{position:absolute;background:linear-gradient(90deg,transparent,var(--ornate-gold),transparent);height:1px;pointer-events:none}.edge-top{top:15px;left:55px;right:55px}.edge-bottom{bottom:15px;left:55px;right:55px}.edge-decoration.vertical{width:1px;height:auto;background:linear-gradient(180deg,transparent,var(--ornate-gold),transparent)}.edge-left{left:15px;top:55px;bottom:55px}.edge-right{right:15px;top:55px;bottom:55px}',
       '.game-inner{display:flex;flex:1;min-height:0;min-width:0;background:#e4d5b7;background-image:url("https://www.transparenttextures.com/patterns/paper-fibers.png")}',
       '.sidebar{position:relative;width:100px;min-width:100px;background:transparent;border:none;border-right:2px solid var(--ornate-dark);display:flex;flex-direction:column;justify-content:flex-start;align-items:center;padding:10px 6px 12px;min-height:0}',
@@ -172,12 +173,13 @@
       '.map-grid-16{display:grid;grid-template-columns:repeat(16,58px);grid-template-rows:repeat(3,120px);gap:12px;align-items:center;justify-items:center;width:max-content}',
       '.map-grid-16--anim .node-circle.map-gen-pending{opacity:0;transform:scale(0.5);filter:blur(2px);pointer-events:none;transition:opacity .38s cubic-bezier(0.22,1,0.36,1),transform .38s cubic-bezier(0.22,1,0.36,1),filter .25s ease}',
       '.map-grid-16--anim .node-circle.map-gen-pending.map-gen-revealed{opacity:1;transform:scale(1);filter:none;pointer-events:auto}',
-      '.map-grid-16--anim .node-circle.map-gen-pending.map-gen-revealed.passed{opacity:.35;filter:grayscale(.8);pointer-events:none}',
+      '.map-grid-16--anim .node-circle.map-gen-pending.map-gen-revealed.visited{background:#1a150e!important;border-color:#1a150e!important;color:#fff!important;opacity:1;filter:none;pointer-events:none}',
+      '.map-grid-16--anim .node-circle.map-gen-pending.map-gen-revealed.skipped{opacity:.35;filter:grayscale(.85);pointer-events:none}',
       '.map-grid-16--anim .node-circle.map-gen-pending.map-gen-revealed.future{pointer-events:none}',
       '.map-grid-16--anim .node-circle.map-gen-pending.map-gen-revealed.map-node--muted{pointer-events:none}',
       '.map-grid-16--anim .node-circle.map-gen-pending.map-gen-revealed.current{transform:scale(1.2);filter:none;opacity:1}',
       '.node-circle{width:100%;max-width:58px;aspect-ratio:1;margin:0 auto;border:3px solid #1a150e;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.4);cursor:pointer;transition:transform .2s,background .2s;position:relative;font-size:20px}',
-      '.node-circle:hover{transform:scale(1.12);background:#fff;z-index:5}.node-circle.current{background:#1a150e!important;color:#fff!important;transform:scale(1.2);box-shadow:0 0 20px var(--ap-glow)}.node-circle.reachable{border-color:var(--ap-glow);border-width:4px;animation:nodePulse 2s infinite}.node-circle.passed{opacity:.35;filter:grayscale(.8);cursor:not-allowed;pointer-events:none}.node-circle.future{cursor:not-allowed;pointer-events:none}',
+      '.node-circle:hover{transform:scale(1.12);background:#fff;z-index:5}.node-circle.visited:hover{transform:scale(1);background:#1a150e!important}.node-circle.skipped:hover{transform:scale(1)}.node-circle.current{background:#1a150e!important;color:#fff!important;transform:scale(1.2);box-shadow:0 0 20px var(--ap-glow)}.node-circle.visited{background:#1a150e!important;color:#fff!important;border-color:#1a150e!important;transform:scale(1);box-shadow:none;cursor:not-allowed;pointer-events:none;opacity:1;filter:none}.node-circle.skipped{opacity:.35;filter:grayscale(.85);cursor:not-allowed;pointer-events:none;background:rgba(255,255,255,.4)!important;border-color:#b0a898!important}.node-circle.visited .node-type-label{color:#b8b0a0}.node-circle.skipped .node-type-label{color:#8a8270}.node-circle.current .node-type-label{color:#e4d5b7}.node-circle.reachable.map-node--selected .node-type-label{color:#e4d5b7}.node-circle.reachable{border-color:var(--ap-glow);border-width:4px;animation:nodePulse 2s infinite}.node-circle.future{cursor:not-allowed;pointer-events:none}',
       '.node-circle-icon{display:flex;align-items:center;justify-content:center;width:28px;height:28px;flex-shrink:0}.node-circle-icon svg{width:100%;height:100%;stroke:currentColor}',
       '.node-type-label{position:absolute;bottom:-22px;left:50%;transform:translateX(-50%);font-size:10px;white-space:nowrap;color:#5c4d10;font-weight:bold}',
       '.map-legend{display:flex;gap:16px;justify-content:center;padding:12px;background:rgba(0,0,0,.05);border-radius:10px;margin-top:16px;flex-shrink:0;flex-wrap:wrap}',
@@ -188,10 +190,12 @@
       '.node-circle.reachable.map-node--selected:hover{transform:scale(1);background:#1a150e!important}',
       '.node-circle.reachable.map-node--selected .node-circle-icon{color:#fff}',
       '.node-circle.reachable.map-node--selected .node-circle-icon svg{stroke:currentColor;color:#fff}',
-      '.node-circle.reachable.map-node--muted{animation:none!important;opacity:.55;filter:grayscale(1);border-color:#9e9e9e!important;background:rgba(190,190,190,.5)!important;color:#888!important;box-shadow:none!important;pointer-events:none;cursor:default}',
-      '.node-circle.reachable.map-node--muted:hover{transform:scale(1);opacity:.55}',
-      '.node-circle.reachable.map-node--muted .node-circle-icon{color:#888}',
-      '.node-circle.reachable.map-node--muted .node-circle-icon svg{stroke:currentColor;color:#888}',
+      '.node-circle.future.map-node--muted{animation:none!important;opacity:.55;filter:grayscale(1);border-color:#9e9e9e!important;background:rgba(190,190,190,.45)!important;color:#888!important;box-shadow:none!important;pointer-events:none;cursor:not-allowed}',
+      '.node-circle.reachable.map-node--muted{animation:none!important;opacity:.55;filter:grayscale(1);border-color:#9e9e9e!important;background:rgba(190,190,190,.45)!important;color:#888!important;box-shadow:none!important;cursor:pointer;pointer-events:auto}',
+      '.node-circle.reachable.map-node--muted:hover{transform:scale(1.06);opacity:.65}',
+      '.node-circle.map-node--muted .node-type-label{color:#8a8270}',
+      '.node-circle.map-node--muted .node-circle-icon{color:#888}',
+      '.node-circle.map-node--muted .node-circle-icon svg{stroke:currentColor;color:#888}',
       '.character-detail-content{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;padding:20px}',
       '.character-detail-content .char-detail-grid{flex:1;min-height:0;overflow:hidden}',
       '.char-detail-grid{display:grid;grid-template-columns:280px minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr);gap:20px;min-height:0}',
@@ -691,6 +695,17 @@
     }
 
     function initSidebar() {
+      var gameFrame = document.querySelector('.game-frame.ornate-frame');
+      if (
+        gameFrame &&
+        !document.getElementById('hentai-fs-btn-game') &&
+        typeof window.色色地牢_createFullscreenButton === 'function'
+      ) {
+        var fsGame = window.色色地牢_createFullscreenButton();
+        fsGame.id = 'hentai-fs-btn-game';
+        gameFrame.appendChild(fsGame);
+        if (typeof window.色色地牢_syncFullscreenButtons === 'function') window.色色地牢_syncFullscreenButtons();
+      }
       var gameInner = document.querySelector('.game-inner');
       var viewStory = document.getElementById('view-story');
       var storyBox = viewStory ? viewStory.querySelector('.story-box') : null;
@@ -927,7 +942,26 @@
         });
         return found && found.type != null && String(found.type) !== '' ? String(found.type) : '';
       }
-      function getNodeStatus(nodeId, currentPos) {
+      /**
+       * @param nodeStates 若由 renderMapContent 传入则只 getVariables 一次；省略时内部读取（供 commitPendingMapPosAfterBattle）
+       */
+      function getNodeStatus(nodeId, currentPos, nodeStates) {
+        var ns = nodeStates;
+        if (ns === undefined) {
+          ns = null;
+          try {
+            if (typeof getVariables === 'function') {
+              var v0 = getVariables({ type: 'chat' });
+              ns = v0 && v0.nodeStates && typeof v0.nodeStates === 'object' ? v0.nodeStates : null;
+            }
+          } catch (e0) {}
+        }
+        function hasEnteredNode(id) {
+          return !!(ns && ns[id]);
+        }
+        function classifyPastOrSibling() {
+          return hasEnteredNode(nodeId) ? 'visited' : 'skipped';
+        }
         var parts = currentPos.split('-').map(Number);
         var currCol = parts[0],
           currRow = parts[1];
@@ -935,7 +969,9 @@
         var nodeCol = nParts[0],
           nodeRow = nParts[1];
         if (nodeId === currentPos) return 'current';
-        if (nodeCol < currCol) return 'passed';
+        if (nodeCol < currCol) return classifyPastOrSibling();
+        /* 同列未站过的分支：灰（skipped）；真正站过的为 visited（黑） */
+        if (nodeCol === currCol && nodeId !== currentPos) return classifyPastOrSibling();
         if (nodeCol === currCol + 1) {
           if (currentPos === '0-0') return 'reachable';
           if (nodeId === '15-0' && currCol === 14) return 'reachable';
@@ -943,6 +979,53 @@
           return 'future';
         }
         return 'future';
+      }
+      /**
+       * 战斗胜利后点击「继续前进」时调用：把地图「当前位置」写入为此前在地图上选的待走格（_mapUIPendingNodeId），
+       * 否则 map.pos 一直为 0-0，下一列节点会始终为 future、无法点击。
+       */
+      function commitPendingMapPosAfterBattle() {
+        var pending = _mapUIPendingNodeId;
+        if (!pending) return;
+        var m = getMapData();
+        var cur = (m.pos || '0-0').toString();
+        var st = getNodeStatus(pending, cur);
+        if (st !== 'reachable') return;
+        var v = null;
+        try {
+          if (typeof getVariables === 'function') v = getVariables({ type: 'chat' });
+        } catch (e) {}
+        if (!v) v = {};
+        var mapObj;
+        if (v.map && typeof v.map === 'object' && Array.isArray(v.map.nodes) && v.map.nodes.length >= 40) {
+          try {
+            mapObj = JSON.parse(JSON.stringify(v.map));
+          } catch (e2) {
+            mapObj = null;
+          }
+        }
+        if (!mapObj) {
+          mapObj = {
+            area: m.area,
+            pos: pending,
+            nodes: m.nodes,
+            inv: Array.isArray(m.inv) ? m.inv.slice() : [],
+            revealOrder: m.revealOrder && Array.isArray(m.revealOrder) ? m.revealOrder.slice() : undefined,
+          };
+        } else {
+          mapObj.pos = pending;
+          mapObj.area = mapObj.area || m.area;
+          if (!Array.isArray(mapObj.nodes) || mapObj.nodes.length < 40) mapObj.nodes = m.nodes;
+        }
+        v.map = mapObj;
+        mergePreserveChatGold(v);
+        if (typeof replaceVariables === 'function') replaceVariables(v, { type: 'chat' });
+        try {
+          _lastKnownMap = JSON.parse(JSON.stringify(mapObj));
+        } catch (e3) {}
+        setTimeout(function () {
+          renderMapContent({});
+        }, 0);
       }
       function renderMapContent(opts) {
         opts = opts || {};
@@ -961,6 +1044,14 @@
           window.matchMedia &&
           window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         var doGenAnim = !!(opts.animateGen && !reduceMotion);
+        var nodeStatesForMap = null;
+        try {
+          if (typeof getVariables === 'function') {
+            var vMap = getVariables({ type: 'chat' });
+            nodeStatesForMap =
+              vMap && vMap.nodeStates && typeof vMap.nodeStates === 'object' ? vMap.nodeStates : null;
+          }
+        } catch (eNs) {}
         var nodesHtml = '';
         for (var col = 0; col <= 15; col++) {
           for (var row = 1; row <= 3; row++) {
@@ -973,24 +1064,44 @@
             if (!realNode) continue;
             var conf = MAP_CONFIG[realNode.type] || { color: '#333' };
             var iconSvg = MAP_ICONS[realNode.type] != null ? MAP_ICONS[realNode.type] : MAP_ICONS_FALLBACK;
-            var nodeStatus = getNodeStatus(finalId, m.pos);
+            var nodeStatus = getNodeStatus(finalId, m.pos, nodeStatesForMap);
             var cls = nodeStatus;
             var extraUiCls = '';
-            if (nodeStatus === 'reachable' && _mapUIPendingNodeId) {
-              if (finalId === _mapUIPendingNodeId) extraUiCls = ' map-node--selected';
-              else {
-                var pCol = parseInt(_mapUIPendingNodeId.split('-')[0], 10);
-                var fCol = parseInt(finalId.split('-')[0], 10);
-                if (pCol === fCol) extraUiCls = ' map-node--muted';
+            /* 待选下一格：选中格黑底；同列其余格（含因行差标为 future 的格）一律灰显，避免一列里黑/灰/彩色混用 */
+            if (_mapUIPendingNodeId) {
+              var pColPending = parseInt(_mapUIPendingNodeId.split('-')[0], 10);
+              var fColPending = parseInt(finalId.split('-')[0], 10);
+              if (finalId === _mapUIPendingNodeId) {
+                if (nodeStatus === 'reachable') extraUiCls = ' map-node--selected';
+              } else if (pColPending === fColPending) {
+                extraUiCls = ' map-node--muted';
               }
             }
             cls += extraUiCls;
             var iconColor = conf.color;
-            if (nodeStatus === 'current') iconColor = '#fff';
-            if (nodeStatus === 'reachable' && extraUiCls.indexOf('map-node--selected') !== -1) iconColor = '#fff';
-            if (nodeStatus === 'reachable' && extraUiCls.indexOf('map-node--muted') !== -1) iconColor = '#888';
+            var borderColor = conf.color;
+            if (nodeStatus === 'visited') {
+              iconColor = '#fff';
+              borderColor = '#1a150e';
+            }
+            if (nodeStatus === 'skipped') {
+              iconColor = conf.color;
+              borderColor = conf.color;
+            }
+            if (nodeStatus === 'current') {
+              iconColor = '#fff';
+              borderColor = '#1a150e';
+            }
+            if (nodeStatus === 'reachable' && extraUiCls.indexOf('map-node--selected') !== -1) {
+              iconColor = '#fff';
+              borderColor = '#1a150e';
+            }
+            if (extraUiCls.indexOf('map-node--muted') !== -1) {
+              iconColor = '#888';
+              borderColor = '#9e9e9e';
+            }
             var clickHandler = '';
-            if (nodeStatus === 'reachable' && extraUiCls.indexOf('map-node--muted') === -1) {
+            if (nodeStatus === 'reachable') {
               clickHandler = ' onclick="window.fillPath && window.fillPath(\'' + finalId + '\')"';
             }
             var genPending = doGenAnim ? ' map-gen-pending' : '';
@@ -1005,7 +1116,7 @@
               ';grid-row:' +
               (4 - row) +
               ';border-color:' +
-              conf.color +
+              borderColor +
               ';color:' +
               iconColor +
               '"' +
@@ -1046,7 +1157,7 @@
           nextAreaBtn +
           '<div class="map-legend">' +
           legendHtml +
-          '<div class="legend-item" style="margin-left:16px;border-left:2px solid var(--gold-border);padding-left:12px"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#1a150e;margin-right:4px"></span>当前</div><div class="legend-item"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;border:3px solid var(--ap-glow);margin-right:4px"></span>可前往</div><div class="legend-item"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:rgba(0,0,0,.3);filter:grayscale(.8);margin-right:4px"></span>已通过</div></div></div>';
+          '<div class="legend-item" style="margin-left:16px;border-left:2px solid var(--gold-border);padding-left:12px"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#1a150e;box-shadow:0 0 6px var(--ap-glow);margin-right:4px"></span>当前</div><div class="legend-item"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;border:3px solid var(--ap-glow);margin-right:4px"></span>可前往</div><div class="legend-item"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#1a150e;margin-right:4px"></span>已走过</div><div class="legend-item"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:rgba(0,0,0,.12);filter:grayscale(.85);opacity:.5;margin-right:4px"></span>同层未走</div></div></div>';
         if (doGenAnim) {
           var gridEl = mapDrawerContent.querySelector('.map-grid-16');
           if (!gridEl) return;
@@ -1131,6 +1242,7 @@
             renderMapContent({});
           }, 0);
         };
+        window.色色地牢_commitPendingMapPosAfterBattle = commitPendingMapPosAfterBattle;
         window.色色地牢_lookupMapNodeType = lookupMapNodeTypeById;
       }
       function showMapDrawer(opts) {
@@ -1817,6 +1929,9 @@
           '</div><div class="bar-fill" style="width:' +
           expPct +
           '%;background:#2d8a4e"></div></div></div>' +
+          '<div class="bar-row" title="战斗外仍保留，不因回合或战斗结束而清零"><span class="bar-label">精液</span><div class="bar-wrap" style="background:#3d2a24"><div class="bar-text">' +
+          (ch && ch.semenVolumeMl != null ? Number(ch.semenVolumeMl) || 0 : 0) +
+          ' ml</div></div></div>' +
           '</div>' +
           (unspentPoints > 0 || hasSkillDeltas || pendingSpecial.length > 0
             ? '<div class="attr-allocate-footer"><button type="button" class="attr-reset-btn">重置</button><button type="button" class="attr-confirm-btn">确定</button></div>'
@@ -2637,6 +2752,8 @@
       var result = raw.map(function (ch) {
         if (!ch) return null;
         var base = chars && ch.name && chars[ch.name] ? Object.assign({}, chars[ch.name], ch) : Object.assign({}, ch);
+        if (base.semenVolumeMl == null || base.semenVolumeMl === '') base.semenVolumeMl = 0;
+        else base.semenVolumeMl = Number(base.semenVolumeMl) || 0;
         return base;
       });
       var portraits = window.CHARACTER_PORTRAITS;
@@ -2690,6 +2807,28 @@
       if (typeof replaceVariables === 'function') replaceVariables(v, { type: 'chat' });
     }
     /**
+     * 进入新一场战斗前：清空 buff/debuff、护盾；AP 回满；不修改 HP（保留上一场结束时的血量）。
+     * 直接修改 getParty() 返回数组中的角色对象。
+     */
+    function preparePartyForNewBattle() {
+      var party = getParty();
+      if (!party || !party.length) return;
+      for (var i = 0; i < party.length; i++) {
+        var ch = party[i];
+        if (!ch) continue;
+        ch.buffs = [];
+        ch.currentShield = 0;
+        var lv = ch.level != null ? ch.level : 1;
+        if (ch.name === '白牙') {
+          ch.currentAp = 2;
+        } else {
+          ch.currentAp = getApByLevel(lv);
+        }
+        if (ch.见切弹返) ch.见切弹返 = false;
+        if (ch.影舞反击) ch.影舞反击 = false;
+      }
+    }
+    /**
      * 将 AI 遭遇生成的 spawn plan 写入聊天变量 enemyParty，并刷新战斗格子渲染。
      * 由 encounter.js 在 generate 回调中调用（需在 app 加载后）。
      */
@@ -2703,6 +2842,7 @@
         return;
       var enemies = window.色色地牢_enemyDesign.buildEnemyPartyFromSpawnPlan(plan);
       if (!enemies) return;
+      preparePartyForNewBattle();
       if (typeof window !== 'undefined' && window.BattleGrid && typeof window.BattleGrid.capUnitBuffs === 'function') {
         enemies.forEach(function (en) {
           if (en) window.BattleGrid.capUnitBuffs(en);
@@ -2714,7 +2854,10 @@
       console.info('[色色地牢][enemy_design] 已写入 enemyParty（聊天变量）并刷新战斗视图');
       if (typeof toastr !== 'undefined') toastr.info('敌方阵容已同步到战斗界面');
     }
-    if (typeof window !== 'undefined') window.色色地牢_commitSpawnPlanToBattle = commitSpawnPlanToBattle;
+    if (typeof window !== 'undefined') {
+      window.色色地牢_commitSpawnPlanToBattle = commitSpawnPlanToBattle;
+      window.色色地牢_preparePartyForNewBattle = preparePartyForNewBattle;
+    }
     /** 存档：获取当前游戏状态（供 save.js 写入 localStorage）。不调用 getMapData（其在 initSidebar 内），直接从 chat 变量组装 map。 */
     function getCurrentGameState() {
       var party = getParty();
@@ -3515,10 +3658,12 @@
         if (!ch || !template) return;
         ch.level = 1;
         ch.exp = 0;
+        ch.skillPointsSpent = 0;
         ['bonusStr', 'bonusAgi', 'bonusInt', 'bonusSta', 'bonusDef', 'bonusLuk', 'bonusCha'].forEach(function (k) {
           if (Object.prototype.hasOwnProperty.call(ch, k)) ch[k] = 0;
         });
         ch.buffs = [];
+        ch.semenVolumeMl = 0;
         ch.specialSkillsUnlocked = [];
         var tsks = template.skills;
         var sks = ch.skills;
@@ -3530,8 +3675,8 @@
           if (!cs || !ts) continue;
           if (Object.prototype.hasOwnProperty.call(ts, 'level')) cs.level = 1;
           delete cs.advancement;
-          if (Object.prototype.hasOwnProperty.call(ts, 'locked')) cs.locked = ts.locked;
-          else delete cs.locked;
+          /* 与模板一致：仅当模板显式 locked:true 时为锁定；避免 hasOwnProperty/delete 在部分环境下与克隆对象不一致 */
+          cs.locked = ts.locked === true;
         }
       }
       /** 新游戏 4 步选完后点击「开始冒险」：将所选两名角色写入 autosave 并替换当前角色槽，保存难度与初始祝福到 autosave，应用祝福效果 */

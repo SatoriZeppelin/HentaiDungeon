@@ -2,6 +2,8 @@
  * 解析 AI 可能返回的 <enemy_design> 片段（精英/杂兵等 + 意图管道符）。
  * 意图行格式：<target|scope|action|effect|param1|param2>，字段可为空。
  *
+ * 怪物名片：`<名称|种族>`、`<名称|种族|性别>`，或 `<名称|种族|性别|体型>`。
+ * 体型（第四段，可选）：tiny / small / medium / large / huge；省略时按 medium。
  * 示例：
  * <player|single|attack||14|> — 对单个玩家造成 14 点伤害
  * <player|aoe|multi_attack||4|3> — 对全体玩家 3 段、每段 4 点
@@ -13,6 +15,25 @@
   var RANK_TAGS = ['elite', 'fodder', 'normal', 'strong', 'boss'];
   /** 嘲讽（taunt）在战斗规则中固定为 2 层，与 AI 是否在 param 中写层数无关 */
   var TAUNT_LAYERS_FIXED = 2;
+
+  var BODY_SIZE_KEYS = ['tiny', 'small', 'medium', 'large', 'huge'];
+  /** 体型：省略或非法时视为 medium */
+  function normalizeBodySize(s) {
+    var k = (s || '').toString().toLowerCase().trim();
+    if (BODY_SIZE_KEYS.indexOf(k) !== -1) return k;
+    return 'medium';
+  }
+  /** tiny 基础 1～5ml（整数），其余体型为 tiny 的 2、3、4、5 倍（猥亵/侵犯等用） */
+  function getBodySizeMultiplier(size) {
+    var i = BODY_SIZE_KEYS.indexOf(normalizeBodySize(size));
+    return i >= 0 ? i + 1 : 3;
+  }
+  function rollSemenMlForBodySize(bodySize, rng) {
+    rng = rng || Math.random;
+    var mult = getBodySizeMultiplier(bodySize);
+    var base = Math.floor(rng() * 5) + 1;
+    return base * mult;
+  }
 
   /** 将管道串解析为固定 6 段（不足补空） */
   function parsePipeSegments(body) {
@@ -69,13 +90,16 @@
   }
 
   /**
-   * 解析 <名称|种族> 形式的单行（怪物名片）
+   * 解析怪物名片：`<名称|种族>`、`<名称|种族|性别>`、`<名称|种族|性别|体型>`。
+   * 第三段性别、第四段体型可选；体型为 tiny|small|medium|large|huge。
    */
   function parseNameSpeciesLine(lineInner) {
     var p = parsePipeSegments(lineInner);
     return {
       name: (p[0] || '').trim(),
       species: (p[1] || '').trim(),
+      gender: (p[2] || '').trim(),
+      bodySize: normalizeBodySize(p[3]),
       raw: lineInner,
     };
   }
@@ -95,10 +119,14 @@
     var nameLine = rest.match(/<([^>\n]+)>/);
     var name = '';
     var species = '';
+    var gender = '';
+    var bodySize = 'medium';
     if (nameLine && nameLine[1].indexOf('|') !== -1) {
       var ns = parseNameSpeciesLine(nameLine[1]);
       name = ns.name;
       species = ns.species;
+      gender = ns.gender || '';
+      bodySize = ns.bodySize || 'medium';
     } else if (nameLine) {
       name = nameLine[1].trim();
     }
@@ -106,13 +134,15 @@
       rank: rank,
       name: name,
       species: species,
+      gender: gender,
+      bodySize: bodySize,
       intents: intents,
     };
   }
 
   /**
    * 从整段文本中解析 <enemy_design>...</enemy_design>
-   * @returns {{ enemies: Array<{ rank, name, species, intents }> } | null}
+   * @returns {{ enemies: Array<{ rank, name, species, gender, bodySize, intents }> } | null}
    */
   function parseEnemyDesign(text) {
     if (!text || typeof text !== 'string') return null;
@@ -193,6 +223,8 @@
       arr[slot - 1] = {
         name: u.name || '未命名',
         species: u.species || '',
+        gender: u.gender != null && String(u.gender).trim() !== '' ? String(u.gender).trim() : '',
+        bodySize: u.bodySize != null ? normalizeBodySize(u.bodySize) : 'medium',
         rank: u.rank,
         level: rankToDisplayLevel(u.rank),
         hp: st.hp,
@@ -210,7 +242,7 @@
 
   /**
    * 根据解析结果描述「会如何生成」敌方单位；stats 由 enemyStats 填入；写入战斗由 app 的 commitSpawnPlanToBattle 完成。
-   * 规则简述：enemies 与单位一一对应，但 **敌方槽位 1～6 随机填充**（互不重复）；每只怪带 name/species/rank 与意图列表；嘲讽意图一律按 2 层处理。
+   * 规则简述：enemies 与单位一一对应，但 **敌方槽位 1～6 随机填充**（互不重复）；每只怪带 name/species/gender/bodySize（可选）/rank 与意图列表；嘲讽意图一律按 2 层处理。
    * @param {{ enemies: Array }} parsed
    * @param {{ rng?: () => number }} options 可选，传入 rng 便于测试固定随机序列
    */
@@ -228,6 +260,8 @@
         rank: e.rank,
         name: e.name || '未命名',
         species: e.species || '',
+        gender: e.gender != null && String(e.gender).trim() !== '' ? String(e.gender).trim() : '',
+        bodySize: e.bodySize != null ? normalizeBodySize(e.bodySize) : 'medium',
         intents: e.intents || [],
         intentSummary: (e.intents || []).map(function (it) {
           if (it.tauntLayers != null) return 'taunt×' + it.tauntLayers + '(固定)';
@@ -258,11 +292,16 @@
       TAUNT_LAYERS_FIXED: TAUNT_LAYERS_FIXED,
       parseIntentLine: parseIntentLine,
       parseEnemyDesign: parseEnemyDesign,
+      parseNameSpeciesLine: parseNameSpeciesLine,
       tryParseAiReply: tryParseAiReply,
       buildSpawnPlanFromDesign: buildSpawnPlanFromDesign,
       buildEnemyPartyFromSpawnPlan: buildEnemyPartyFromSpawnPlan,
       rankToDisplayLevel: rankToDisplayLevel,
       pickRandomEnemySlots: pickRandomEnemySlots,
+      BODY_SIZE_KEYS: BODY_SIZE_KEYS,
+      normalizeBodySize: normalizeBodySize,
+      getBodySizeMultiplier: getBodySizeMultiplier,
+      rollSemenMlForBodySize: rollSemenMlForBodySize,
     };
   }
 })();

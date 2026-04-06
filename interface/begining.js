@@ -6,6 +6,67 @@
 (function () {
   'use strict';
 
+  /** 全屏切换（documentElement），供开局与主界面共用 */
+  function getFullscreenElement() {
+    return (
+      document.fullscreenElement ||
+      document.webkitFullscreenElement ||
+      document.mozFullScreenElement ||
+      document.msFullscreenElement ||
+      null
+    );
+  }
+  function isFullscreen() {
+    return !!getFullscreenElement();
+  }
+  function toggleFullscreen() {
+    var root = document.documentElement;
+    if (isFullscreen()) {
+      var d = document;
+      var exitFn = d.exitFullscreen || d.webkitExitFullscreen || d.mozCancelFullScreen || d.msExitFullscreen;
+      if (exitFn) return exitFn.call(d).catch(function () {});
+    } else {
+      var req = root.requestFullscreen || root.webkitRequestFullscreen || root.mozRequestFullScreen || root.msRequestFullscreen;
+      if (req) return req.call(root).catch(function () {});
+    }
+  }
+  var FS_SVG_ENTER =
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>';
+  var FS_SVG_EXIT =
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>';
+  function syncFullscreenButtonIcons() {
+    var active = isFullscreen();
+    var html = active ? FS_SVG_EXIT : FS_SVG_ENTER;
+    document.querySelectorAll('.hentai-fs-btn').forEach(function (btn) {
+      btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+      btn.title = active ? '退出全屏' : '全屏';
+      btn.setAttribute('aria-label', active ? '退出全屏' : '全屏');
+      var inner = btn.querySelector('.hentai-fs-btn-inner');
+      if (inner) inner.innerHTML = html;
+    });
+  }
+  function createFullscreenButton() {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'hentai-fs-btn';
+    btn.innerHTML = '<span class="hentai-fs-btn-inner"></span>';
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleFullscreen();
+    });
+    syncFullscreenButtonIcons();
+    return btn;
+  }
+  if (typeof window !== 'undefined') {
+    window.色色地牢_toggleFullscreen = toggleFullscreen;
+    window.色色地牢_syncFullscreenButtons = syncFullscreenButtonIcons;
+    window.色色地牢_createFullscreenButton = createFullscreenButton;
+  }
+  ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'].forEach(function (ev) {
+    document.addEventListener(ev, syncFullscreenButtonIcons);
+  });
+
   const OVERLAY_ID = 'begining-overlay';
   /** 封面：标题界面别称 */
   const COVER_ID = 'begining-cover';
@@ -880,7 +941,13 @@
     var styleEl = document.createElement('style');
     styleEl.textContent =
       '@keyframes begining-glow{0%,100%{text-shadow:0 0 8px rgba(232,224,208,0.4),0 0 16px rgba(232,224,208,0.2);}' +
-      '50%{text-shadow:0 0 14px rgba(232,224,208,0.7),0 0 28px rgba(232,224,208,0.35);}}';
+      '50%{text-shadow:0 0 14px rgba(232,224,208,0.7),0 0 28px rgba(232,224,208,0.35);}}' +
+      '.hentai-fs-btn{position:absolute;top:12px;right:12px;z-index:100001;width:44px;height:44px;padding:0;border-radius:50%;' +
+      'border:2px solid rgba(255,255,255,0.88);background:rgba(45,31,20,0.92);color:rgba(232,224,208,0.95);cursor:pointer;' +
+      'display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.45);transition:background .2s,border-color .2s}' +
+      '.hentai-fs-btn:hover{background:rgba(60,45,30,0.95);border-color:rgba(255,255,255,0.65)}' +
+      '.hentai-fs-btn:focus-visible{outline:2px solid rgba(255,255,255,0.75);outline-offset:2px}' +
+      '.hentai-fs-btn-inner{display:flex;align-items:center;justify-content:center}';
     overlay.appendChild(styleEl);
 
     var fontLink = document.createElement('link');
@@ -925,7 +992,7 @@
       'position:absolute;left:12px;bottom:12px;font-size:clamp(10px,1.4vw,12px);color:rgba(232,224,208,0.75);' +
       'pointer-events:auto;';
     coverLicense.innerHTML =
-      'This work by <span property="cc:attributionName">SovietZeppelin</span> is licensed under ' +
+      'This work by <span property="cc:attributionName">SovietZeppelin and 醉里论道</span> is licensed under ' +
       '<a href="https://creativecommons.org/licenses/by-nc-sa/4.0/?ref=chooser-v1" target="_blank" rel="license noopener noreferrer" ' +
       'style="color:rgba(232,224,208,0.9);text-decoration:underline;">CC BY-NC-SA 4.0</a>';
     coverLicense.setAttribute('xmlns:cc', 'http://creativecommons.org/ns#');
@@ -967,18 +1034,6 @@
     loadSavePanel.appendChild(loadSaveList);
     loadSavePanel.appendChild(loadSaveBack);
     startMenu.appendChild(loadSavePanel);
-    // 左下角：CC 协议标注
-    var introLicense = document.createElement('div');
-    introLicense.className = 'begining-intro-license';
-    introLicense.style.cssText =
-      'position:absolute;left:12px;bottom:12px;font-size:clamp(10px,1.4vw,12px);color:rgba(232,224,208,0.75);' +
-      'pointer-events:auto;';
-    introLicense.innerHTML =
-      'This work by <span property="cc:attributionName">SovietZeppelin</span> is licensed under ' +
-      '<a href="https://creativecommons.org/licenses/by-nc-sa/4.0/?ref=chooser-v1" target="_blank" rel="license noopener noreferrer" ' +
-      'style="color:rgba(232,224,208,0.9);text-decoration:underline;">CC BY-NC-SA 4.0</a>';
-    introLicense.setAttribute('xmlns:cc', 'http://creativecommons.org/ns#');
-    startMenu.appendChild(introLicense);
     overlay.appendChild(startMenu);
 
     // ——— 新开局选项界面（点击「新游戏」后显示） ———
@@ -993,6 +1048,10 @@
       }, 0);
     });
     overlay.appendChild(newGamePanel);
+
+    var fsBtnOverlay = createFullscreenButton();
+    fsBtnOverlay.id = 'hentai-fs-btn-overlay';
+    overlay.appendChild(fsBtnOverlay);
 
     function goToStartMenu() {
       overlay.style.cursor = 'default';
@@ -1023,6 +1082,7 @@
     }
 
     overlay.addEventListener('click', function (e) {
+      if (e.target.closest('.hentai-fs-btn')) return;
       if (e.target.closest('#' + START_MENU_ID)) return;
       goToStartMenu();
     });

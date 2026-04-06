@@ -373,12 +373,6 @@
     { id: '中度破损', name: '中度破损', desc: '防御-20%', tooltip: '防御-20%。永久（无自动结算）。' },
     { id: '严重破损', name: '严重破损', desc: '防御-30%', tooltip: '防御-30%。永久（无自动结算）。' },
     {
-      id: '精液附着',
-      name: '精液附着',
-      desc: '追踪各部位精液状态，层级：无→少量→明显→大量',
-      tooltip: '追踪各部位精液状态。',
-    },
-    {
       id: '攻势',
       name: '攻势',
       desc: '力量+2',
@@ -602,7 +596,6 @@
     轻微破损: { fill: 'rgba(97,97,97,0.4)', border: '#616161', color: '#424242' },
     中度破损: { fill: 'rgba(97,97,97,0.45)', border: '#616161', color: '#424242' },
     严重破损: { fill: 'rgba(97,97,97,0.5)', border: '#616161', color: '#424242' },
-    精液附着: { fill: 'rgba(158,158,158,0.4)', border: '#9e9e9e', color: '#616161' },
     攻势: { fill: 'rgba(0,0,0,0.5)', border: '#1a1a1a', color: '#1a1a1a' },
     守势: { fill: 'rgba(250,250,250,0.7)', border: '#e0e0e0', color: '#333333' },
     锁定: { fill: 'rgba(33,150,243,0.45)', border: '#1976d2', color: '#1976d2' },
@@ -1706,8 +1699,25 @@
         var hpPct = maxHp ? Math.min(100, (hp / maxHp) * 100) : 0;
         var shieldPct = maxHp > 0 && shieldNum > 0 ? Math.min(100, (shieldNum / maxHp) * 100) : 0;
         slotEl.classList.add('slot-enemy', 'slot-char');
+        var genderHint =
+          en.gender && String(en.gender).trim() ? ' · ' + String(en.gender).trim().replace(/</g, '&lt;') : '';
+        var bodySizeHint =
+          en.bodySize && String(en.bodySize).trim()
+            ? ' · ' + String(en.bodySize).trim().replace(/</g, '&lt;')
+            : '';
         slotEl.title =
-          name + ' HP ' + hp + '/' + maxHp + (shieldNum > 0 ? ' 护盾' + shieldNum : '') + ' 攻击' + atk + ' 防御' + def;
+          name +
+          genderHint +
+          bodySizeHint +
+          ' HP ' +
+          hp +
+          '/' +
+          maxHp +
+          (shieldNum > 0 ? ' 护盾' + shieldNum : '') +
+          ' 攻击' +
+          atk +
+          ' 防御' +
+          def;
         if (hp <= 0) {
           var nameEl = slotEl.querySelector('.slot-char-name');
           var hasOverlay = slotEl.querySelector('.slot-defeated-overlay');
@@ -2353,25 +2363,647 @@
       }
       processSlot(1);
     }
-    /** 敌方行动回合：怪物攻击逻辑。支持 单体攻击/群体攻击(AOE)/连击/防御；可通过 window.色色地牢_getEnemyActionType(monster, context) 或 window.色色地牢_ENEMY_ACTION_HANDLERS 扩展。 */
-    var ENEMY_ACTION_TYPES = { single_target: '单体攻击', aoe: '群体攻击', multi_hit: '连击', defense: '防御' };
-    function getDefaultEnemyActionWeights(monster) {
-      var level = (monster && (monster.level || '').toString()) || 'Normal';
-      if (level === 'Normal') return { single_target: 40, aoe: 20, multi_hit: 25, defense: 15 };
-      return { single_target: 40, aoe: 20, multi_hit: 25, defense: 15 };
+    /** 敌方行动：意图行（AI）+ 程序侧 服装破坏/猥亵/束缚/强制侵犯；无意图时回退单体/AOE/连击/防御。 */
+    var ENEMY_ACTION_TYPES = {
+      single_target: '单体攻击',
+      aoe: '群体攻击',
+      multi_hit: '连击',
+      defense: '防御',
+      prog_clothes_break: '服装破坏',
+      prog_lewd_grope: '猥亵',
+      prog_bind: '束缚',
+      prog_forced_rape: '强制侵犯',
+    };
+    var ENEMY_ACTION_LABELS = ENEMY_ACTION_TYPES;
+    function isEnemyFemaleForLewd(monster) {
+      var g = monster && monster.gender != null ? String(monster.gender).toLowerCase().trim() : '';
+      return g === 'female' || String(monster && monster.gender).trim() === '女';
     }
-    function pickEnemyActionType(monster) {
-      if (typeof window !== 'undefined' && typeof window.色色地牢_getEnemyActionType === 'function') {
-        var custom = window.色色地牢_getEnemyActionType(monster, { party: getParty(), enemies: getEnemyParty() });
-        if (custom && ENEMY_ACTION_TYPES[custom]) return custom;
+    function isTauntIntentLine(act, eff) {
+      var a = (act || '').toLowerCase().trim();
+      var e = (eff || '').toLowerCase().trim();
+      return a === 'taunt' || e === 'taunt';
+    }
+    function allyHasBuffName(ally, buffName) {
+      if (!ally || !buffName) return false;
+      return (ally.buffs || []).some(function (b) {
+        return (b.id === buffName || b.name === buffName) && (parseInt(b.layers, 10) || 0) > 0;
+      });
+    }
+    function allyQualifiesForForcedRape(ally) {
+      if (!ally) return false;
+      if (allyHasBuffName(ally, '严重破损')) return true;
+      var tag = (ally.outfitTag || ally.outfit || '').toString();
+      return /泳装|舞娘|swimsuit|dancer/i.test(tag);
+    }
+    function getForcedRapeTargetSlots(party) {
+      var t = getTargetableAllySlotsForEnemy(party);
+      var out = [];
+      for (var i = 0; i < t.length; i++) {
+        var al = party[t[i] - 1];
+        if (al && allyQualifiesForForcedRape(al)) out.push(t[i]);
       }
-      var weights = getDefaultEnemyActionWeights(monster);
-      var total = weights.single_target + weights.aoe + weights.multi_hit + weights.defense;
+      return out;
+    }
+    function getOtherAliveEnemySlots(enemies, selfSlot) {
+      if (!enemies) return [];
+      var all = getTargetableEnemySlotIndices(enemies);
+      var out = [];
+      for (var i = 0; i < all.length; i++) {
+        var s = all[i];
+        if (s === selfSlot) continue;
+        if (enemies[s - 1]) out.push(s);
+      }
+      return out;
+    }
+    function canExecuteIntentLine(intent, party, enemies, selfSlot) {
+      if (!intent) return false;
+      var tgt = (intent.target || '').toLowerCase();
+      var act = (intent.action || '').toLowerCase();
+      var eff = (intent.effect || '').toLowerCase();
+      if (isTauntIntentLine(act, eff) && tgt === 'self') return true;
+      if (tgt === 'player') return getTargetableAllySlotsForEnemy(party).length > 0;
+      if (tgt === 'ally') return getOtherAliveEnemySlots(enemies, selfSlot).length > 0;
+      return false;
+    }
+    function getClothingDamageTier(ally) {
+      if (allyHasBuffName(ally, '严重破损')) return 3;
+      if (allyHasBuffName(ally, '中度破损')) return 2;
+      if (allyHasBuffName(ally, '轻微破损')) return 1;
+      return 0;
+    }
+    function stripClothingDamageBuffs(ally) {
+      ally.buffs = (ally.buffs || []).filter(function (b) {
+        var id = b.id || b.name;
+        return id !== '轻微破损' && id !== '中度破损' && id !== '严重破损';
+      });
+    }
+    function bumpClothingDamageOneLevel(ally) {
+      var t = getClothingDamageTier(ally);
+      stripClothingDamageBuffs(ally);
+      if (t === 0) addBuffLayers(ally, '轻微破损', '轻微破损', 1);
+      else if (t === 1) addBuffLayers(ally, '中度破损', '中度破损', 1);
+      else addBuffLayers(ally, '严重破损', '严重破损', 1);
+    }
+    function formatEnemyActionLabel(monster, actionType) {
+      if (actionType.indexOf('intent:') === 0) {
+        var ix = parseInt(actionType.split(':')[1], 10);
+        var it = monster.intents && monster.intents[ix];
+        if (!it) return '意图';
+        var hint = (it.action || it.effect || '').slice(0, 20);
+        return '意图#' + (ix + 1) + (hint ? '（' + hint + '）' : '');
+      }
+      return ENEMY_ACTION_TYPES[actionType] || actionType;
+    }
+    function pickWeightedEnemyAction(weights) {
+      var keys = Object.keys(weights);
+      var total = 0;
+      for (var wi = 0; wi < keys.length; wi++) total += Math.max(0, parseInt(weights[keys[wi]], 10) || 0);
+      if (total <= 0) return 'defense';
       var r = Math.random() * total;
-      if (r < weights.single_target) return 'single_target';
-      if (r < weights.single_target + weights.aoe) return 'aoe';
-      if (r < weights.single_target + weights.aoe + weights.multi_hit) return 'multi_hit';
-      return 'defense';
+      var acc = 0;
+      for (var wj = 0; wj < keys.length; wj++) {
+        var ww = Math.max(0, parseInt(weights[keys[wj]], 10) || 0);
+        acc += ww;
+        if (r < acc) return keys[wj];
+      }
+      return keys[keys.length - 1];
+    }
+    /** 正常项与色情项权重（总和 1000，组内均分）。随开局难度：普通 75%/25%，休闲 50%/50%，困难 90%/10%。正常项：可执行 intent:*、无意图时的单体/AOE/连击/防御。色情项：prog_clothes_break、prog_bind、prog_lewd_grope、prog_forced_rape（后两者仅非 female）。若当前池无色情项则全部为正常（100%）。 */
+    function addEqualShareWeights(weights, keys, total) {
+      var n = keys.length;
+      if (n === 0 || total <= 0) return;
+      var base = Math.floor(total / n);
+      var rem = total - base * n;
+      for (var i = 0; i < n; i++) {
+        weights[keys[i]] = base + (i < rem ? 1 : 0);
+      }
+    }
+    /** @returns {{ normal: number, lewd: number }} 二者之和为 1000 */
+    function getDifficultyNormalLewdWeightSplit() {
+      var d = '';
+      try {
+        if (typeof getVariables === 'function') {
+          var v = getVariables({ type: 'chat' });
+          if (v && v.difficulty != null) d = String(v.difficulty).trim();
+        }
+      } catch (eDiff) {}
+      if (d === '休闲') return { normal: 500, lewd: 500 };
+      if (d === '困难') return { normal: 900, lewd: 100 };
+      return { normal: 750, lewd: 250 };
+    }
+    function buildEnemyActionWeights(monster, party, enemies, enemySlotNum) {
+      var normalKeys = [];
+      var lewdKeys = [];
+      var intents = monster.intents || [];
+      var isFemale = isEnemyFemaleForLewd(monster);
+      var hasPlayers = getTargetableAllySlotsForEnemy(party).length > 0;
+      var hasForcedTarget = getForcedRapeTargetSlots(party).length > 0;
+      if (intents.length > 0) {
+        for (var ii = 0; ii < intents.length; ii++) {
+          if (canExecuteIntentLine(intents[ii], party, enemies, enemySlotNum)) normalKeys.push('intent:' + ii);
+        }
+        if (hasPlayers) {
+          lewdKeys.push('prog_clothes_break');
+          lewdKeys.push('prog_bind');
+        }
+        if (!isFemale && hasPlayers) lewdKeys.push('prog_lewd_grope');
+        if (!isFemale && hasPlayers && hasForcedTarget) lewdKeys.push('prog_forced_rape');
+      } else {
+        normalKeys.push('single_target', 'aoe', 'multi_hit', 'defense');
+        if (hasPlayers) {
+          lewdKeys.push('prog_clothes_break');
+          lewdKeys.push('prog_bind');
+        }
+        if (!isFemale && hasPlayers) lewdKeys.push('prog_lewd_grope');
+        if (!isFemale && hasPlayers && hasForcedTarget) lewdKeys.push('prog_forced_rape');
+      }
+      var weights = {};
+      var nN = normalKeys.length;
+      var nL = lewdKeys.length;
+      if (nN === 0 && nL === 0) {
+        weights.defense = 1;
+        return weights;
+      }
+      if (nL === 0) {
+        addEqualShareWeights(weights, normalKeys, 1000);
+      } else if (nN === 0) {
+        addEqualShareWeights(weights, lewdKeys, 1000);
+      } else {
+        var split = getDifficultyNormalLewdWeightSplit();
+        addEqualShareWeights(weights, normalKeys, split.normal);
+        addEqualShareWeights(weights, lewdKeys, split.lewd);
+      }
+      return weights;
+    }
+    function pickEnemyActionType(monster, battleCtx) {
+      battleCtx = battleCtx || {};
+      var party = battleCtx.party || getParty();
+      var enemies = battleCtx.enemies || getEnemyParty();
+      var slot = battleCtx.slot != null ? battleCtx.slot : 1;
+      if (typeof window !== 'undefined' && typeof window.色色地牢_getEnemyActionType === 'function') {
+        var custom = window.色色地牢_getEnemyActionType(monster, { party: party, enemies: enemies, slot: slot });
+        if (custom && (ENEMY_ACTION_TYPES[custom] || /^intent:\d+$/.test(custom))) return custom;
+      }
+      return pickWeightedEnemyAction(buildEnemyActionWeights(monster, party, enemies, slot));
+    }
+    /** 执行 enemy_design 第 idx 条意图 */
+    function applyEnemyIntentByIndex(monster, idx, party, enemies, enemySlotNum, onDone) {
+      onDone = typeof onDone === 'function' ? onDone : function () {};
+      var it = monster.intents && monster.intents[idx];
+      if (!it) {
+        onDone();
+        return;
+      }
+      var tgt = (it.target || '').toLowerCase();
+      var scope = (it.scope || '').toLowerCase();
+      var act = (it.action || '').toLowerCase();
+      var eff = (it.effect || '').toLowerCase();
+      var p1 = it.param1;
+      var p2 = it.param2;
+      var name = monster.name || '敌方';
+      var atk = Math.max(0, parseInt(monster.atk, 10) || 0);
+      var enemySlotEl = document.querySelector('.slot[data-slot="enemy-' + enemySlotNum + '"]');
+      if (isTauntIntentLine(act, eff) && tgt === 'self') {
+        var tl = 2;
+        if (
+          typeof window !== 'undefined' &&
+          window.色色地牢_enemyDesign &&
+          window.色色地牢_enemyDesign.TAUNT_LAYERS_FIXED != null
+        )
+          tl = window.色色地牢_enemyDesign.TAUNT_LAYERS_FIXED;
+        addBuffLayers(monster, '嘲讽', '嘲讽', tl);
+        appendCombatLog(name + ' 对自身施加【嘲讽】' + tl + '层');
+        function ft() {
+          saveBattleData(party, enemies);
+          renderEnemySlots(enemies);
+          onDone({ partyChanged: false });
+        }
+        if (enemySlotEl) playAnimationOnSlot(enemySlotEl, 'Recovery4', ft);
+        else ft();
+        return;
+      }
+      if (tgt === 'player' && scope === 'single' && act === 'attack') {
+        var tA = getTargetableAllySlotsForEnemy(party);
+        if (tA.length === 0) {
+          onDone({ partyChanged: false });
+          return;
+        }
+        var ts = tA[Math.floor(Math.random() * tA.length)];
+        var ally = party[ts - 1];
+        var baseDmg = Math.max(1, parseInt(p1, 10) || Math.floor(atk * 0.85));
+        var result = resolveAttack(monster, ally, baseDmg, false);
+        var allySlotEl = document.querySelector('.slot[data-slot="ally-' + ts + '"]');
+        function afterDmg() {
+          applyDamageToAllyAndTry弹返(ally, monster, result.finalDamage);
+          appendCombatLog(
+            formatAttackLogLine(name, '单体攻击（意图）', ally.name || '己方', result, baseDmg, '攻击', null, ally.hp),
+          );
+          if (!result.hit && ally.name === '黯') try残影步Counter(ally, monster, party, enemies, enemySlotNum);
+          if (!result.hit && ally.name === '岚' && ally.影舞反击)
+            try岚影舞Counter(ally, monster, party, enemies, enemySlotNum);
+          saveBattleData(party, enemies);
+          renderAllySlots(party);
+          renderEnemySlots(enemies);
+          onDone();
+        }
+        if (enemySlotEl && allySlotEl) {
+          playStrikeShake(enemySlotEl, allySlotEl, function () {
+            playSlashOnSlot(allySlotEl, result.hit, afterDmg);
+          });
+        } else afterDmg();
+        return;
+      }
+      /** 对己方单体多段伤害（与 aoe+multi_attack 区分：aoe=可每段换目标，single=锁定同一目标） */
+      if (tgt === 'player' && scope === 'single' && act === 'multi_attack') {
+        var perHitS = Math.max(1, parseInt(p1, 10) || 4);
+        var hitsS = Math.max(1, parseInt(p2, 10) || 3);
+        var taS = getTargetableAllySlotsForEnemy(party);
+        if (taS.length === 0) {
+          onDone({ partyChanged: false });
+          return;
+        }
+        var lockSlot = taS[Math.floor(Math.random() * taS.length)];
+        var mIdxS = 0;
+        function nextHitSingle() {
+          if (mIdxS >= hitsS) {
+            saveBattleData(party, enemies);
+            renderAllySlots(party);
+            renderEnemySlots(enemies);
+            onDone();
+            return;
+          }
+          var taCheck = getTargetableAllySlotsForEnemy(party);
+          if (taCheck.indexOf(lockSlot) === -1) {
+            saveBattleData(party, enemies);
+            renderAllySlots(party);
+            renderEnemySlots(enemies);
+            onDone();
+            return;
+          }
+          var alS = party[lockSlot - 1];
+          if (!alS || (parseInt(alS.hp, 10) || 0) <= 0) {
+            saveBattleData(party, enemies);
+            renderAllySlots(party);
+            renderEnemySlots(enemies);
+            onDone();
+            return;
+          }
+          var resS = resolveAttack(monster, alS, perHitS, false);
+          var elS = document.querySelector('.slot[data-slot="ally-' + lockSlot + '"]');
+          function applyOneS() {
+            applyDamageToAllyAndTry弹返(alS, monster, resS.finalDamage);
+            appendCombatLog(
+              formatAttackLogLine(
+                name,
+                '单体多段攻击（意图）',
+                alS.name || '己方',
+                resS,
+                perHitS,
+                '攻击',
+                null,
+                alS.hp,
+              ),
+            );
+            if (!resS.hit && alS.name === '黯') try残影步Counter(alS, monster, party, enemies, enemySlotNum);
+            if (!resS.hit && alS.name === '岚' && alS.影舞反击)
+              try岚影舞Counter(alS, monster, party, enemies, enemySlotNum);
+            mIdxS++;
+            setTimeout(nextHitSingle, 220);
+          }
+          if (elS && enemySlotEl) {
+            playStrikeShake(enemySlotEl, elS, function () {
+              playSlashOnSlot(elS, resS.hit, applyOneS);
+            });
+          } else applyOneS();
+        }
+        nextHitSingle();
+        return;
+      }
+      if (tgt === 'player' && scope === 'aoe' && act === 'multi_attack') {
+        var perHit = Math.max(1, parseInt(p1, 10) || 4);
+        var hits = Math.max(1, parseInt(p2, 10) || 3);
+        var mIdx = 0;
+        function nextHit() {
+          if (mIdx >= hits) {
+            saveBattleData(party, enemies);
+            renderAllySlots(party);
+            renderEnemySlots(enemies);
+            onDone();
+            return;
+          }
+          var ta = getTargetableAllySlotsForEnemy(party);
+          if (ta.length === 0) {
+            saveBattleData(party, enemies);
+            renderAllySlots(party);
+            renderEnemySlots(enemies);
+            onDone();
+            return;
+          }
+          var slot = ta[Math.floor(Math.random() * ta.length)];
+          var al = party[slot - 1];
+          var res = resolveAttack(monster, al, perHit, false);
+          var el = document.querySelector('.slot[data-slot="ally-' + slot + '"]');
+          function applyOne() {
+            applyDamageToAllyAndTry弹返(al, monster, res.finalDamage);
+            appendCombatLog(
+              formatAttackLogLine(name, 'AOE多段攻击（意图）', al.name || '己方', res, perHit, '攻击', null, al.hp),
+            );
+            if (!res.hit && al.name === '黯') try残影步Counter(al, monster, party, enemies, enemySlotNum);
+            if (!res.hit && al.name === '岚' && al.影舞反击)
+              try岚影舞Counter(al, monster, party, enemies, enemySlotNum);
+            mIdx++;
+            setTimeout(nextHit, 220);
+          }
+          if (el && enemySlotEl) {
+            playStrikeShake(enemySlotEl, el, function () {
+              playSlashOnSlot(el, res.hit, applyOne);
+            });
+          } else applyOne();
+        }
+        nextHit();
+        return;
+      }
+      if (tgt === 'player' && scope === 'single' && act === 'debuff') {
+        var tD = getTargetableAllySlotsForEnemy(party);
+        if (tD.length === 0) {
+          onDone({ partyChanged: false });
+          return;
+        }
+        var ds = tD[Math.floor(Math.random() * tD.length)];
+        var alD = party[ds - 1];
+        var debuffLayers = Math.max(1, parseInt(p1, 10) || 2);
+        if (eff === 'vulnerability' || eff === '') addBuffLayers(alD, '脆弱', '脆弱', debuffLayers);
+        else addBuffLayers(alD, '虚弱', '虚弱', debuffLayers);
+        appendCombatLog(
+          name +
+            ' 对 ' +
+            (alD.name || '己方') +
+            ' 施加【' +
+            (eff === 'vulnerability' || eff === '' ? '脆弱' : '虚弱') +
+            '】' +
+            debuffLayers +
+            '层',
+        );
+        var elD = document.querySelector('.slot[data-slot="ally-' + ds + '"]');
+        function fd() {
+          saveBattleData(party, enemies);
+          renderAllySlots(party);
+          renderEnemySlots(enemies);
+          onDone();
+        }
+        if (enemySlotEl && elD) playAnimationOnSlot(enemySlotEl, 'Recovery4', fd);
+        else fd();
+        return;
+      }
+      if (tgt === 'ally' && scope === 'aoe' && act === 'buff') {
+        var oSlots = getOtherAliveEnemySlots(enemies, enemySlotNum);
+        if (oSlots.length === 0) {
+          onDone({ partyChanged: false });
+          return;
+        }
+        var bl = Math.max(1, parseInt(p1, 10) || 1);
+        var buffId = '力量强化';
+        if (eff && eff.indexOf('strength') === -1 && eff !== 'strength_up' && eff !== '') buffId = '攻击强化';
+        for (var oi = 0; oi < oSlots.length; oi++) {
+          var eu = enemies[oSlots[oi] - 1];
+          if (eu) addBuffLayers(eu, buffId, buffId, bl);
+        }
+        appendCombatLog(name + ' 对友方全体施加【' + buffId + '】' + bl + '层');
+        function fb() {
+          saveBattleData(party, enemies);
+          renderEnemySlots(enemies);
+          onDone({ partyChanged: false });
+        }
+        if (enemySlotEl) playAnimationOnSlot(enemySlotEl, 'Recovery4', fb);
+        else fb();
+        return;
+      }
+      /** 对单个友方怪上 buff（与 aoe 区分：single=随机一名其它敌方） */
+      if (tgt === 'ally' && scope === 'single' && act === 'buff') {
+        var oSlots1 = getOtherAliveEnemySlots(enemies, enemySlotNum);
+        if (oSlots1.length === 0) {
+          onDone({ partyChanged: false });
+          return;
+        }
+        var pickB = oSlots1[Math.floor(Math.random() * oSlots1.length)];
+        var eu1 = enemies[pickB - 1];
+        var bl1 = Math.max(1, parseInt(p1, 10) || 1);
+        var effLower = (eff || '').toLowerCase();
+        var buffId1 = '力量强化';
+        if (effLower === 'regeneration' || effLower.indexOf('regen') !== -1) buffId1 = '再生';
+        else if (effLower === 'strength_up' || effLower.indexOf('strength') !== -1) buffId1 = '力量强化';
+        else if (effLower.indexOf('attack') !== -1) buffId1 = '攻击强化';
+        if (eu1) addBuffLayers(eu1, buffId1, buffId1, bl1);
+        appendCombatLog(
+          name + ' 对友方「' + (eu1 && eu1.name ? eu1.name : '') + '」施加【' + buffId1 + '】' + bl1 + '层',
+        );
+        function fb1() {
+          saveBattleData(party, enemies);
+          renderEnemySlots(enemies);
+          onDone({ partyChanged: false });
+        }
+        if (enemySlotEl) playAnimationOnSlot(enemySlotEl, 'Recovery4', fb1);
+        else fb1();
+        return;
+      }
+      if (tgt === 'ally' && scope === 'single' && act === 'heal') {
+        var hSlots = getOtherAliveEnemySlots(enemies, enemySlotNum);
+        if (hSlots.length === 0) {
+          onDone({ partyChanged: false });
+          return;
+        }
+        var hs = hSlots[Math.floor(Math.random() * hSlots.length)];
+        var he = enemies[hs - 1];
+        var hv = Math.max(1, parseInt(p1, 10) || 10);
+        var curHp = parseInt(he.hp, 10) || 0;
+        var mxHp = parseInt(he.maxHp, 10) || curHp || 1;
+        he.hp = Math.min(mxHp, curHp + hv);
+        appendCombatLog(name + ' 治疗友方「' + (he.name || '') + '」回复 ' + hv + ' HP');
+        function fh() {
+          saveBattleData(party, enemies);
+          renderEnemySlots(enemies);
+          onDone({ partyChanged: false });
+        }
+        if (enemySlotEl) playAnimationOnSlot(enemySlotEl, 'Recovery4', fh);
+        else fh();
+        return;
+      }
+      if (tgt === 'player' && getTargetableAllySlotsForEnemy(party).length > 0) {
+        var tA2 = getTargetableAllySlotsForEnemy(party);
+        var ts2 = tA2[Math.floor(Math.random() * tA2.length)];
+        var ally2 = party[ts2 - 1];
+        var baseDmg2 = Math.max(1, Math.floor(atk * 0.85));
+        var res2 = resolveAttack(monster, ally2, baseDmg2, false);
+        applyDamageToAllyAndTry弹返(ally2, monster, res2.finalDamage);
+        appendCombatLog(
+          formatAttackLogLine(
+            name,
+            '单体攻击（意图回退）',
+            ally2.name || '己方',
+            res2,
+            baseDmg2,
+            '攻击',
+            null,
+            ally2.hp,
+          ),
+        );
+        saveBattleData(party, enemies);
+        renderAllySlots(party);
+        renderEnemySlots(enemies);
+        onDone();
+        return;
+      }
+      onDone({ partyChanged: false });
+    }
+    function applyProgClothesBreak(monster, party, enemies, enemySlotNum, onDone) {
+      onDone = typeof onDone === 'function' ? onDone : function () {};
+      var enemySlotEl = document.querySelector('.slot[data-slot="enemy-' + enemySlotNum + '"]');
+      var atk = Math.max(0, parseInt(monster.atk, 10) || 0);
+      var name = monster.name || '敌方';
+      var targetable = getTargetableAllySlotsForEnemy(party);
+      if (targetable.length === 0) {
+        onDone({ partyChanged: false });
+        return;
+      }
+      var targetSlot = targetable[Math.floor(Math.random() * targetable.length)];
+      var ally = party[targetSlot - 1];
+      var baseDmg = Math.max(1, Math.floor(atk * 0.3));
+      var result = resolveAttack(monster, ally, baseDmg, false);
+      var allySlotEl = document.querySelector('.slot[data-slot="ally-' + targetSlot + '"]');
+      function afterCloth() {
+        applyDamageToAllyAndTry弹返(ally, monster, result.finalDamage);
+        if (result.hit) bumpClothingDamageOneLevel(ally);
+        appendCombatLog(
+          name +
+            ' 「服装破坏」对 ' +
+            (ally.name || '己方') +
+            ' 造成 ' +
+            result.finalDamage +
+            ' 伤害' +
+            (result.hit ? '，服装破损+1级' : ''),
+        );
+        saveBattleData(party, enemies);
+        renderAllySlots(party);
+        renderEnemySlots(enemies);
+        onDone();
+      }
+      if (enemySlotEl && allySlotEl) {
+        playStrikeShake(enemySlotEl, allySlotEl, function () {
+          playSlashOnSlot(allySlotEl, result.hit, afterCloth);
+        });
+      } else afterCloth();
+    }
+    function applyProgLewdGrope(monster, party, enemies, enemySlotNum, onDone) {
+      onDone = typeof onDone === 'function' ? onDone : function () {};
+      var enemySlotEl = document.querySelector('.slot[data-slot="enemy-' + enemySlotNum + '"]');
+      var name = monster.name || '敌方';
+      var targetable = getTargetableAllySlotsForEnemy(party);
+      if (targetable.length === 0) {
+        onDone({ partyChanged: false });
+        return;
+      }
+      var lewdSlot = targetable[Math.floor(Math.random() * targetable.length)];
+      var lewdAlly = party[lewdSlot - 1];
+      var edSemen = typeof window !== 'undefined' ? window.色色地牢_enemyDesign : null;
+      var mlAdd =
+        edSemen && typeof edSemen.rollSemenMlForBodySize === 'function'
+          ? edSemen.rollSemenMlForBodySize(monster.bodySize || 'medium')
+          : 0;
+      if (lewdAlly) {
+        var prevMl = parseFloat(lewdAlly.semenVolumeMl);
+        if (isNaN(prevMl)) prevMl = 0;
+        lewdAlly.semenVolumeMl = prevMl + mlAdd;
+      }
+      appendCombatLog(
+        name +
+          ' 「猥亵」对 ' +
+          (lewdAlly && lewdAlly.name ? lewdAlly.name : '己方') +
+          '（体表精液 +' +
+          mlAdd +
+          'ml，累计 ' +
+          (lewdAlly && lewdAlly.semenVolumeMl != null ? lewdAlly.semenVolumeMl : 0) +
+          'ml）',
+      );
+      var lewdAllyEl = document.querySelector('.slot[data-slot="ally-' + lewdSlot + '"]');
+      function finishLewd() {
+        saveBattleData(party, enemies);
+        renderAllySlots(party);
+        renderEnemySlots(enemies);
+        onDone();
+      }
+      if (enemySlotEl && lewdAllyEl) {
+        playAnimationOnSlot(enemySlotEl, 'Recovery4', function () {
+          finishLewd();
+        });
+      } else finishLewd();
+    }
+    function applyProgBind(monster, party, enemies, enemySlotNum, onDone) {
+      onDone = typeof onDone === 'function' ? onDone : function () {};
+      var enemySlotEl = document.querySelector('.slot[data-slot="enemy-' + enemySlotNum + '"]');
+      var name = monster.name || '敌方';
+      var targetable = getTargetableAllySlotsForEnemy(party);
+      if (targetable.length === 0) {
+        onDone({ partyChanged: false });
+        return;
+      }
+      var slot = targetable[Math.floor(Math.random() * targetable.length)];
+      var ally = party[slot - 1];
+      addBuffLayers(ally, '眩晕', '眩晕', 1);
+      appendCombatLog(name + ' 「束缚」对 ' + (ally.name || '己方') + ' 施加1层【眩晕】');
+      var allyEl = document.querySelector('.slot[data-slot="ally-' + slot + '"]');
+      function fin() {
+        saveBattleData(party, enemies);
+        renderAllySlots(party);
+        renderEnemySlots(enemies);
+        onDone();
+      }
+      if (enemySlotEl && allyEl) playAnimationOnSlot(enemySlotEl, 'Recovery4', fin);
+      else fin();
+    }
+    function applyProgForcedRape(monster, party, enemies, enemySlotNum, onDone) {
+      onDone = typeof onDone === 'function' ? onDone : function () {};
+      var enemySlotEl = document.querySelector('.slot[data-slot="enemy-' + enemySlotNum + '"]');
+      var name = monster.name || '敌方';
+      var slots = getForcedRapeTargetSlots(party);
+      if (slots.length === 0) {
+        onDone({ partyChanged: false });
+        return;
+      }
+      var targetSlot = slots[Math.floor(Math.random() * slots.length)];
+      var ally = party[targetSlot - 1];
+      addBuffLayers(ally, '眩晕', '眩晕', 1);
+      var edSemen = typeof window !== 'undefined' ? window.色色地牢_enemyDesign : null;
+      var ml1 =
+        edSemen && typeof edSemen.rollSemenMlForBodySize === 'function'
+          ? edSemen.rollSemenMlForBodySize(monster.bodySize || 'medium')
+          : 0;
+      var ml2 =
+        edSemen && typeof edSemen.rollSemenMlForBodySize === 'function'
+          ? edSemen.rollSemenMlForBodySize(monster.bodySize || 'medium')
+          : 0;
+      var prev = parseFloat(ally.semenVolumeMl);
+      if (isNaN(prev)) prev = 0;
+      ally.semenVolumeMl = prev + ml1 + ml2;
+      appendCombatLog(
+        name +
+          ' 「强制侵犯」对 ' +
+          (ally.name || '己方') +
+          '：1层【眩晕】，下体/体内精液 +' +
+          (ml1 + ml2) +
+          'ml（累计 ' +
+          ally.semenVolumeMl +
+          'ml）',
+      );
+      var allyEl = document.querySelector('.slot[data-slot="ally-' + targetSlot + '"]');
+      function fin2() {
+        saveBattleData(party, enemies);
+        renderAllySlots(party);
+        renderEnemySlots(enemies);
+        onDone();
+      }
+      if (enemySlotEl && allyEl) playAnimationOnSlot(enemySlotEl, 'Recovery4', fin2);
+      else fin2();
     }
     function applyEnemyAction(monster, actionType, party, enemies, enemySlotNum, onDone) {
       onDone = typeof onDone === 'function' ? onDone : function () {};
@@ -2379,7 +3011,6 @@
       var atk = Math.max(0, parseInt(monster.atk, 10) || 0);
       var def = Math.max(0, parseInt(monster.def, 10) || 0);
       var name = monster.name || '敌方';
-      var targetable = getTargetableAllySlotsForEnemy(party);
       if (actionType === 'defense') {
         var shieldVal = Math.max(0, Math.floor(def * (0.8 + 0.4 * Math.random())));
         if (shieldVal > 0) {
@@ -2399,6 +3030,28 @@
         }
         return;
       }
+      if (actionType.indexOf('intent:') === 0) {
+        var iidx = parseInt(actionType.split(':')[1], 10);
+        applyEnemyIntentByIndex(monster, iidx, party, enemies, enemySlotNum, onDone);
+        return;
+      }
+      if (actionType === 'prog_clothes_break') {
+        applyProgClothesBreak(monster, party, enemies, enemySlotNum, onDone);
+        return;
+      }
+      if (actionType === 'prog_lewd_grope') {
+        applyProgLewdGrope(monster, party, enemies, enemySlotNum, onDone);
+        return;
+      }
+      if (actionType === 'prog_bind') {
+        applyProgBind(monster, party, enemies, enemySlotNum, onDone);
+        return;
+      }
+      if (actionType === 'prog_forced_rape') {
+        applyProgForcedRape(monster, party, enemies, enemySlotNum, onDone);
+        return;
+      }
+      var targetable = getTargetableAllySlotsForEnemy(party);
       if (targetable.length === 0) {
         onDone({ partyChanged: false });
         return;
@@ -2619,7 +3272,6 @@
       }
     }
     var ENEMY_ACTION_WAIT_MS = 500;
-    var ENEMY_ACTION_LABELS = { single_target: '单体攻击', aoe: '群体攻击', multi_hit: '连击', defense: '防御' };
     /** 敌方行动回合：1～6 号位严格依次行动，每怪行动后保存并刷新界面，再等 0.5s 进行下一怪；onDone 可选 */
     function resolveEnemyActions(onDone) {
       var party = getParty();
@@ -2654,14 +3306,14 @@
           return;
         }
         {
-          var actionType = pickEnemyActionType(enemy);
+          var actionType = pickEnemyActionType(enemy, { party: party, enemies: enemies, slot: slot });
           console.info(
             '[战斗] ' +
               slot +
               '号位 ' +
               (enemy.name || '敌方') +
               ' 执行 ' +
-              (ENEMY_ACTION_LABELS[actionType] || actionType),
+              formatEnemyActionLabel(enemy, actionType),
           );
           function afterAction(opts) {
             saveBattleData(party, enemies);
@@ -7757,6 +8409,8 @@
         endTurnBtn.addEventListener('click', function () {
           if (getBattlePhase() !== BATTLE_PHASE.PLAYER_ACTION) return;
           if (endTurnBtn.getAttribute('data-battle-btn-mode') === 'continue-map') {
+            if (typeof window.色色地牢_commitPendingMapPosAfterBattle === 'function')
+              window.色色地牢_commitPendingMapPosAfterBattle();
             if (typeof window.色色地牢_showMapDrawer === 'function') window.色色地牢_showMapDrawer({});
             return;
           }
