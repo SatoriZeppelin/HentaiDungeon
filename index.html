@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>色色地牢</title>
+  </head>
+  <body>
+    <!-- 开局界面：最先加载，载入时显示 HentaiDungeon/色色地牢 与左下角协议，点击后进入主界面 -->
+    <script src="interface/begining.js"></script>
+    <!-- 样式与侧边栏/战斗逻辑由 界面/app.js 注入；文本由 界面/story.js 提供；jQuery 由 CDN 或酒馆环境提供 -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+    <div class="game-frame ornate-frame">
+      <!-- 装饰性外框：四角镂空花纹 -->
+      <div class="corner-ornament corner-tl">
+        <svg viewBox="0 0 100 100">
+          <path
+            d="M0,0 L40,0 C35,5 30,10 25,20 C20,30 15,35 10,40 L10,25 C15,20 20,15 25,10 C30,5 35,3 40,0 M0,0 L0,40 C5,35 10,30 20,25 C30,20 35,15 40,10 L25,10 C20,15 15,20 10,25 C5,30 3,35 0,40"
+          />
+          <circle cx="8" cy="8" r="4" />
+        </svg>
+      </div>
+      <div class="corner-ornament corner-tr">
+        <svg viewBox="0 0 100 100">
+          <path
+            d="M0,0 L40,0 C35,5 30,10 25,20 C20,30 15,35 10,40 L10,25 C15,20 20,15 25,10 C30,5 35,3 40,0 M0,0 L0,40 C5,35 10,30 20,25 C30,20 35,15 40,10 L25,10 C20,15 15,20 10,25 C5,30 3,35 0,40"
+          />
+          <circle cx="8" cy="8" r="4" />
+        </svg>
+      </div>
+      <div class="corner-ornament corner-bl">
+        <svg viewBox="0 0 100 100">
+          <path
+            d="M0,0 L40,0 C35,5 30,10 25,20 C20,30 15,35 10,40 L10,25 C15,20 20,15 25,10 C30,5 35,3 40,0 M0,0 L0,40 C5,35 10,30 20,25 C30,20 35,15 40,10 L25,10 C20,15 15,20 10,25 C5,30 3,35 0,40"
+          />
+          <circle cx="8" cy="8" r="4" />
+        </svg>
+      </div>
+      <div class="corner-ornament corner-br">
+        <svg viewBox="0 0 100 100">
+          <path
+            d="M0,0 L40,0 C35,5 30,10 25,20 C20,30 15,35 10,40 L10,25 C15,20 20,15 25,10 C30,5 35,3 40,0 M0,0 L0,40 C5,35 10,30 20,25 C30,20 35,15 40,10 L25,10 C20,15 15,20 10,25 C5,30 3,35 0,40"
+          />
+          <circle cx="8" cy="8" r="4" />
+        </svg>
+      </div>
+      <div class="edge-decoration edge-top"></div>
+      <div class="edge-decoration edge-bottom"></div>
+      <div class="edge-decoration vertical edge-left"></div>
+      <div class="edge-decoration vertical edge-right"></div>
+      <div class="game-inner">
+        <!-- 左侧列表 -->
+        <nav class="sidebar">
+          <div
+            id="dungeon-floor-hud"
+            class="dungeon-floor-hud"
+            role="status"
+            aria-live="polite"
+            title="当前探索进度"
+          >
+            <div class="dungeon-floor-hud-title">大层</div>
+            <div class="dungeon-floor-hud-major" id="dungeon-floor-major">1</div>
+            <div class="dungeon-floor-hud-band" id="dungeon-floor-band">起点</div>
+            <div class="dungeon-floor-hud-floor" id="dungeon-floor-global">第 0 层</div>
+          </div>
+          <ul class="sidebar-list">
+            <li>
+              <button type="button" class="sidebar-btn" data-tab="switch">
+                <span class="sidebar-btn-icon"
+                  ><svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M1 4v6h6" />
+                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" /></svg></span
+                ><span class="sidebar-btn-label">切换</span>
+              </button>
+            </li>
+            <li>
+              <button type="button" class="sidebar-btn" data-tab="character">
+                <span class="sidebar-btn-icon"
+                  ><svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <circle cx="12" cy="8" r="4" />
+                    <path d="M20 21a8 8 0 0 0-16 0" /></svg></span
+                ><span class="sidebar-btn-label">角色</span>
+              </button>
+            </li>
+            <li>
+              <button type="button" class="sidebar-btn" data-tab="misc">
+                <span class="sidebar-btn-icon"
+                  ><svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <rect x="3" y="3" width="7" height="7" />
+                    <rect x="14" y="3" width="7" height="7" />
+                    <rect x="14" y="14" width="7" height="7" />
+                    <rect x="3" y="14" width="7" height="7" /></svg></span
+                ><span class="sidebar-btn-label">杂项</span>
+              </button>
+            </li>
+            <li>
+              <button type="button" class="sidebar-btn" data-tab="settings">
+                <span class="sidebar-btn-icon"
+                  ><svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="3" />
+                    <path
+                      d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+                    /></svg></span
+                ><span class="sidebar-btn-label">设置</span>
+              </button>
+            </li>
+          </ul>
+          <div class="sidebar-gold-hud" id="sidebar-gold-hud" role="status" aria-live="polite" title="当前金币">
+            <span class="sidebar-gold-icon" id="sidebar-gold-icon" aria-hidden="true"></span>
+            <span class="sidebar-gold-value" id="sidebar-gold-value">0</span>
+          </div>
+          <!-- 角色按钮右侧弹出：四个角色头像槽，无角色则留空 -->
+          <div class="character-panel" id="character-panel" hidden>
+            <div class="character-panel-inner">
+              <div class="character-avatars">
+                <div class="character-avatar-slot" data-avatar="1" title="角色1"></div>
+                <div class="character-avatar-slot" data-avatar="2" title="角色2"></div>
+                <div class="character-avatar-slot" data-avatar="3" title="角色3"></div>
+                <div class="character-avatar-slot" data-avatar="4" title="角色4"></div>
+              </div>
+            </div>
+          </div>
+          <!-- 杂项按钮右侧弹出：地图、背包等次级按钮，上下排列 -->
+          <div class="misc-panel" id="misc-panel" hidden>
+            <div class="misc-panel-inner">
+              <button type="button" class="misc-sub-btn" data-misc="map" title="地图">
+                <span class="misc-sub-btn-icon">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
+                    <line x1="8" y1="2" x2="8" y2="18" />
+                    <line x1="16" y1="6" x2="16" y2="22" />
+                  </svg>
+                </span>
+                <span class="misc-sub-btn-label">地图</span>
+              </button>
+              <button type="button" class="misc-sub-btn" data-misc="bag" title="背包">
+                <span class="misc-sub-btn-icon">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  >
+                    <path
+                      d="M20.232 10.5257C19.6468 7.40452 19.3542 5.84393 18.2433 4.92196C17.1324 4 15.5446 4 12.369 4H11.6479C8.47228 4 6.8845 4 5.7736 4.92196C4.66271 5.84393 4.37009 7.40452 3.78487 10.5257C2.96195 14.9146 2.55049 17.1091 3.75011 18.5545C4.94973 20 7.18244 20 11.6478 20H12.369C16.8344 20 19.0672 20 20.2668 18.5545C20.9628 17.7159 21.1165 16.6252 20.9621 15"
+                    />
+                    <path d="M9.1709 8C9.58273 9.16519 10.694 10 12.0002 10C13.3064 10 14.4177 9.16519 14.8295 8" />
+                  </svg>
+                </span>
+                <span class="misc-sub-btn-label">背包</span>
+              </button>
+            </div>
+          </div>
+        </nav>
+
+        <div class="view-container">
+          <!-- 角色细则：从左侧滑出，左缘与按钮栏右边界对齐，无关闭按钮；再次点击头像或取消角色选中时关闭 -->
+          <div class="character-detail-drawer" id="character-detail-drawer">
+            <div id="character-detail-content" class="character-detail-content"></div>
+          </div>
+          <!-- 点击右侧空白关闭细则并回弹角色按钮 -->
+          <div class="character-detail-backdrop" id="character-detail-backdrop"></div>
+          <!-- 地图抽屉：点击杂项-地图后从左侧滑出，展示探索路线图 -->
+          <div class="map-drawer" id="map-drawer">
+            <div id="map-drawer-content" class="map-drawer-content"></div>
+          </div>
+          <div class="map-drawer-backdrop" id="map-drawer-backdrop"></div>
+          <!-- 背包抽屉：点击杂项-背包后从左侧滑出，展示旅行行囊 -->
+          <div class="bag-drawer" id="bag-drawer">
+            <div id="bag-drawer-content" class="bag-drawer-content"></div>
+          </div>
+          <div class="bag-drawer-backdrop" id="bag-drawer-backdrop"></div>
+          <!-- 技能界面：战斗界面点击角色卡牌头像（非换位状态）时弹出，显示攻击、防御等 -->
+          <div class="skill-popup" id="skill-popup"></div>
+          <!-- 分支进阶弹窗：技能 Lv4 且未进阶时，点击进阶键打开 -->
+          <div class="advancement-popup" id="advancement-popup">
+            <div class="advancement-popup-backdrop"></div>
+            <div class="advancement-popup-panel" id="advancement-popup-panel"></div>
+          </div>
+          <div class="special-skill-popup" id="special-skill-popup">
+            <div class="special-skill-popup-backdrop"></div>
+            <div class="special-skill-popup-panel" id="special-skill-popup-panel">
+              <div class="special-skill-popup-title">
+                特殊技能<button type="button" class="special-skill-popup-close" title="关闭" aria-label="关闭"></button>
+              </div>
+              <div class="special-skill-popup-body" id="special-skill-popup-body"></div>
+            </div>
+          </div>
+          <!-- 战斗视图（默认显示） -->
+          <div class="view-battle">
+            <main class="battle-area">
+              <section class="side side-ally">
+                <div class="slots-grid slots-ally">
+                  <div class="slot slot-char" data-slot="ally-1" title="空位">空位</div>
+                  <div class="slot slot-char" data-slot="ally-2" title="空位">空位</div>
+                  <div class="slot slot-char" data-slot="ally-3" title="空位">空位</div>
+                  <div class="slot slot-char" data-slot="ally-4" title="空位">空位</div>
+                  <div class="slot slot-char" data-slot="ally-5" title="空位">空位</div>
+                  <div class="slot slot-char" data-slot="ally-6" title="空位">空位</div>
+                </div>
+              </section>
+              <div class="battle-round-center" id="battle-round-center">
+                <div class="battle-round-number" id="battle-round-number">第1回合</div>
+                <div class="battle-round-swords" aria-hidden="true">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"></polyline>
+                    <line x1="13" x2="19" y1="19" y2="13"></line>
+                    <line x1="16" x2="20" y1="16" y2="20"></line>
+                    <line x1="19" x2="21" y1="21" y2="19"></line>
+                    <polyline points="14.5 6.5 18 3 21 3 21 6 17.5 9.5"></polyline>
+                    <line x1="5" x2="9" y1="14" y2="18"></line>
+                    <line x1="7" x2="4" y1="17" y2="20"></line>
+                    <line x1="3" x2="5" y1="19" y2="21"></line>
+                  </svg>
+                </div>
+                <div class="battle-round-phase" id="battle-round-phase">玩家行动回合</div>
+                <button type="button" class="battle-end-turn-btn" id="battle-end-turn-btn">结束回合</button>
+              </div>
+              <section class="side side-enemy">
+                <div class="slots-grid slots-enemy">
+                  <div class="slot slot-enemy" data-slot="enemy-1">空位</div>
+                  <div class="slot slot-enemy" data-slot="enemy-2">空位</div>
+                  <div class="slot slot-enemy" data-slot="enemy-3">空位</div>
+                  <div class="slot slot-enemy" data-slot="enemy-4">空位</div>
+                  <div class="slot slot-enemy" data-slot="enemy-5">空位</div>
+                  <div class="slot slot-enemy" data-slot="enemy-6">空位</div>
+                </div>
+              </section>
+            </main>
+            <!-- 行动日志：左下角悬浮，黑底白字，最多5行，单条5秒后淡出，不占布局、z轴高于战斗 -->
+            <div class="battle-action-log" id="battle-action-log" aria-live="polite"></div>
+          </div>
+
+          <!-- 文字视图：从左往右弹出的圆角矩形文字框，占位与己方+敌方一致 -->
+          <div class="view-story" id="view-story" hidden>
+            <div class="story-box">
+              <div id="story-content" class="story-content font-medium font-kaiti">暂无正文内容</div>
+            </div>
+          </div>
+
+          <!-- 设置界面：与文本区同位置同大小，从左往右弹出；先关文本再弹出 -->
+          <div class="view-settings" id="settings-overlay" hidden>
+            <div class="settings-box">
+              <div class="settings-inner">
+                <h2 class="settings-title">设置</h2>
+                <div class="settings-section">
+                  <span class="settings-label">文本区字号</span>
+                  <div class="settings-row">
+                    <button type="button" class="story-side-btn" id="font-small">小</button>
+                    <button type="button" class="story-side-btn active" id="font-medium">中</button>
+                    <button type="button" class="story-side-btn" id="font-large">大</button>
+                  </div>
+                </div>
+                <div class="settings-section">
+                  <span class="settings-label">文本区字体</span>
+                  <div class="settings-row">
+                    <button type="button" class="story-side-btn active" id="font-kaiti">楷体</button>
+                    <button type="button" class="story-side-btn" id="font-songti">宋体</button>
+                    <button type="button" class="story-side-btn" id="font-heiti">黑体</button>
+                    <button type="button" class="story-side-btn" id="font-fangsong">仿宋</button>
+                    <button type="button" class="story-side-btn" id="font-yahei">雅黑</button>
+                  </div>
+                </div>
+                <button type="button" class="settings-close" id="settings-close">关闭</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="character/character.js"></script>
+    <script src="resource/illustration.js"></script>
+    <script src="resource/svg.js"></script>
+    <script src="resource/animations.js"></script>
+    <script src="interface/story.js"></script>
+    <script src="interface/settings.js"></script>
+    <script src="interface/battle.js"></script>
+    <script src="interface/enemyStats.js"></script>
+    <script src="interface/enemyDesign.js"></script>
+    <script src="interface/encounter.js"></script>
+    <script src="interface/app.js"></script>
+  </body>
+</html>
