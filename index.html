@@ -226,6 +226,9 @@
           </div>
           <!-- 战斗视图（默认显示） -->
           <div class="view-battle">
+            <div class="battle-floor-title-wrap" id="battle-floor-title-wrap" style="display: none">
+              <h2 class="battle-floor-title" id="battle-floor-title"></h2>
+            </div>
             <main class="battle-area">
               <section class="side side-ally">
                 <div class="slots-grid slots-ally">
@@ -313,6 +316,23 @@
           </div>
         </div>
       </div>
+      <div
+        id="normal-battle-gen-error-overlay"
+        class="normal-battle-gen-error-overlay"
+        hidden
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="normal-battle-gen-error-title"
+      >
+        <div class="normal-battle-gen-error-panel">
+          <h3 class="normal-battle-gen-error-title" id="normal-battle-gen-error-title">生成出错</h3>
+          <pre class="normal-battle-gen-error-body"></pre>
+          <div class="normal-battle-gen-error-actions">
+            <button type="button" class="story-side-btn" id="normal-battle-gen-error-back">回退行动</button>
+            <button type="button" class="story-side-btn" id="normal-battle-gen-error-retry">再次生成</button>
+          </div>
+        </div>
+      </div>
     </div>
     <script src="character/character.js"></script>
     <script src="resource/illustration.js"></script>
@@ -321,11 +341,11 @@
     <script src="interface/story.js"></script>
     <script src="interface/settings.js"></script>
     <script src="interface/battle.js"></script>
-    <script src="interface/enemyStats.js"></script>
-    <script src="interface/enemyDesign.js"></script>
-    <script src="interface/encounter.js"></script>
-    <script src="interface/save.js"></script>
-    <script src="interface/skill.js"></script>
+    <script src="backend/enemy.js"></script>
+    <script src="backend/encounter.js"></script>
+    <script src="backend/save.js"></script>
+    <script src="backend/skill.js"></script>
+    <script src="backend/golddrop.js"></script>
     <script src="interface/app.js"></script>
   </body>
 </html>

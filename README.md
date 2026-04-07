@@ -10,7 +10,7 @@
 
 ```
 色色地牢/
-├── index.html              # 主 HTML，按顺序引用 character/、resource/、interface/ 下脚本
+├── index.html              # 主 HTML，按顺序引用 character/、resource/、interface/、backend/ 下脚本
 ├── HentaiDungeon.html      # 可选：由仓库根目录 node scripts/inline-hentai-dungeon-html.js 将上述脚本内联成的单文件 HTML，便于整包分发
 ├── character/
 │   └── character.js        # 角色数据：属性、被动/基础/可升级技能、特殊技能列表、已解锁特殊技能（见下方职责表）
@@ -18,25 +18,28 @@
 │   ├── illustration.js     # 角色立绘 URL（CHARACTER_PORTRAITS）
 │   ├── svg.js              # 界面用 SVG 图标（技能攻击/防御、AP、换位等）
 │   └── animations.js       # 战斗动画资源 URL（斩击、恢复、状态等 APNG）
-├── interface/
+├── interface/              # 与**前端界面**直接相关的脚本（DOM、布局、内联样式、开局/设置/文字区、战斗视图等）
 │   ├── begining.js         # 开局界面：载入时显示 HentaiDungeon / 色色地牢 标题与左下角协议，需在 app.js 之前加载
-│   ├── save.js             # 存档模块：浏览器 localStorage 槽位读写、历史战斗记录、每节点进入时状态（详见下方「存档系统」）
-│   ├── app.js              # 入口：内联样式、侧边栏、调用 battle 的 initBattle；角色/地图/背包抽屉、技能解析等
-│   ├── skill.js            # 技能公式与描述解析：getBaseDamageForSkill、resolveSkillEffect、getBaseDamageFromResolvedEffect 等，由 app 加载并传入 battle
+│   ├── app.js              # 入口：内联样式、侧边栏、调用 battle 的 initBattle；角色/地图/背包抽屉、与酒馆变量同步等
 │   ├── battle.js           # 战斗初始化与 UI：initBattle/initBattleUI、网格、技能弹窗、攻击结算、回合推进（详见 README-battle.md）
-│   ├── enemyStats.js       # 敌方 HP/攻/防：档位倍率 × 区域基准随机值；区域由大层推导（与左侧 HUD 每 15 层一大层一致）
-│   ├── enemyDesign.js      # 解析 AI 可能返回的 <enemy_design>（精英/杂兵等 + 意图管道符），供 encounter 在 generate 回调后打日志
-│   ├── encounter.js        # 地图遭遇：进入「普通战斗」格时按层数抽敌方组合（fodder/normal/strong 等），拼区域文案并调用 generate 发给 AI（不经输入框）
 │   ├── story.js            # 文字区：字号/字体、正文内容与 setStoryText / getStoryContent
 │   ├── settings.js         # 设置面板：打开/关闭、关闭按钮与退出动画
 │   └── README-battle.md    # 战斗逻辑说明
+├── backend/                # 与**后端/数据与 AI 管线**相关的脚本（规则、遭遇 generate、存档、技能公式等，无页面专用壳层）
+│   ├── enemy.js            # 敌方数值 + `<enemy_design>` 解析（色色地牢_enemyStats / 色色地牢_enemyDesign）
+│   ├── encounter.js        # 普通战斗：抽组合、拼提示词、`generate` 调酒馆 AI、解析敌方设计
+│   ├── save.js             # 存档：localStorage 槽位与快照（详见「存档系统」）
+│   ├── skill.js            # 技能公式与描述解析，由 app 取得 API 后传入 battle
+│   └── golddrop.js         # 战斗胜利金币区间投掷（色色地牢_goldDrop）
 ├── App.vue                 # 预留 Vue 组件
 ├── 技能编写说明.md
 ├── .gitignore
 └── README.md
 ```
 
-**脚本加载顺序（`index.html` 底部）**：`character` → `resource/*` → `story` → `settings` → **`battle` → `enemyStats` → `enemyDesign` → `encounter` → `app`**。`enemyStats.js` 须在 `enemyDesign.js` 之前；`encounter.js` 须在 `app.js` 之前。
+**脚本加载顺序（`index.html` 底部）**：`character` → `resource/*` → `interface/story.js` → `interface/settings.js` → **`interface/battle.js` → `backend/enemy.js` → `backend/encounter.js` → `backend/save.js` → `backend/skill.js` → `backend/golddrop.js` → `interface/app.js`**。`enemy.js` 须整文件在 `encounter.js` 之前；`encounter.js` 须在 `app.js` 之前。
+
+**命名约定**：色色地牢项目下 **JavaScript 源文件名一律小写**（如 `enemy.js`、`golddrop.js`），避免出现骆驼峰文件名。
 
 ## 各 JS 职责规范
 
@@ -47,21 +50,21 @@
 | **resource/illustration.js** | **立绘资源**。`window.CHARACTER_PORTRAITS`：角色名 → 图片 URL 或相对路径。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | **resource/svg.js**          | **界面 SVG 图标**。`window.色色地牢_SVG`：攻击/防御/AP/换位/关闭等图标字符串，供技能卡、弹窗、按钮使用。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | **resource/animations.js**   | **战斗动画资源**。`window.ANIMATIONS`：斩击、恢复、状态等 APNG 的 URL，按 Slash / Recovery / State 等分组。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| **interface/app.js**         | **界面入口与全局逻辑**。内联注入全部 CSS；侧边栏点击与视图切换（initSidebar）；**调用** battle 的 `initBattle(options)` 完成战斗初始化；**特殊技能点**（getSpecialSkillPointsTotal、getUnspentSpecialSkillPoints）计算与解锁、特殊技能弹窗；角色细则抽屉、地图/背包抽屉（`fillPath` 等在「普通战斗」时调用 **`window.色色地牢_requestNormalBattleAiPrompt`**，逻辑在 encounter.js）；从 `window.色色地牢_character` 取得特殊技能列表/白牙工厂并封装 SUMMON_BAIYA、getBaiyaStatsFromOwner；特殊技能弹窗；getDisplayStat；**加载** skill.js 取得技能公式与描述解析 API 并传入 battle。                                                 |
-| **interface/skill.js**       | **技能公式与描述解析（独立模块）**。由 app 在 getDisplayStat 就绪后通过 `window.色色地牢_skill.create(getDisplayStat)` 取得 API，再传给 battle。提供 getBaseDamageForSkill（各技能伤害公式）、resolveSkillEffect / resolveSkillEffectWithStats（占位符解析）、getBaseDamageFromResolvedEffect、getSkillEffectForLevel、getShieldForSkill 等；与 **技能编写说明.md** 中的占位符、BUFF_DEFINITIONS 对应。                                                                                                                                                                                                                              |
+| **interface/app.js**         | **界面入口与全局逻辑**。内联注入全部 CSS；侧边栏点击与视图切换（initSidebar）；**调用** battle 的 `initBattle(options)` 完成战斗初始化；**特殊技能点**（getSpecialSkillPointsTotal、getUnspentSpecialSkillPoints）计算与解锁、特殊技能弹窗；角色细则抽屉、地图/背包抽屉（`fillPath` 等在「普通战斗」时调用 **`window.色色地牢_requestNormalBattleAiPrompt`**，逻辑在 backend/encounter.js）；从 `window.色色地牢_character` 取得特殊技能列表/白牙工厂并封装 SUMMON_BAIYA、getBaiyaStatsFromOwner；特殊技能弹窗；getDisplayStat；**依赖** backend/skill.js 取得技能公式与描述解析 API 并传入 battle。                                                 |
+| **backend/skill.js**         | **技能公式与描述解析（独立模块）**。由 app 在 getDisplayStat 就绪后通过 `window.色色地牢_skill.create(getDisplayStat)` 取得 API，再传给 battle。提供 getBaseDamageForSkill（各技能伤害公式）、resolveSkillEffect / resolveSkillEffectWithStats（占位符解析）、getBaseDamageFromResolvedEffect、getSkillEffectForLevel、getShieldForSkill 等；与 **技能编写说明.md** 中的占位符、BUFF_DEFINITIONS 对应。                                                                                                                                                                                                                              |
 | **interface/battle.js**      | **战斗初始化与战斗 UI/回合逻辑**。提供 `initBattle(options)` 与 `initBattleUI(options)`，完成己方/敌方槽位渲染、技能选择弹窗、换位、攻击结算与受击表现；依赖 app 传入的 getParty、getEnemyParty、saveBattleData、getSpecialSkillsForChar、**getBaseDamageForSkill**、**resolveSkillEffect** 等。详见 **interface/README-battle.md**。                                                                                                                                                                                                                                                                                                |
-| **interface/enemyStats.js**  | **敌方数值表**。档位（fodder/normal/strong/elite/boss）含分值与 HP/攻/防倍率；Boss 的 HP 倍率在 **800%～1000%** 间随机。三个 **区域基准**（HP/攻/防各为整数区间）由 **大层** 映射：大层 1→区域1，大层 2→区域2，大层 ≥3→区域3。单只怪：`baseHp` 等在区间内随机取整，再乘倍率得 **`units[].stats`**（`hp`/`maxHp`/`atk`/`def`）。对外 **`window.色色地牢_enemyStats`**：`computeStatsForRank`、`applySpawnPlanStats`、`majorFromNodeId` 等。                                                                                                                                                                                           |
-| **interface/enemyDesign.js** | **AI 敌方设计片段解析**。解析 `<enemy_design>` 下 `<elite>` / `<fodder>` / `<normal>` / `<strong>` / `<boss>` 等块：怪物名片 **`<名称                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 种族>`**、**`<名称 | 种族 | 性别>`**，或 **`<名称 | 种族 | 性别 | 体型>`**（第四段：`tiny` / `small` / `medium` / `large` / `huge`，省略视为`medium`），以及`<intent>` 内 `<target | scope | action | effect | param1 | param2>`意图行（管道字段可为空）。**`buildSpawnPlanFromDesign`** 将各方 **随机填入敌方 1～6 槽（互不重复）**，并调用 **enemyStats** 填入 **`stats`**（需传入当前地图`nodeId`以计算区域）。对外 **`window.色色地牢_enemyDesign`**：`parseEnemyDesign`、`tryParseAiReply`、`buildSpawnPlanFromDesign`、`pickRandomEnemySlots`、`rollSemenMlForBodySize` 等。由 **encounter.js** 在 `generate` 成功后若正文含 `<enemy_design`则解析；**`buildEnemyPartyFromSpawnPlan`** 将计划转为 6 槽阵容，由 **`window.色色地牢_commitSpawnPlanToBattle`**（app.js）写入 **`enemyParty`** 并 **`BattleGrid.refreshBattleView`**。 |
-| **interface/encounter.js**   | **普通战斗遭遇与 AI 提示**。在玩家点击地图上的「普通战斗」可前往格时，按节点列号（层数）分档、等概率抽取敌方分值组合，拼上与开局区域一致的四行区域文案 + `生成…`（英文档位名：fodder / normal / strong 等），经 **`generate({ user_input, should_silence: true })`** 发给酒馆 AI；控制台输出完整提示词；若有 **`enemyDesign.js`** 则尝试解析 AI 回复中的 `<enemy_design>`，**`buildSpawnPlanFromDesign`** 传入 **`nodeId`** 以计算数值。对外 **`window.色色地牢_encounter`**（含组合表与工具函数）及 **`window.色色地牢_requestNormalBattleAiPrompt`**。依赖酒馆助手全局 **`generate`**；须在 **battle.js 之后、app.js 之前** 加载。 |
-| **interface/save.js**        | **存档模块**。所有存档存于浏览器 localStorage（key：`色色地牢_saves`）。单槽位含：party、enemyParty、buffDefinitions、map、meta、history.recentBattleLog、nodeStates（每地图节点「刚进入时」快照）。对外 `window.色色地牢_save`：getSaveSlots、loadSlot、saveSlot、getLastSlotIndex、setLastSlotIndex。需在 app.js 之前加载。                                                                                                                                                                                                                                                                                                        |
+| **backend/enemy.js**         | **敌方模块（单文件双导出）**。**数值**：档位（fodder/normal/strong/elite/boss）与区域基准、大层→区域映射、`applySpawnPlanStats` 等 → **`window.色色地牢_enemyStats`**。**解析**：`<enemy_design>`、意图管道、`buildSpawnPlanFromDesign`（内部调用 `色色地牢_enemyStats.applySpawnPlanStats`）、`buildEnemyPartyFromSpawnPlan` 等 → **`window.色色地牢_enemyDesign`**。由 **backend/encounter.js** 在 `generate` 成功后解析；**`window.色色地牢_commitSpawnPlanToBattle`**（app.js）写入 **`enemyParty`**。 |
+| **backend/encounter.js**     | **普通战斗遭遇与 AI 提示**。在玩家点击地图上的「普通战斗」可前往格时，按节点列号（层数）分档、等概率抽取敌方分值组合，拼上与开局区域一致的四行区域文案 + `生成…`（英文档位名：fodder / normal / strong 等），经 **`generate({ user_input, should_silence: true })`** 发给酒馆 AI；控制台输出完整提示词；若已加载 **`backend/enemy.js`** 则尝试解析 AI 回复中的 `<enemy_design>`，**`buildSpawnPlanFromDesign`** 传入 **`nodeId`** 以计算数值。对外 **`window.色色地牢_encounter`**（含组合表与工具函数）及 **`window.色色地牢_requestNormalBattleAiPrompt`**。依赖酒馆助手全局 **`generate`**；须在 **battle.js 之后、app.js 之前** 加载。 |
+| **backend/golddrop.js**      | **战斗胜利金币**。按区域档与战斗类型（普通/精英/首领）在区间内随机 **`rollBattleGold`**；对外 **`window.色色地牢_goldDrop`**（含 `RULES_TEXT` 等）。须在 **app.js** 之前加载。                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| **backend/save.js**          | **存档模块**。所有存档存于浏览器 localStorage（key：`色色地牢_saves`）。单槽位含：party、enemyParty、buffDefinitions、map、meta、history.recentBattleLog、nodeStates（每地图节点「刚进入时」快照）。对外 `window.色色地牢_save`：getSaveSlots、loadSlot、saveSlot、getLastSlotIndex、setLastSlotIndex。需在 app.js 之前加载。                                                                                                                                                                                                                                                                                                        |
 | **interface/story.js**       | **文字区**。正文 DOM（#story-content）的字号/字体切换；对外 setStoryText / getStoryContent / initStoryPanel。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | **interface/settings.js**    | **设置界面**。设置面板的显示/隐藏、关闭按钮、退出动画；对外 openSettings / closeSettings / initSettings。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 
-约定：**角色相关数据与逻辑（含特殊技能列表、白牙召唤）一律放在 character/character.js**；**特殊技能点计算与解锁在 interface/app.js**；**技能伤害公式与描述占位符解析在 interface/skill.js**；**战斗初始化与战斗 UI 放在 interface/battle.js**；**地图「普通战斗」遭遇组合与 AI 提示词在 interface/encounter.js**；**AI 返回的 `<enemy_design>` 管道意图解析在 interface/enemyDesign.js**；**存档读写与槽位管理在 interface/save.js**；**资源 URL 放在 resource/**；**界面入口与技能解析调用放在 interface/app.js**。
+约定：**角色相关数据与逻辑（含特殊技能列表、白牙召唤）一律放在 character/character.js**；**特殊技能点计算与解锁在 interface/app.js**；**技能伤害公式与描述占位符解析在 backend/skill.js**；**战斗初始化与战斗 UI 放在 interface/battle.js**；**地图「普通战斗」遭遇组合与 AI 提示词在 backend/encounter.js**；**敌方数值与 `<enemy_design>` 解析在 backend/enemy.js**（`色色地牢_enemyStats` / `色色地牢_enemyDesign`）；**存档读写与槽位管理在 backend/save.js**；**战斗胜利金币规则在 backend/golddrop.js**；**资源 URL 放在 resource/**；**界面壳层、样式与视图切换在 interface/**（`app.js`、`begining.js`、`story.js`、`settings.js`）。
 
 ### AI 敌方设计格式（`<enemy_design>`，可选）
 
-若模型在 `generate` 回复中输出如下结构，**enemyDesign.js** 会解析并在控制台打印：
+若模型在 `generate` 回复中输出如下结构，**backend/enemy.js**（`色色地牢_enemyDesign`）会解析并在控制台打印：
 
 - 根标签 `<enemy_design>…</enemy_design>`。
 - 子块：`elite` / `fodder` / `normal` / `strong` / `boss`（可多个同档块）。
@@ -71,7 +74,7 @@
 - **嘲讽**：解析时 **`action` 或 `effect` 为 `taunt`** 一律视为 **固定 2 层**，`param1` 规范为 `'2'`，并带字段 **`tauntLayers: 2`**（不采用 AI 可能填写的其它层数）。
 - 同档可多个块（如三个 `<fodder>…</fodder>`），按出现顺序与单位一一对应；**`buildSpawnPlanFromDesign`** 在敌方 **1～6 号槽内随机不重复分配**（`slotsUsed`），不按 1→2→3 顺序填。
 
-当前实现：**解析** → **`stats`**（enemyStats）→ **`commitSpawnPlanToBattle`** 写入聊天变量 **`enemyParty`** 并刷新战斗格子；**有意图**时敌方按上条行动池结算；**无意图**时回退为单体/AOE/连击/防御 + 程序侧四种（猥亵/强制侵犯仍受性别与强制侵犯条件约束）。
+当前实现：**解析** → **`stats`**（`色色地牢_enemyStats`）→ **`commitSpawnPlanToBattle`** 写入聊天变量 **`enemyParty`** 并刷新战斗格子；**有意图**时敌方按上条行动池结算；**无意图**时回退为单体/AOE/连击/防御 + 程序侧四种（猥亵/强制侵犯仍受性别与强制侵犯条件约束）。
 
 ### 敌方数值（档位 × 区域基准）
 
@@ -91,12 +94,12 @@
 
 例：大层 1、某格为第 1 层（`nodeId` 如 `1-1`），生成 1 只杂兵：在 **40～50** 内随机取 `baseHp`，再乘 **50%** 得到 `hp`/`maxHp`；攻击、防御同理各自在基准区间内随机取整后乘杂兵倍率。
 
-## 存档系统（interface/save.js）
+## 存档系统（backend/save.js）
 
 - **存储位置**：仅浏览器 **localStorage**（key：`色色地牢_saves`），与 map、battle 相关数据一致。
 - **单槽位内容**：`party`、`enemyParty`、`buffDefinitions`、`map`（area/pos/nodes/inv）、`meta`（savedAt、areaName 等）、**history.recentBattleLog**（最近一次战斗的日志行，cap 100 条）、**nodeStates**（以地图节点 id 为 key，存该节点「刚进入时」的 party/enemyParty/map/buffDefinitions 快照，cap 50 个节点）。
 - **API**（`window.色色地牢_save`）：**getSaveSlots()** 返回槽位摘要（用于读取存档/保存时选择）；**loadSlot(index)** 读取指定槽位；**saveSlot(index, payload)** 写入并设为「最后使用」；**getLastSlotIndex()** / **setLastSlotIndex(n)** 供「继续游戏」使用。
-- **加载顺序**：save.js 需在 app.js 之前加载；app 提供 getCurrentGameState、applySavePayload、recordNodeState，并在「继续游戏」/「读取存档」时调用 save 的 loadSlot + applySavePayload；开局「读取存档」在 begining 中展示槽位列表，选中后调用 `window.beginingLoadSaveSlot(index)`；杂项面板中「保存」按钮将当前状态写入 lastIndex 对应槽位。
+- **加载顺序**：`backend/save.js` 需在 `interface/app.js` 之前加载；app 提供 getCurrentGameState、applySavePayload、recordNodeState，并在「继续游戏」/「读取存档」时调用 save 的 loadSlot + applySavePayload；开局「读取存档」在 begining 中展示槽位列表，选中后调用 `window.beginingLoadSaveSlot(index)`；杂项面板中「保存」按钮将当前状态写入 lastIndex 对应槽位。
 - **历史与节点状态**：battle 通过 **getRecentBattleLog** / **setBattleLog** 暴露最近战斗日志供存档与读档恢复；地图在 **renderMapContent** 时若检测到 `pos` 变化会调用 **recordNodeState(pos)** 将当前状态写入 `chat.nodeStates[pos]`，随存档一并持久化。
 
 ## 角色初始状态
@@ -171,12 +174,13 @@
 - 改立绘/图标/动画链接：改 **resource/** 下对应 js。
 - 改样式：改 **interface/app.js** 内 CSS。
 - 改侧边栏/视图切换/角色面板/特殊技能弹窗：改 **interface/app.js**。
-- 改技能伤害公式或描述占位符解析（如 [Str×0.2]、【buff名】）：改 **interface/skill.js**。
+- 改技能伤害公式或描述占位符解析（如 [Str×0.2]、【buff名】）：改 **backend/skill.js**。
 - 改战斗初始化或战斗 UI/回合逻辑：改 **interface/battle.js**（详见 interface/README-battle.md）。
-- 改普通战斗遭遇组合、区域四行文案或发给 AI 的 `generate` 提示：改 **interface/encounter.js**。
-- 改 `<enemy_design>` 解析规则或意图字段：改 **interface/enemyDesign.js**。
-- 改档位倍率、区域基准表或大层→区域映射：改 **interface/enemyStats.js**。
-- 改存档逻辑、槽位数或持久化内容：改 **interface/save.js**。
+- 改普通战斗遭遇组合、区域四行文案或发给 AI 的 `generate` 提示：改 **backend/encounter.js**。
+- 改 `<enemy_design>` 解析规则或意图字段：改 **backend/enemy.js**（文件后半，`色色地牢_enemyDesign` 段）。
+- 改档位倍率、区域基准表或大层→区域映射：改 **backend/enemy.js**（文件前半，`色色地牢_enemyStats` 段）。
+- 改战斗胜利金币区间：改 **backend/golddrop.js**。
+- 改存档逻辑、槽位数或持久化内容：改 **backend/save.js**。
 - 改文字区：改 **interface/story.js**。
 - 改设置界面（打开/关闭、关闭按钮）：改 **interface/settings.js**。
 

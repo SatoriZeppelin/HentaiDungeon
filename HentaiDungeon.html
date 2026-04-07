@@ -1366,6 +1366,9 @@
           </div>
           <!-- 战斗视图（默认显示） -->
           <div class="view-battle">
+            <div class="battle-floor-title-wrap" id="battle-floor-title-wrap" style="display: none">
+              <h2 class="battle-floor-title" id="battle-floor-title"></h2>
+            </div>
             <main class="battle-area">
               <section class="side side-ally">
                 <div class="slots-grid slots-ally">
@@ -1450,6 +1453,23 @@
                 <button type="button" class="settings-close" id="settings-close">关闭</button>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+      <div
+        id="normal-battle-gen-error-overlay"
+        class="normal-battle-gen-error-overlay"
+        hidden
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="normal-battle-gen-error-title"
+      >
+        <div class="normal-battle-gen-error-panel">
+          <h3 class="normal-battle-gen-error-title" id="normal-battle-gen-error-title">生成出错</h3>
+          <pre class="normal-battle-gen-error-body"></pre>
+          <div class="normal-battle-gen-error-actions">
+            <button type="button" class="story-side-btn" id="normal-battle-gen-error-back">回退行动</button>
+            <button type="button" class="story-side-btn" id="normal-battle-gen-error-retry">再次生成</button>
           </div>
         </div>
       </div>
@@ -4738,6 +4758,12 @@ yahei: 'font-yahei',
    */
   function initBattleUI(options) {
     if (!options || typeof options.getParty !== 'function' || typeof options.saveBattleData !== 'function') return;
+    var getBattleFloorTitle =
+      typeof options.getBattleFloorTitle === 'function'
+        ? options.getBattleFloorTitle
+        : function () {
+            return '';
+          };
     var getParty = options.getParty;
     var getEnemyParty = options.getEnemyParty;
     var saveBattleData = options.saveBattleData;
@@ -5437,6 +5463,13 @@ yahei: 'font-yahei',
         phase === BATTLE_PHASE.PLAYER_ACTION && !hasAnyLivingEnemy(enemies);
       btn.textContent = showContinue ? '继续前进' : '结束回合';
       btn.setAttribute('data-battle-btn-mode', showContinue ? 'continue-map' : 'end-turn');
+      if (showContinue && typeof window.色色地牢_onBattleVictoryUi === 'function') {
+        try {
+          window.色色地牢_onBattleVictoryUi();
+        } catch (eV) {
+          console.warn('[色色地牢] 色色地牢_onBattleVictoryUi', eV);
+        }
+      }
     }
     function renderEnemySlots(optionalEnemies) {
       var enemies = optionalEnemies != null && Array.isArray(optionalEnemies) ? optionalEnemies : getEnemyParty();
@@ -5923,6 +5956,15 @@ yahei: 'font-yahei',
       if (roundNumEl) roundNumEl.textContent = '第' + round + '回合';
       if (phaseLabelEl) phaseLabelEl.textContent = phaseLabel;
       syncBattleEndTurnButton();
+    }
+    function updateBattleFloorTitle() {
+      var wrap = document.getElementById('battle-floor-title-wrap');
+      var el = document.getElementById('battle-floor-title');
+      if (!el || !wrap) return;
+      var t = typeof getBattleFloorTitle === 'function' ? getBattleFloorTitle() : '';
+      t = (t || '').toString().trim();
+      el.textContent = t;
+      wrap.style.display = t ? '' : 'none';
     }
     var PLAYER_BUFF_RESOLVE_MS = 100;
     /** 奉献：艾丽卡回合开始时对自身和敌方全体造成 Sta×1.0 神圣伤害。由打开技能弹窗时调用 tryTriggerErika奉献 触发。 */
@@ -12130,7 +12172,9 @@ yahei: 'font-yahei',
         renderAllySlots();
         renderEnemySlots();
         updateBattlePhaseDisplay();
+        updateBattleFloorTitle();
       };
+      updateBattleFloorTitle();
       var origAdvance = advanceBattlePhase;
       window.BattleGrid.advanceBattlePhase = function (callback) {
         var roundBefore = getBigRound();
@@ -12268,10 +12312,10 @@ yahei: 'font-yahei',
 })();
 
 
-/* ========== interface/enemyStats.js ========== */
+/* ========== backend/enemy.js ========== */
 /**
- * 敌方数值：按档位倍率 × 区域 HP/攻/防 基准随机值，得到每只怪的确定 hp / atk / def。
- * 区域由「大层」推导：大层 1 → 区域1，大层 2 → 区域2，大层 ≥3 → 区域3（与 HUD 每 15 层一大层一致）。
+ * backend/enemy.js — 敌方数值 + `<enemy_design>` 解析（合并自原 `enemyStats.js`、`enemyDesign.js`）。
+ * 对外仍为 **`window.色色地牢_enemyStats`** 与 **`window.色色地牢_enemyDesign`**；本文件内先执行数值 IIFE，再执行解析 IIFE。
  */
 (function () {
   'use strict';
@@ -12471,8 +12515,6 @@ yahei: 'font-yahei',
   }
 })();
 
-
-/* ========== interface/enemyDesign.js ========== */
 /**
  * 解析 AI 可能返回的 <enemy_design> 片段（精英/杂兵等 + 意图管道符）。
  * 意图行格式：<target|scope|action|effect|param1|param2>，字段可为空。
@@ -12490,6 +12532,38 @@ yahei: 'font-yahei',
   var RANK_TAGS = ['elite', 'fodder', 'normal', 'strong', 'boss'];
   /** 嘲讽（taunt）在战斗规则中固定为 2 层，与 AI 是否在 param 中写层数无关 */
   var TAUNT_LAYERS_FIXED = 2;
+
+  /** elite/fodder/…/intent 等不可作楼层名 */
+  function isReservedEnemyDesignTag(tag) {
+    var t = (tag || '').toString().toLowerCase().trim();
+    if (!t) return true;
+    if (RANK_TAGS.indexOf(t) !== -1) return true;
+    if (t === 'intent' || t === 'enemy_design') return true;
+    return false;
+  }
+
+  /**
+   * 解析 `<enemy_design>` 内紧跟根后的可选楼层标签，如 `<封印监牢>` 或 `<封印监牢></封印监牢>`；
+   * 标签名即为当前 floor 显示名。去掉该段后再解析 rank 块。
+   * @returns {{ floorName: string, inner: string }}
+   */
+  function extractFloorNameFromEnemyDesignInner(inner) {
+    var trimmed = String(inner || '').replace(/^\s+/, '');
+    if (!trimmed) return { floorName: '', inner: inner };
+    var sc = trimmed.match(/^<([^\s>/]+)\s*\/>/);
+    if (sc && !isReservedEnemyDesignTag(sc[1])) {
+      return { floorName: sc[1].trim(), inner: trimmed.slice(sc[0].length) };
+    }
+    var pair = trimmed.match(/^<([^\s>/]+)(\s[^>]*)?>([\s\S]*?)<\/\1\s*>/i);
+    if (pair && !isReservedEnemyDesignTag(pair[1])) {
+      return { floorName: pair[1].trim(), inner: trimmed.slice(pair[0].length) };
+    }
+    var open = trimmed.match(/^<([^\s>/]+)(\s[^>]*)?>/);
+    if (open && !isReservedEnemyDesignTag(open[1])) {
+      return { floorName: open[1].trim(), inner: trimmed.slice(open[0].length) };
+    }
+    return { floorName: '', inner: inner };
+  }
 
   var BODY_SIZE_KEYS = ['tiny', 'small', 'medium', 'large', 'huge'];
   /** 体型：省略或非法时视为 medium */
@@ -12617,13 +12691,15 @@ yahei: 'font-yahei',
 
   /**
    * 从整段文本中解析 <enemy_design>...</enemy_design>
-   * @returns {{ enemies: Array<{ rank, name, species, gender, bodySize, intents }> } | null}
+   * @returns {{ enemies: Array<{ rank, name, species, gender, bodySize, intents }>, floorName?: string } | null}
    */
   function parseEnemyDesign(text) {
     if (!text || typeof text !== 'string') return null;
     var root = text.match(/<enemy_design\s*>([\s\S]*?)<\/enemy_design>/i);
     if (!root) return null;
-    var inner = root[1];
+    var floorExtract = extractFloorNameFromEnemyDesignInner(root[1]);
+    var inner = floorExtract.inner;
+    var floorName = floorExtract.floorName || '';
     var enemies = [];
     RANK_TAGS.forEach(function (rank) {
       var re = new RegExp('<' + rank + '\\s*>([\\s\\S]*?)<\\/' + rank + '>', 'gi');
@@ -12632,7 +12708,7 @@ yahei: 'font-yahei',
         enemies.push(parseRankBlock(rank, m[1]));
       }
     });
-    return { enemies: enemies };
+    return { enemies: enemies, floorName: floorName };
   }
 
   /** 若文本中含 enemy_design 则解析，否则返回 null */
@@ -12716,7 +12792,7 @@ yahei: 'font-yahei',
   }
 
   /**
-   * 根据解析结果描述「会如何生成」敌方单位；stats 由 enemyStats 填入；写入战斗由 app 的 commitSpawnPlanToBattle 完成。
+   * 根据解析结果描述「会如何生成」敌方单位；stats 由同文件内 `window.色色地牢_enemyStats` 填入；写入战斗由 app 的 commitSpawnPlanToBattle 完成。
    * 规则简述：enemies 与单位一一对应，但 **敌方槽位 1～6 随机填充**（互不重复）；每只怪带 name/species/gender/bodySize（可选）/rank 与意图列表；嘲讽意图一律按 2 层处理。
    * @param {{ enemies: Array }} parsed
    * @param {{ rng?: () => number }} options 可选，传入 rng 便于测试固定随机序列
@@ -12749,7 +12825,8 @@ yahei: 'font-yahei',
       slotAssignment: 'random',
       slotsUsed: slots.slice(),
       units: units,
-      note: '按 units[].enemySlot 填入 enemyParty；stats 由 enemyStats 计算。调用方应 commitSpawnPlanToBattle(plan) 写入变量并刷新战斗视图。',
+      floorName: parsed.floorName != null && String(parsed.floorName).trim() !== '' ? String(parsed.floorName).trim() : '',
+      note: '按 units[].enemySlot 填入 enemyParty；stats 由 window.色色地牢_enemyStats 计算。调用方应 commitSpawnPlanToBattle(plan) 写入变量并刷新战斗视图。',
     };
     if (
       typeof window.色色地牢_enemyStats !== 'undefined' &&
@@ -12763,6 +12840,7 @@ yahei: 'font-yahei',
 
   if (typeof window !== 'undefined') {
     window.色色地牢_enemyDesign = {
+      extractFloorNameFromEnemyDesignInner: extractFloorNameFromEnemyDesignInner,
       RANK_TAGS: RANK_TAGS,
       TAUNT_LAYERS_FIXED: TAUNT_LAYERS_FIXED,
       parseIntentLine: parseIntentLine,
@@ -12782,7 +12860,7 @@ yahei: 'font-yahei',
 })();
 
 
-/* ========== interface/encounter.js ========== */
+/* ========== backend/encounter.js ========== */
 /**
  * 地图遭遇：进入「普通战斗」等格子时，按层数抽敌方组合并发给 AI（generate）。
  * 依赖酒馆助手的全局 generate；由 app.js 在点击地图格子时调用。
@@ -12895,9 +12973,11 @@ yahei: 'font-yahei',
     };
   }
 
-  function buildNormalBattleAiPrompt(areaName, comp) {
+  /** @param {string} nodeId 地图节点 id，拼在标签行下一行：前往x-y（仅经 generate 发送，不写输入框） */
+  function buildNormalBattleAiPrompt(areaName, comp, nodeId) {
     var lines = getAreaNormalBattlePromptLines(areaName);
     var gen = formatCompositionGenLine(comp);
+    var goLine = '前往' + (nodeId != null ? String(nodeId).trim() : '');
     return (
       lines.title +
       '\n' +
@@ -12907,48 +12987,142 @@ yahei: 'font-yahei',
       '\n' +
       lines.tags +
       '\n' +
+      goLine +
+      '\n' +
       gen
     );
+  }
+
+  /** 最近一次普通战斗 generate 的上下文，供「再次生成」与错误面板使用 */
+  var lastNormalBattleGenCtx = null;
+
+  function clearLastNormalBattleGenCtx() {
+    lastNormalBattleGenCtx = null;
+  }
+
+  function formatGenerateErrorDetail(err) {
+    if (err == null) return '(无详情)';
+    if (typeof err === 'string') return err;
+    if (err && err.message) return String(err.message) + (err.stack ? '\n' + err.stack : '');
+    try {
+      return JSON.stringify(err);
+    } catch (e) {
+      return String(err);
+    }
+  }
+
+  function showNormalBattleGenerateErrorPanel(payload) {
+    payload = payload || {};
+    if (typeof window.色色地牢_showNormalBattleGenerateError === 'function') {
+      window.色色地牢_showNormalBattleGenerateError(payload);
+    } else {
+      console.error('[色色地牢][普通战斗] 生成出错', payload);
+    }
+  }
+
+  function handleNormalBattleGenerateCommitted() {
+    clearLastNormalBattleGenCtx();
+  }
+
+  /**
+   * 使用已拼好的提示词执行 generate → 解析 enemy_design → 写入战斗。
+   * @param {string} text
+   * @param {string} areaName
+   * @param {string} nodeId
+   */
+  function runNormalBattleGenerate(text, areaName, nodeId) {
+    if (typeof generate !== 'function') {
+      console.warn('[色色地牢][普通战斗] generate 不可用');
+      showNormalBattleGenerateErrorPanel({
+        title: '生成出错',
+        body: '当前环境未提供酒馆助手 generate 接口，无法请求 AI。',
+      });
+      return;
+    }
+    generate({ user_input: text, should_silence: true })
+      .then(function (result) {
+        var raw = result == null ? '' : String(result);
+        console.info(
+          '[色色地牢][普通战斗] AI 生成结束，返回长度=' + (raw != null ? raw.length : 0),
+        );
+        var ed = window.色色地牢_enemyDesign;
+        if (!ed || typeof ed.tryParseAiReply !== 'function') {
+          showNormalBattleGenerateErrorPanel({
+            title: '生成出错',
+            body: raw || '(空回复)',
+          });
+          return;
+        }
+        var parsed = ed.tryParseAiReply(result);
+        if (!parsed || !parsed.enemies || !parsed.enemies.length) {
+          showNormalBattleGenerateErrorPanel({
+            title: '生成出错',
+            body: raw || '(回复中未找到可解析的 <enemy_design> 或敌方配置为空)',
+          });
+          return;
+        }
+        if (typeof ed.buildSpawnPlanFromDesign !== 'function') {
+          showNormalBattleGenerateErrorPanel({
+            title: '生成出错',
+            body: raw,
+          });
+          return;
+        }
+        var plan = ed.buildSpawnPlanFromDesign(parsed, { nodeId: nodeId });
+        if (!plan) {
+          showNormalBattleGenerateErrorPanel({
+            title: '生成出错',
+            body: raw,
+          });
+          return;
+        }
+        console.info('[色色地牢][enemy_design] 生成计划（含数值）:', plan);
+        if (typeof window.色色地牢_commitSpawnPlanToBattle !== 'function') {
+          showNormalBattleGenerateErrorPanel({
+            title: '生成出错',
+            body: raw + '\n\n(内部错误：commitSpawnPlanToBattle 不可用)',
+          });
+          return;
+        }
+        var committed = window.色色地牢_commitSpawnPlanToBattle(plan);
+        if (committed) {
+          console.info('[色色地牢][enemy_design] 解析成功并已写入战斗');
+          handleNormalBattleGenerateCommitted();
+        } else {
+          showNormalBattleGenerateErrorPanel({
+            title: '生成出错',
+            body: raw + '\n\n(无法根据生成结果构建敌方队伍，请检查 AI 输出格式)',
+          });
+        }
+      })
+      .catch(function (err) {
+        console.error('[色色地牢][普通战斗] generate 失败', err);
+        showNormalBattleGenerateErrorPanel({
+          title: '生成出错',
+          body: formatGenerateErrorDetail(err),
+        });
+      });
   }
 
   /** 进入「普通战斗」格时：按层数档位等概率抽组合，拼区域文案 +「生成…」，控制台输出并调用 generate（不经输入框） */
   function requestNormalBattleAiPrompt(areaName, nodeId) {
     var layer = getLayerFromMapNodeId(nodeId);
     var comp = pickNormalBattleComposition(layer);
-    var text = buildNormalBattleAiPrompt(areaName, comp);
+    var text = buildNormalBattleAiPrompt(areaName, comp, nodeId);
+    lastNormalBattleGenCtx = { areaName: areaName, nodeId: nodeId, text: text };
     console.info('[色色地牢][普通战斗] 层数(列号)=' + layer + ' 组合=' + JSON.stringify(comp));
     console.info('[色色地牢][普通战斗] 发送给 AI 的提示词:\n' + text);
-    if (typeof generate !== 'function') {
-      console.warn('[色色地牢][普通战斗] generate 不可用，仅已输出控制台');
+    runNormalBattleGenerate(text, areaName, nodeId);
+  }
+
+  /** 再次生成：沿用上一次抽中的提示词与同 nodeId（不重新随机组合） */
+  function retryLastNormalBattleGenerate() {
+    if (!lastNormalBattleGenCtx || !lastNormalBattleGenCtx.text) {
+      console.warn('[色色地牢][普通战斗] 无可用重试上下文');
       return;
     }
-    generate({ user_input: text, should_silence: true })
-      .then(function (result) {
-        console.info(
-          '[色色地牢][普通战斗] AI 生成结束，返回长度=' + (result && result.length != null ? result.length : 0),
-        );
-        if (
-          typeof window.色色地牢_enemyDesign !== 'undefined' &&
-          window.色色地牢_enemyDesign &&
-          typeof window.色色地牢_enemyDesign.tryParseAiReply === 'function'
-        ) {
-          var parsed = window.色色地牢_enemyDesign.tryParseAiReply(result);
-          if (parsed && parsed.enemies && parsed.enemies.length) {
-            console.info('[色色地牢][enemy_design] 解析成功:', parsed);
-            if (typeof window.色色地牢_enemyDesign.buildSpawnPlanFromDesign === 'function') {
-              var plan = window.色色地牢_enemyDesign.buildSpawnPlanFromDesign(parsed, { nodeId: nodeId });
-              if (plan) {
-                console.info('[色色地牢][enemy_design] 生成计划（含数值）:', plan);
-                if (typeof window.色色地牢_commitSpawnPlanToBattle === 'function')
-                  window.色色地牢_commitSpawnPlanToBattle(plan);
-              }
-            }
-          }
-        }
-      })
-      .catch(function (err) {
-        console.error('[色色地牢][普通战斗] generate 失败', err);
-      });
+    var c = lastNormalBattleGenCtx;
+    runNormalBattleGenerate(c.text, c.areaName, c.nodeId);
   }
 
   if (typeof window !== 'undefined') {
@@ -12961,13 +13135,18 @@ yahei: 'font-yahei',
       getAreaNormalBattlePromptLines: getAreaNormalBattlePromptLines,
       buildNormalBattleAiPrompt: buildNormalBattleAiPrompt,
       requestNormalBattleAiPrompt: requestNormalBattleAiPrompt,
+      retryLastNormalBattleGenerate: retryLastNormalBattleGenerate,
+      clearLastNormalBattleGenCtx: clearLastNormalBattleGenCtx,
+      runNormalBattleGenerate: runNormalBattleGenerate,
     };
     window.色色地牢_requestNormalBattleAiPrompt = requestNormalBattleAiPrompt;
+    window.色色地牢_retryLastNormalBattleGenerate = retryLastNormalBattleGenerate;
+    window.色色地牢_clearLastNormalBattleGenCtx = clearLastNormalBattleGenCtx;
   }
 })();
 
 
-/* ========== interface/save.js ========== */
+/* ========== backend/save.js ========== */
 /**
  * 色色地牢 - 存档模块（浏览器 localStorage）
  * 单槽位含：party, enemyParty, buffDefinitions, map, meta, history.recentBattleLog, nodeStates
@@ -13114,7 +13293,7 @@ yahei: 'font-yahei',
 })();
 
 
-/* ========== interface/skill.js ========== */
+/* ========== backend/skill.js ========== */
 /**
  * 色色地牢 - 技能公式与描述解析（独立模块）
  * 由 app.js 在 getDisplayStat 就绪后调用 window.色色地牢_skill.create(getDisplayStat) 取得 API，
@@ -13565,6 +13744,110 @@ yahei: 'font-yahei',
 })();
 
 
+/* ========== backend/golddrop.js ========== */
+/**
+ * 战斗胜利金币掉落：按当前区域档位（区域1/2/3）与战斗类型（普通/精英/首领）在区间内随机。
+ * 区域映射与 NEW_GAME_AREAS 顺序一致：艾尔瑟斯→区域1，格里莫瓦→区域2，拉文斯与地狱边缘→区域3。
+ */
+(function () {
+  'use strict';
+
+  var AREA_ORDER = ['艾尔瑟斯森林', '格里莫瓦王国旧都', '拉文斯庄园', '地狱边缘'];
+
+  var RULES_TEXT =
+    '区域1·基准掉落\n' +
+    '普通战斗\n' +
+    '掉落区间：12-20金币\n\n' +
+    '精英战斗\n' +
+    '掉落区间：30-45金币\n\n' +
+    '首领战斗\n' +
+    '掉落区间：50-80金币\n\n' +
+    '区域2·强化掉落（+50%）\n' +
+    '普通战斗\n' +
+    '掉落区间：18-30金币\n\n' +
+    '精英战斗\n' +
+    '掉落区间：45-68金币\n\n' +
+    '首领战斗\n' +
+    '掉落区间：75-120金币\n\n' +
+    '区域3·高级掉落（+100%）\n' +
+    '普通战斗\n' +
+    '掉落区间：24-40金币\n\n' +
+    '精英战斗\n' +
+    '掉落区间：60-90金币\n\n' +
+    '首领战斗\n' +
+    '掉落区间：100-160金币（与区域1首领同比+100%）';
+
+  /** @returns {number} 0=区域1, 1=区域2, 2=区域3 */
+  function getTierIndexFromArea(areaName) {
+    var a = (areaName || '').toString().trim();
+    if (a === '格里莫瓦旧都') a = '格里莫瓦王国旧都';
+    var i = AREA_ORDER.indexOf(a);
+    if (i < 0) return 0;
+    if (i === 0) return 0;
+    if (i === 1) return 1;
+    return 2;
+  }
+
+  function kindKeyFromNodeType(nodeType) {
+    var t = (nodeType || '').toString();
+    if (t === '精英战斗') return 'elite';
+    if (t === '首领战斗') return 'boss';
+    return 'normal';
+  }
+
+  /**
+   * tierIndex: 0,1,2
+   * kind: normal | elite | boss
+   */
+  var DROP_TABLE = {
+    normal: [
+      [12, 20],
+      [18, 30],
+      [24, 40],
+    ],
+    elite: [
+      [30, 45],
+      [45, 68],
+      [60, 90],
+    ],
+    boss: [
+      [50, 80],
+      [75, 120],
+      [100, 160],
+    ],
+  };
+
+  function rollInclusive(lo, hi) {
+    var a = Math.min(lo, hi);
+    var b = Math.max(lo, hi);
+    return Math.floor(Math.random() * (b - a + 1)) + a;
+  }
+
+  /**
+   * @param {string} areaName 地图区域名
+   * @param {string} nodeType 普通战斗 | 精英战斗 | 首领战斗
+   * @returns {number}
+   */
+  function rollBattleGold(areaName, nodeType) {
+    var tier = getTierIndexFromArea(areaName);
+    var kind = kindKeyFromNodeType(nodeType);
+    var row = DROP_TABLE[kind];
+    if (!row || !row[tier]) return 0;
+    var range = row[tier];
+    return rollInclusive(range[0], range[1]);
+  }
+
+  if (typeof window !== 'undefined') {
+    window.色色地牢_goldDrop = {
+      AREA_ORDER: AREA_ORDER,
+      RULES_TEXT: RULES_TEXT,
+      getTierIndexFromArea: getTierIndexFromArea,
+      rollBattleGold: rollBattleGold,
+    };
+  }
+})();
+
+
 /* ========== interface/app.js ========== */
 /**
  * 色色地牢 - 界面入口（样式 + 侧边栏 + 战斗，合一文件）
@@ -13659,6 +13942,15 @@ yahei: 'font-yahei',
       '.skill-popup{position:fixed;z-index:2000;background:#1a150e;color:#e4d5b7;border:2px solid var(--gold-border);border-radius:10px;padding:6px 0;min-width:200px;max-width:320px;max-height:calc(100vh - 16px);overflow-y:auto;overflow-x:hidden;box-shadow:0 6px 24px rgba(0,0,0,.45);display:none}.skill-popup.show{display:block}.skill-popup-title{padding:8px 14px 6px;font-size:12px;font-weight:bold;color:var(--ornate-gold);border-bottom:1px solid rgba(139,115,32,.4);margin-bottom:4px}.skill-popup-opt{display:flex;align-items:flex-start;gap:10px;padding:12px 16px;cursor:pointer;font-size:14px;transition:background .15s}.skill-popup-opt:hover{background:rgba(201,162,39,.15)}.skill-popup-opt svg{width:18px;height:18px;flex-shrink:0;stroke:currentColor}.skill-popup-opt-main{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}.skill-popup-opt-head{display:flex;align-items:center;min-width:0}.skill-popup-opt-ap{margin-left:auto;display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:bold;color:var(--ap-orange);flex-shrink:0}.skill-popup-opt-ap svg{width:14px;height:14px;stroke:currentColor}.skill-popup-opt-desc{font-size:11px;color:#9a8b72;line-height:1.3;white-space:pre-line}.skill-popup-opt{position:relative}.skill-popup-opt-disabled{pointer-events:none;cursor:not-allowed}.skill-popup-opt-disabled::after{content:"";position:absolute;inset:0;background:rgba(0,0,0,.5);border-radius:4px}',
       '.view-container{display:flex;flex:1;flex-direction:column;min-height:0;min-width:0;overflow:hidden;position:relative}',
       '.view-battle{display:flex;flex:1;min-height:0;flex-direction:column;overflow:hidden;position:relative;z-index:0}',
+      '.battle-floor-title-wrap{width:100%;flex-shrink:0;text-align:center;padding:12px 16px 6px;box-sizing:border-box}',
+      '.battle-floor-title{margin:0;font-size:1.65rem;font-weight:900;font-family:"Microsoft YaHei","SimHei","Heiti SC","黑体",sans-serif;color:#fff;letter-spacing:.14em;line-height:1.25;text-shadow:0 0 6px rgba(201,162,39,.55),0 0 14px rgba(201,162,39,.35),0 0 22px rgba(201,162,39,.2)}',
+      '.normal-battle-gen-error-overlay{position:absolute;inset:0;z-index:5000;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;background:rgba(0,0,0,.58);pointer-events:auto}',
+      '.normal-battle-gen-error-overlay[hidden]{display:none!important}',
+      '.normal-battle-gen-error-panel{max-width:min(520px,92vw);max-height:min(70vh,520px);width:100%;display:flex;flex-direction:column;gap:12px;padding:18px 20px;border:3px solid #b91c1c;border-radius:12px;background:linear-gradient(165deg,#2a1515 0%,#1a0f0e 100%);box-shadow:0 0 0 1px rgba(248,113,113,.35),0 12px 40px rgba(0,0,0,.65)}',
+      '.normal-battle-gen-error-title{margin:0;font-size:1.15rem;font-weight:bold;color:#fecaca;text-align:center;letter-spacing:.08em}',
+      '.normal-battle-gen-error-body{margin:0;padding:12px 14px;border-radius:8px;background:rgba(0,0,0,.45);color:#e7e5e4;font-size:12px;line-height:1.45;white-space:pre-wrap;overflow:auto;word-break:break-word;border:1px solid rgba(248,113,113,.25);flex:1;min-height:80px}',
+      '.normal-battle-gen-error-actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:4px}',
+      '.normal-battle-gen-error-actions .story-side-btn{min-width:120px}',
       '.dungeon-floor-hud{position:relative;flex-shrink:0;z-index:12;pointer-events:none;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;width:100%;max-width:88px;padding:6px 4px 8px;margin:0 0 6px;background:rgba(26,21,14,.93);border:2px solid var(--gold-border);border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,.4)}',
       '.dungeon-floor-hud-title{font-size:10px;font-weight:bold;color:#8b7355;letter-spacing:2px;line-height:1}',
       '.dungeon-floor-hud-major{font-size:26px;font-weight:bold;color:var(--ornate-gold);line-height:1.05;margin-top:4px;text-shadow:0 0 10px rgba(201,162,39,.4)}',
@@ -13668,6 +13960,7 @@ yahei: 'font-yahei',
       '.sidebar-gold-icon{display:flex;align-items:center;justify-content:center;width:34px;height:34px;margin-bottom:2px;color:var(--ornate-gold);filter:drop-shadow(0 2px 3px rgba(0,0,0,.2))}',
       '.sidebar-gold-icon svg{width:100%;height:100%;display:block}',
       '.sidebar-gold-value{font-size:15px;font-weight:bold;color:#3d3529;line-height:1.15;letter-spacing:.02em;font-variant-numeric:tabular-nums}',
+      '@keyframes gold-gain-float-up{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-52px)}}.gold-gain-float{position:fixed;z-index:4200;pointer-events:none;font-size:22px;font-weight:bold;color:#fbbf24;text-shadow:0 0 10px rgba(251,191,36,.9),0 2px 4px rgba(0,0,0,.5);animation:gold-gain-float-up 1.15s ease-out forwards}',
       '.battle-action-log{position:absolute;left:0;bottom:0;z-index:100;pointer-events:none;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;gap:0;padding:8px;overflow:visible}',
       '.battle-action-log-line{background:rgba(0,0,0,.75);color:#fff;padding:4px 10px;font-size:12px;line-height:1.4;white-space:normal;max-width:min(420px,90vw);overflow-wrap:break-word;transition:opacity .3s ease-out}',
       '.battle-action-log-line.battle-action-log-fade{opacity:0}',
@@ -14262,6 +14555,41 @@ yahei: 'font-yahei',
       (document.head || document.documentElement).appendChild(el);
     }
 
+    /** 普通战斗 AI 生成失败：红框居中、展示原文/错误，回退地图选格或重试 */
+    function initNormalBattleGenerateErrorUI() {
+      var overlay = document.getElementById('normal-battle-gen-error-overlay');
+      if (!overlay) return;
+      var backBtn = document.getElementById('normal-battle-gen-error-back');
+      var retryBtn = document.getElementById('normal-battle-gen-error-retry');
+      function hideOverlay() {
+        overlay.setAttribute('hidden', 'hidden');
+      }
+      window.色色地牢_showNormalBattleGenerateError = function (payload) {
+        payload = payload || {};
+        var titleEl = overlay.querySelector('.normal-battle-gen-error-title');
+        var bodyEl = overlay.querySelector('.normal-battle-gen-error-body');
+        if (titleEl) titleEl.textContent = payload.title || '生成出错';
+        if (bodyEl) bodyEl.textContent = payload.body != null ? String(payload.body) : '';
+        overlay.removeAttribute('hidden');
+      };
+      if (backBtn) {
+        backBtn.addEventListener('click', function () {
+          hideOverlay();
+          if (typeof window.色色地牢_clearLastNormalBattleGenCtx === 'function')
+            window.色色地牢_clearLastNormalBattleGenCtx();
+          if (typeof window.色色地牢_clearMapNodeSelection === 'function')
+            window.色色地牢_clearMapNodeSelection();
+        });
+      }
+      if (retryBtn) {
+        retryBtn.addEventListener('click', function () {
+          hideOverlay();
+          if (typeof window.色色地牢_retryLastNormalBattleGenerate === 'function')
+            window.色色地牢_retryLastNormalBattleGenerate();
+        });
+      }
+    }
+
     function initSidebar() {
       var gameFrame = document.querySelector('.game-frame.ornate-frame');
       if (
@@ -14749,7 +15077,7 @@ yahei: 'font-yahei',
         }
       }
       /**
-       * 在 0 层（pos=0-0）点击第 1 列某格：标记为待选节点 → 全图重绘（当前格仍「当前」，同列另两格灰显+去波纹，选中格黑底白图标+弹跳动画）→ 预留 AI 回调 → 仍可向输入框写入「前往x-y」。
+       * 点击可前往格：标记为待选节点 → 重绘地图（同列待选样式）。普通战斗由 encounter 经 generate 发送提示词（内含「前往节点 id」），不写输入框。
        * 真正移动位置需由 AI/楼层外逻辑改 chat 变量 map.pos 后再 refreshMap。
        * 重绘必须推迟到 setTimeout(0)：若在 click 同步里 replace innerHTML，节点会从 DOM 移除，冒泡到 document 时 e.target 已不在 #map-drawer 内，会误触 closeMiscPanelOnClickOutside 关掉地图。
        */
@@ -14774,17 +15102,19 @@ yahei: 'font-yahei',
               console.warn('[色色地牢] 色色地牢_onMapNodeIntent', e);
             }
           }
+          if (
+            realNode &&
+            (realNode.type === '普通战斗' || realNode.type === '精英战斗' || realNode.type === '首领战斗')
+          ) {
+            window._色色地牢_lastBattleIntent = {
+              area: m.area,
+              nodeId: id,
+              nodeType: realNode.type,
+            };
+          }
           if (realNode && realNode.type === '普通战斗') {
             if (typeof window.色色地牢_requestNormalBattleAiPrompt === 'function')
               window.色色地牢_requestNormalBattleAiPrompt(m.area, id);
-          }
-          var area =
-            typeof window.parent !== 'undefined' && window.parent.document
-              ? window.parent.document.querySelector('#send_textarea')
-              : null;
-          if (area) {
-            area.value = '前往' + id;
-            area.dispatchEvent(new Event('input', { bubbles: true }));
           }
         }, 0);
       }
@@ -14822,6 +15152,7 @@ yahei: 'font-yahei',
         window.色色地牢_refreshMap = renderMapContent;
         window.色色地牢_updateFloorHUD = updateDungeonFloorHUD;
         window.色色地牢_updateGoldHUD = updateSidebarGoldHUD;
+        window.色色地牢_onBattleVictoryUi = onBattleVictoryGold;
       }
       function hideMapDrawer() {
         if (mapDrawer) mapDrawer.classList.remove('open');
@@ -16359,7 +16690,8 @@ yahei: 'font-yahei',
       return result;
     }
     /** 战斗模块写回己方/敌方数据并更新缓存（由 battle.initBattleUI 调用） */
-    function saveBattleData(party, enemies) {
+    /** @param {{ battleFloorTitle?: string }} [opts] 可选；传入 battleFloorTitle 时写入聊天变量（AI 敌方设计中的楼层名） */
+    function saveBattleData(party, enemies, opts) {
       _lastKnownParty = party;
       _lastKnownEnemies = enemies;
       var v = null;
@@ -16369,6 +16701,9 @@ yahei: 'font-yahei',
       if (!v) v = {};
       v.party = party;
       v.enemyParty = enemies;
+      if (opts && Object.prototype.hasOwnProperty.call(opts, 'battleFloorTitle')) {
+        v.battleFloorTitle = opts.battleFloorTitle;
+      }
       if (!v.buffDefinitions || !Array.isArray(v.buffDefinitions) || v.buffDefinitions.length === 0)
         v.buffDefinitions = BUFF_DEFINITIONS;
       mergePreserveChatGold(v);
@@ -16400,27 +16735,32 @@ yahei: 'font-yahei',
      * 将 AI 遭遇生成的 spawn plan 写入聊天变量 enemyParty，并刷新战斗格子渲染。
      * 由 encounter.js 在 generate 回调中调用（需在 app 加载后）。
      */
+    /** @returns {boolean} 是否已成功写入战斗 */
     function commitSpawnPlanToBattle(plan) {
+      if (typeof window !== 'undefined') window._色色地牢_battleVictoryGoldGranted = false;
       if (
         !plan ||
         typeof window.色色地牢_enemyDesign === 'undefined' ||
         !window.色色地牢_enemyDesign ||
         typeof window.色色地牢_enemyDesign.buildEnemyPartyFromSpawnPlan !== 'function'
       )
-        return;
+        return false;
       var enemies = window.色色地牢_enemyDesign.buildEnemyPartyFromSpawnPlan(plan);
-      if (!enemies) return;
+      if (!enemies) return false;
       preparePartyForNewBattle();
       if (typeof window !== 'undefined' && window.BattleGrid && typeof window.BattleGrid.capUnitBuffs === 'function') {
         enemies.forEach(function (en) {
           if (en) window.BattleGrid.capUnitBuffs(en);
         });
       }
-      saveBattleData(getParty(), enemies);
+      saveBattleData(getParty(), enemies, {
+        battleFloorTitle: plan.floorName != null ? String(plan.floorName).trim() : '',
+      });
       if (typeof window.BattleGrid !== 'undefined' && typeof window.BattleGrid.refreshBattleView === 'function')
         window.BattleGrid.refreshBattleView();
       console.info('[色色地牢][enemy_design] 已写入 enemyParty（聊天变量）并刷新战斗视图');
       if (typeof toastr !== 'undefined') toastr.info('敌方阵容已同步到战斗界面');
+      return true;
     }
     if (typeof window !== 'undefined') {
       window.色色地牢_commitSpawnPlanToBattle = commitSpawnPlanToBattle;
@@ -16593,6 +16933,85 @@ yahei: 'font-yahei',
         }
       }
       el.textContent = String(getChatGold());
+    }
+    function animateGoldCountUp(fromVal, toVal, durationMs, onTick, onDone) {
+      fromVal = Math.max(0, parseInt(fromVal, 10) || 0);
+      toVal = Math.max(0, parseInt(toVal, 10) || 0);
+      if (fromVal === toVal) {
+        if (typeof onTick === 'function') onTick(toVal);
+        if (typeof onDone === 'function') onDone();
+        return;
+      }
+      var t0 = Date.now();
+      var dur = Math.max(80, durationMs | 0);
+      function tick() {
+        var t = Math.min(1, (Date.now() - t0) / dur);
+        var eased = 1 - Math.pow(1 - t, 2);
+        var cur = Math.round(fromVal + (toVal - fromVal) * eased);
+        if (typeof onTick === 'function') onTick(cur);
+        if (t < 1) requestAnimationFrame(tick);
+        else {
+          if (typeof onTick === 'function') onTick(toVal);
+          if (typeof onDone === 'function') onDone();
+        }
+      }
+      requestAnimationFrame(tick);
+    }
+    function showGoldGainFloatNearHud(amount) {
+      var el = document.createElement('div');
+      el.className = 'gold-gain-float';
+      el.textContent = '+' + amount;
+      var hud = document.getElementById('sidebar-gold-hud');
+      if (hud) {
+        var r = hud.getBoundingClientRect();
+        el.style.left = Math.max(8, r.left) + 'px';
+        el.style.top = Math.max(8, r.top - 4) + 'px';
+      } else {
+        el.style.left = '16px';
+        el.style.bottom = '96px';
+      }
+      document.body.appendChild(el);
+      setTimeout(function () {
+        if (el.parentNode) el.parentNode.removeChild(el);
+      }, 1300);
+    }
+    function onBattleVictoryGold() {
+      if (typeof window !== 'undefined' && window._色色地牢_battleVictoryGoldGranted) return;
+      var gd = typeof window !== 'undefined' ? window.色色地牢_goldDrop : null;
+      if (!gd || typeof gd.rollBattleGold !== 'function') return;
+      var intent = typeof window !== 'undefined' ? window._色色地牢_lastBattleIntent : null;
+      var m = typeof getMapData === 'function' ? getMapData() : null;
+      var area = (intent && intent.area) || (m && m.area) || '';
+      var nodeType = (intent && intent.nodeType) || '普通战斗';
+      var n = gd.rollBattleGold(area, nodeType);
+      if (n <= 0) return;
+      if (typeof window !== 'undefined') window._色色地牢_battleVictoryGoldGranted = true;
+      var startGold = getChatGold();
+      var endGold = startGold + n;
+      showGoldGainFloatNearHud(n);
+      setTimeout(function () {
+        animateGoldCountUp(
+          startGold,
+          endGold,
+          480,
+          function (cur) {
+            var gel = document.getElementById('sidebar-gold-value');
+            if (gel) gel.textContent = String(cur);
+          },
+          function () {
+            var v = null;
+            try {
+              if (typeof getVariables === 'function') v = getVariables({ type: 'chat' });
+            } catch (e) {}
+            if (!v) v = {};
+            v.gold = endGold;
+            _lastKnownChatGold = endGold;
+            mergePreserveChatGold(v);
+            if (typeof replaceVariables === 'function') replaceVariables(v, { type: 'chat' });
+            updateSidebarGoldHUD(endGold);
+          },
+        );
+      }, 260);
     }
     /** 存档：将读取的 payload 写回 chat 并刷新战斗/地图视图 */
     function applySavePayload(payload) {
@@ -16839,7 +17258,7 @@ yahei: 'font-yahei',
         ? window.色色地牢_character.getBaiyaStatsFromOwner(owner, getDisplayStat)
         : { maxHp: 0, atk: 0, def: 0 };
     }
-    /** 技能公式与描述解析：优先使用 interface/skill.js 提供的 API（需在 app 前加载），否则使用占位实现 */
+    /** 技能公式与描述解析：优先使用 backend/skill.js 提供的 API（需在 app 前加载），否则使用占位实现 */
     var skillApi =
       typeof window !== 'undefined' && window.色色地牢_skill && window.色色地牢_skill.create
         ? window.色色地牢_skill.create(getDisplayStat)
@@ -16895,6 +17314,16 @@ yahei: 'font-yahei',
         window.BattleGrid.initBattle({
           getParty: getParty,
           getEnemyParty: getEnemyParty,
+          getBattleFloorTitle: function () {
+            try {
+              if (typeof getVariables === 'function') {
+                var cv = getVariables({ type: 'chat' });
+                if (cv && cv.battleFloorTitle != null && String(cv.battleFloorTitle).trim() !== '')
+                  return String(cv.battleFloorTitle).trim();
+              }
+            } catch (e) {}
+            return '';
+          },
           saveBattleData: saveBattleData,
           getDisplayStat: getDisplayStat,
           getHpFromSta: getHpFromSta,
@@ -17382,12 +17811,14 @@ yahei: 'font-yahei',
         initBattle();
         initSidebar();
         initBuffTooltip();
+        initNormalBattleGenerateErrorUI();
       });
     else
       document.addEventListener('DOMContentLoaded', function () {
         initBattle();
         initSidebar();
         initBuffTooltip();
+        initNormalBattleGenerateErrorUI();
       });
   }
   if (typeof window !== 'undefined' && !window.色色地牢_skill) {

@@ -975,6 +975,12 @@
    */
   function initBattleUI(options) {
     if (!options || typeof options.getParty !== 'function' || typeof options.saveBattleData !== 'function') return;
+    var getBattleFloorTitle =
+      typeof options.getBattleFloorTitle === 'function'
+        ? options.getBattleFloorTitle
+        : function () {
+            return '';
+          };
     var getParty = options.getParty;
     var getEnemyParty = options.getEnemyParty;
     var saveBattleData = options.saveBattleData;
@@ -1674,6 +1680,13 @@
         phase === BATTLE_PHASE.PLAYER_ACTION && !hasAnyLivingEnemy(enemies);
       btn.textContent = showContinue ? '继续前进' : '结束回合';
       btn.setAttribute('data-battle-btn-mode', showContinue ? 'continue-map' : 'end-turn');
+      if (showContinue && typeof window.色色地牢_onBattleVictoryUi === 'function') {
+        try {
+          window.色色地牢_onBattleVictoryUi();
+        } catch (eV) {
+          console.warn('[色色地牢] 色色地牢_onBattleVictoryUi', eV);
+        }
+      }
     }
     function renderEnemySlots(optionalEnemies) {
       var enemies = optionalEnemies != null && Array.isArray(optionalEnemies) ? optionalEnemies : getEnemyParty();
@@ -2160,6 +2173,15 @@
       if (roundNumEl) roundNumEl.textContent = '第' + round + '回合';
       if (phaseLabelEl) phaseLabelEl.textContent = phaseLabel;
       syncBattleEndTurnButton();
+    }
+    function updateBattleFloorTitle() {
+      var wrap = document.getElementById('battle-floor-title-wrap');
+      var el = document.getElementById('battle-floor-title');
+      if (!el || !wrap) return;
+      var t = typeof getBattleFloorTitle === 'function' ? getBattleFloorTitle() : '';
+      t = (t || '').toString().trim();
+      el.textContent = t;
+      wrap.style.display = t ? '' : 'none';
     }
     var PLAYER_BUFF_RESOLVE_MS = 100;
     /** 奉献：艾丽卡回合开始时对自身和敌方全体造成 Sta×1.0 神圣伤害。由打开技能弹窗时调用 tryTriggerErika奉献 触发。 */
@@ -8367,7 +8389,9 @@
         renderAllySlots();
         renderEnemySlots();
         updateBattlePhaseDisplay();
+        updateBattleFloorTitle();
       };
+      updateBattleFloorTitle();
       var origAdvance = advanceBattlePhase;
       window.BattleGrid.advanceBattlePhase = function (callback) {
         var roundBefore = getBigRound();

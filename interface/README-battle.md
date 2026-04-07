@@ -115,7 +115,7 @@
 
 **约定**：所有会造成伤害并写入战斗日志的技能，都必须通过 `formatAttackLogLine` 输出，并依赖 `resolveAttack` 返回的 `damageIncreaseReasons` 填写增加部分，保证格式一致。
 
-**伤害计算与公式对齐**：战斗日志中的「伤害计算」必须与 **interface/skill.js** 中 `getBaseDamageForSkill`（及实际结算中的特殊修正）一致，具体约定如下：
+**伤害计算与公式对齐**：战斗日志中的「伤害计算」必须与 **backend/skill.js** 中 `getBaseDamageForSkill`（及实际结算中的特殊修正）一致，具体约定如下：
 
 | 技能 | 计算公式（与 getBaseDamageForSkill / 结算一致） | 日志中的伤害计算示例 |
 |------|-----------------------------------------------|----------------------|
@@ -129,7 +129,7 @@
 | 斩杀 | floor(Str×mult)；目标 HP＜30% 时再×2 | 力量×1.6=22 或 力量×1.6×2(斩杀线)=44 |
 | 狼牙碎击 | floor(Str×3) | 力量×3=42 |
 | 狼式旋风 | floor(Str×mult)，mult 按等级；斩杀追击时×damageScale | 力量×1.2=18 或 力量×1.2×0.5=9 |
-| 血舞枪刃 | 见 interface/skill.js（两项分别取整相加；A 有流血增伤） | 力量×0.8=6+敏捷×0.4=6=12；流血+60%=19 |
+| 血舞枪刃 | 见 backend/skill.js（两项分别取整相加；A 有流血增伤） | 力量×0.8=6+敏捷×0.4=6=12；流血+60%=19 |
 | 幽灵舞踏 | 每击 floor(Str×mult) | 力量×0.5=7（每击） |
 | 暗夜帷幕 | floor(Int×mult) | 智力×0.6=8 |
 | 魔龙舞 | 每击 floor(Agi×0.4) | 敏捷×0.4=6（每击） |
@@ -146,7 +146,7 @@
 | 白牙 撕咬 | floor(Atk×1.0) | 攻击×1.0=17 |
 | 敌方 单体/群体/连击 | 攻击×倍率（见 ENEMY_ACTION 等） | 攻击×0.8=14 等 |
 
-新增或修改技能时，需在 **interface/skill.js** 的 `getBaseDamageForSkill` 中维护对应公式，并在 `battle.js` 中为对应分支设置与上述计算方式一致的 `damageCalcStr`（或等价参数），避免出现「公式与最终伤害对不上」的情况。
+新增或修改技能时，需在 **backend/skill.js** 的 `getBaseDamageForSkill` 中维护对应公式，并在 `battle.js` 中为对应分支设置与上述计算方式一致的 `damageCalcStr`（或等价参数），避免出现「公式与最终伤害对不上」的情况。
 
 ## 怪物（敌方单位）字段
 
