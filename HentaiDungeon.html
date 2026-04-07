@@ -1,4 +1,3 @@
-```
 <!doctype html>
 <html lang="zh-CN">
   <head>
@@ -1110,7 +1109,8 @@
           loadSavePanel.style.display = 'flex';
           var slots = window.色色地牢_save.getSaveSlots();
           loadSaveList.innerHTML = '';
-          slots.forEach(function (s) {
+          // 仅展示有数据的槽位；save.getSaveSlots() 会额外附带 1 个空槽位供保存（此处不需要）
+          slots.filter(function (s) { return s && s.hasData; }).forEach(function (s) {
             var row = document.createElement('div');
             row.style.cssText =
               'padding:12px 16px;background:rgba(255,255,255,0.1);border:2px solid rgba(139,115,32,0.4);border-radius:8px;cursor:pointer;color:#e8e0d0;';
@@ -1192,13 +1192,7 @@
       <div class="game-inner">
         <!-- 左侧列表 -->
         <nav class="sidebar">
-          <div
-            id="dungeon-floor-hud"
-            class="dungeon-floor-hud"
-            role="status"
-            aria-live="polite"
-            title="当前探索进度"
-          >
+          <div id="dungeon-floor-hud" class="dungeon-floor-hud" role="status" aria-live="polite" title="当前探索进度">
             <div class="dungeon-floor-hud-title">大层</div>
             <div class="dungeon-floor-hud-major" id="dungeon-floor-major">1</div>
             <div class="dungeon-floor-hud-band" id="dungeon-floor-band">起点</div>
@@ -1348,6 +1342,11 @@
             <div id="bag-drawer-content" class="bag-drawer-content"></div>
           </div>
           <div class="bag-drawer-backdrop" id="bag-drawer-backdrop"></div>
+          <!-- 存档抽屉：点击杂项-存档后从左侧滑出，展示存档槽位列表 -->
+          <div class="save-drawer" id="save-drawer">
+            <div id="save-drawer-content" class="save-drawer-content"></div>
+          </div>
+          <div class="save-drawer-backdrop" id="save-drawer-backdrop"></div>
           <!-- 技能界面：战斗界面点击角色卡牌头像（非换位状态）时弹出，显示攻击、防御等 -->
           <div class="skill-popup" id="skill-popup"></div>
           <!-- 分支进阶弹窗：技能 Lv4 且未进阶时，点击进阶键打开 -->
@@ -3734,7 +3733,9 @@ yahei: 'font-yahei',
 (function () {
   var SETTINGS_EXIT_MS = 150;
 
-  function el(id) { return document.getElementById(id); }
+  function el(id) {
+    return document.getElementById(id);
+  }
 
   function openSettings() {
     var overlay = el('settings-overlay');
@@ -5463,13 +5464,6 @@ yahei: 'font-yahei',
         phase === BATTLE_PHASE.PLAYER_ACTION && !hasAnyLivingEnemy(enemies);
       btn.textContent = showContinue ? '继续前进' : '结束回合';
       btn.setAttribute('data-battle-btn-mode', showContinue ? 'continue-map' : 'end-turn');
-      if (showContinue && typeof window.色色地牢_onBattleVictoryUi === 'function') {
-        try {
-          window.色色地牢_onBattleVictoryUi();
-        } catch (eV) {
-          console.warn('[色色地牢] 色色地牢_onBattleVictoryUi', eV);
-        }
-      }
     }
     function renderEnemySlots(optionalEnemies) {
       var enemies = optionalEnemies != null && Array.isArray(optionalEnemies) ? optionalEnemies : getEnemyParty();
@@ -12216,6 +12210,13 @@ yahei: 'font-yahei',
         endTurnBtn.addEventListener('click', function () {
           if (getBattlePhase() !== BATTLE_PHASE.PLAYER_ACTION) return;
           if (endTurnBtn.getAttribute('data-battle-btn-mode') === 'continue-map') {
+            if (typeof window.色色地牢_onBattleVictoryUi === 'function') {
+              try {
+                window.色色地牢_onBattleVictoryUi();
+              } catch (eV) {
+                console.warn('[色色地牢] 色色地牢_onBattleVictoryUi', eV);
+              }
+            }
             if (typeof window.色色地牢_commitPendingMapPosAfterBattle === 'function')
               window.色色地牢_commitPendingMapPosAfterBattle();
             if (typeof window.色色地牢_showMapDrawer === 'function') window.色色地牢_showMapDrawer({});
@@ -12950,6 +12951,78 @@ yahei: 'font-yahei',
     return arr[Math.floor(Math.random() * arr.length)];
   }
 
+  function compositionScore(comp) {
+    if (!comp) return 0;
+    return (comp.z | 0) * 1 + (comp.p | 0) * 2 + (comp.q | 0) * 3 + (comp.e | 0) * 5 + (comp.b | 0) * 0;
+  }
+
+  function getNormalBudgetRange(layer) {
+    var L = layer | 0;
+    var key = 'tier13';
+    if (L >= 4 && L <= 6) key = 'tier46';
+    else if (L >= 7 && L <= 9) key = 'tier79';
+    else if (L >= 10 && L <= 14) key = 'tier1014';
+    else if (L >= 15) key = 'tier1014';
+    var arr = NORMAL_BATTLE_COMPOSITIONS[key] || [];
+    var min = Infinity;
+    var max = -Infinity;
+    for (var i = 0; i < arr.length; i++) {
+      var sc = compositionScore(arr[i]);
+      if (sc < min) min = sc;
+      if (sc > max) max = sc;
+    }
+    if (!isFinite(min) || !isFinite(max)) return { min: 0, max: 0, key: key };
+    return { min: min, max: max, key: key };
+  }
+
+  /**
+   * 4.3 精英战斗预算修正：
+   * - 精英怪物（5分值）必出 1 单位
+   * - 精英战斗总预算 = 当前层普通战斗预算 + 2
+   * - 剩余预算用于配置随从
+   */
+  function pickEliteBattleComposition(layer) {
+    var range = getNormalBudgetRange(layer);
+    var totalMin = (range.min | 0) + 2;
+    var totalMax = (range.max | 0) + 2;
+    if (totalMax < totalMin) totalMax = totalMin;
+    var total = totalMin + Math.floor(Math.random() * (totalMax - totalMin + 1));
+
+    var remainder = total - 5; // 先扣除 1 个精英（5 分）
+    if (remainder < 0) remainder = 0;
+
+    // 随从仅用 z/p/q（1/2/3 分），并限制总单位数不超过 6（精英占 1）
+    var followers = [];
+    for (var z = 0; z <= 5; z++) {
+      for (var p = 0; p <= 5; p++) {
+        for (var q = 0; q <= 5; q++) {
+          var units = z + p + q;
+          if (units > 5) continue;
+          var sc = z * 1 + p * 2 + q * 3;
+          if (sc !== remainder) continue;
+          followers.push({ z: z, p: p, q: q });
+        }
+      }
+    }
+
+    var f = followers.length ? followers[Math.floor(Math.random() * followers.length)] : { z: 0, p: 0, q: 0 };
+    return {
+      e: 1,
+      z: f.z | 0,
+      p: f.p | 0,
+      q: f.q | 0,
+      _budget: {
+        normalKey: range.key,
+        normalMin: range.min,
+        normalMax: range.max,
+        totalMin: totalMin,
+        totalMax: totalMax,
+        total: total,
+        remainder: remainder,
+      },
+    };
+  }
+
   function formatCompositionGenLine(comp) {
     if (!comp) return '生成';
     var parts = [];
@@ -12974,10 +13047,35 @@ yahei: 'font-yahei',
   }
 
   /** @param {string} nodeId 地图节点 id，拼在标签行下一行：前往x-y（仅经 generate 发送，不写输入框） */
-  function buildNormalBattleAiPrompt(areaName, comp, nodeId) {
+  function buildNormalBattleAiPrompt(areaName, comp, nodeId, nodeType, layer) {
     var lines = getAreaNormalBattlePromptLines(areaName);
     var gen = formatCompositionGenLine(comp);
     var goLine = '前往' + (nodeId != null ? String(nodeId).trim() : '');
+    var extra = '';
+    if (nodeType === '精英战斗' && comp && comp._budget) {
+      var b = comp._budget;
+      extra =
+        '\n\n' +
+        '4.3 精英战斗的预算修正\n' +
+        '  精英怪物（5分值）为必出单位，剩余预算用于配置随从。\n' +
+        '  精英战斗总预算 = 当前层普通战斗预算 + 2。\n' +
+        '  示例：第7层精英战斗，预算 = 7至9 + 2 = 9至11。\n' +
+        '  组合：1精英(5)+2普通(4)=9 / 1精英(5)+1强力+1杂兵(4)=9 / 1精英(5)+1强力+1普通(5)=10。\n' +
+        '\n' +
+        '（本次：普通预算 ' +
+        b.normalMin +
+        '至' +
+        b.normalMax +
+        '，精英预算 ' +
+        b.totalMin +
+        '至' +
+        b.totalMax +
+        '，抽中总预算=' +
+        b.total +
+        '，随从预算=' +
+        b.remainder +
+        '）';
+    }
     return (
       lines.title +
       '\n' +
@@ -12989,7 +13087,8 @@ yahei: 'font-yahei',
       '\n' +
       goLine +
       '\n' +
-      gen
+      gen +
+      extra
     );
   }
 
@@ -13105,13 +13204,21 @@ yahei: 'font-yahei',
   }
 
   /** 进入「普通战斗」格时：按层数档位等概率抽组合，拼区域文案 +「生成…」，控制台输出并调用 generate（不经输入框） */
-  function requestNormalBattleAiPrompt(areaName, nodeId) {
+  function requestNormalBattleAiPrompt(areaName, nodeId, nodeType) {
     var layer = getLayerFromMapNodeId(nodeId);
-    var comp = pickNormalBattleComposition(layer);
-    var text = buildNormalBattleAiPrompt(areaName, comp, nodeId);
+    var t = nodeType != null ? String(nodeType).trim() : '普通战斗';
+    var comp = t === '精英战斗' ? pickEliteBattleComposition(layer) : pickNormalBattleComposition(layer);
+    var text = buildNormalBattleAiPrompt(areaName, comp, nodeId, t, layer);
     lastNormalBattleGenCtx = { areaName: areaName, nodeId: nodeId, text: text };
-    console.info('[色色地牢][普通战斗] 层数(列号)=' + layer + ' 组合=' + JSON.stringify(comp));
-    console.info('[色色地牢][普通战斗] 发送给 AI 的提示词:\n' + text);
+    console.info(
+      '[色色地牢][' +
+        t +
+        '] 层数(列号)=' +
+        layer +
+        ' 组合=' +
+        JSON.stringify(comp),
+    );
+    console.info('[色色地牢][' + t + '] 发送给 AI 的提示词:\n' + text);
     runNormalBattleGenerate(text, areaName, nodeId);
   }
 
@@ -13131,6 +13238,9 @@ yahei: 'font-yahei',
       NORMAL_BATTLE_COMPOSITIONS: NORMAL_BATTLE_COMPOSITIONS,
       getLayerFromMapNodeId: getLayerFromMapNodeId,
       pickNormalBattleComposition: pickNormalBattleComposition,
+      pickEliteBattleComposition: pickEliteBattleComposition,
+      getNormalBudgetRange: getNormalBudgetRange,
+      compositionScore: compositionScore,
       formatCompositionGenLine: formatCompositionGenLine,
       getAreaNormalBattlePromptLines: getAreaNormalBattlePromptLines,
       buildNormalBattleAiPrompt: buildNormalBattleAiPrompt,
@@ -13155,7 +13265,8 @@ yahei: 'font-yahei',
   'use strict';
 
   var STORAGE_KEY = '色色地牢_saves';
-  var SLOT_COUNT = 5;
+  // 槽位无限：仅持久化实际存在的数据槽位；UI 额外显示 1 个空槽位供保存
+  var SLOT_COUNT = null;
   var RECENT_LOG_CAP = 100;
   var NODE_STATES_CAP = 50;
 
@@ -13166,10 +13277,8 @@ yahei: 'font-yahei',
       var data = JSON.parse(raw);
       if (!data || typeof data !== 'object') return { slots: [], lastIndex: 0 };
       if (!Array.isArray(data.slots)) data.slots = [];
-      while (data.slots.length < SLOT_COUNT) data.slots.push(null);
-      data.slots = data.slots.slice(0, SLOT_COUNT);
       data.lastIndex = Math.max(0, parseInt(data.lastIndex, 10) || 0);
-      if (data.lastIndex >= SLOT_COUNT) data.lastIndex = 0;
+      if (data.lastIndex >= data.slots.length) data.lastIndex = 0;
       return data;
     } catch (e) {
       return { slots: [], lastIndex: 0 };
@@ -13191,29 +13300,65 @@ yahei: 'font-yahei',
   function getSaveSlots() {
     var data = loadRaw();
     var result = [];
-    for (var i = 0; i < SLOT_COUNT; i++) {
+    for (var i = 0; i < data.slots.length; i++) {
       var slot = data.slots[i];
       var hasData = !!slot && (slot.party != null || slot.map != null);
+      if (!hasData) continue;
+      var partySummary = [];
+      try {
+        var party = Array.isArray(slot.party) ? slot.party : [];
+        for (var pi = 0; pi < party.length; pi++) {
+          var ch = party[pi];
+          if (!ch) continue;
+          partySummary.push({
+            name: ch.name || '',
+            level: ch.level != null ? ch.level : 1,
+            avatar: ch.avatar || '',
+          });
+          if (partySummary.length >= 4) break;
+        }
+      } catch (eP) {
+        console.warn('[色色地牢] 读取存档队伍摘要失败', eP);
+      }
       result.push({
         index: i,
         savedAt: (slot && slot.meta && slot.meta.savedAt) || '',
         areaName: (slot && slot.meta && slot.meta.areaName) || (slot && slot.map && slot.map.area) || '',
         characterNames: (slot && slot.meta && slot.meta.characterNames) || [],
-        hasData: hasData
+        partySummary: partySummary,
+        hasData: true,
       });
     }
+    // 栈式顺序：最近保存的在上（ISO 时间可直接字符串比较）；无时间则视为最旧
+    result.sort(function (a, b) {
+      var as = a && a.savedAt ? String(a.savedAt) : '';
+      var bs = b && b.savedAt ? String(b.savedAt) : '';
+      if (as === bs) return (b.index | 0) - (a.index | 0);
+      if (!as) return 1;
+      if (!bs) return -1;
+      return bs > as ? 1 : -1;
+    });
+    // 始终在最上面追加 1 个空槽位，方便“保存为新存档”
+    result.unshift({
+      index: data.slots.length,
+      savedAt: '',
+      areaName: '',
+      characterNames: [],
+      partySummary: [],
+      hasData: false,
+    });
     return result;
   }
 
   /**
    * 读取指定槽位
-   * @param {number} index 槽位索引 0 ~ SLOT_COUNT-1
+   * @param {number} index 槽位索引
    * @returns {{ party, enemyParty, buffDefinitions, map, history, nodeStates } | null}
    */
   function loadSlot(index) {
     var data = loadRaw();
     var i = Math.max(0, parseInt(index, 10));
-    if (i >= SLOT_COUNT) return null;
+    if (i >= data.slots.length) return null;
     var slot = data.slots[i];
     if (!slot || (slot.party == null && slot.map == null)) return null;
     return {
@@ -13235,7 +13380,8 @@ yahei: 'font-yahei',
   function saveSlot(index, payload) {
     var data = loadRaw();
     var i = Math.max(0, parseInt(index, 10));
-    if (i >= SLOT_COUNT) return;
+    // 允许写入任意索引：不足部分用 null 补齐
+    while (data.slots.length <= i) data.slots.push(null);
     var party = Array.isArray(payload.party) ? payload.party : null;
     var enemyParty = Array.isArray(payload.enemyParty) ? payload.enemyParty : null;
     var recentLog = (payload.history && Array.isArray(payload.history.recentBattleLog))
@@ -13270,13 +13416,27 @@ yahei: 'font-yahei',
     saveRaw(data);
   }
 
+  /**
+   * 清空指定槽位（置为 null），并在清空 lastIndex 时回退到 0。
+   * @param {number} index
+   */
+  function clearSlot(index) {
+    var data = loadRaw();
+    var i = Math.max(0, parseInt(index, 10));
+    if (i >= data.slots.length) return;
+    data.slots[i] = null;
+    if ((data.lastIndex | 0) === i) data.lastIndex = 0;
+    saveRaw(data);
+  }
+
   function getLastSlotIndex() {
     return loadRaw().lastIndex;
   }
 
   function setLastSlotIndex(n) {
     var data = loadRaw();
-    data.lastIndex = Math.max(0, Math.min(SLOT_COUNT - 1, parseInt(n, 10) || 0));
+    data.lastIndex = Math.max(0, parseInt(n, 10) || 0);
+    if (data.lastIndex >= data.slots.length) data.lastIndex = 0;
     saveRaw(data);
   }
 
@@ -13285,6 +13445,7 @@ yahei: 'font-yahei',
       getSaveSlots: getSaveSlots,
       loadSlot: loadSlot,
       saveSlot: saveSlot,
+      clearSlot: clearSlot,
       getLastSlotIndex: getLastSlotIndex,
       setLastSlotIndex: setLastSlotIndex,
       SLOT_COUNT: SLOT_COUNT
@@ -14020,6 +14181,42 @@ yahei: 'font-yahei',
       '.bag-drawer-backdrop{position:absolute;inset:0;z-index:25;pointer-events:none;background:transparent;transition:background .2s}',
       '.bag-drawer.open ~ .bag-drawer-backdrop{pointer-events:auto;background:rgba(0,0,0,.12)}',
       '.bag-drawer-content{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column}',
+      '.save-drawer{position:absolute;left:0;top:0;bottom:0;right:0;width:100%;z-index:30;background:#e4d5b7;background-image:url("https://www.transparenttextures.com/patterns/paper-fibers.png");border-right:2px solid var(--ornate-dark);box-shadow:4px 0 24px rgba(0,0,0,.25);transform:translateX(-100%);transition:transform .3s cubic-bezier(0.19,1,0.22,1);overflow:hidden;display:flex;flex-direction:column}',
+      '.save-drawer.open{transform:translateX(0)}',
+      '.save-drawer-backdrop{position:absolute;inset:0;z-index:25;pointer-events:none;background:transparent;transition:background .2s}',
+      '.save-drawer.open ~ .save-drawer-backdrop{pointer-events:auto;background:rgba(0,0,0,.12)}',
+      '.save-drawer-content{flex:1;min-height:0;overflow:auto;padding:18px 18px 22px;display:flex;flex-direction:column;color:#3d2b1f}',
+      '.save-drawer-title{margin:0 0 14px;font-size:22px;font-weight:900;padding-bottom:12px;color:#2f2317;letter-spacing:.12em;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(61,43,31,.18)}',
+      '.save-slot-list{display:flex;flex-direction:column;gap:12px}',
+      '.save-slot-card{position:relative;background:linear-gradient(180deg,rgba(255,255,255,.82),rgba(255,255,255,.62));border:1px solid rgba(61,43,31,.22);border-radius:16px;padding:14px 14px 12px;box-shadow:0 10px 24px rgba(0,0,0,.10);overflow:hidden}',
+      '.save-slot-card::before{content:\"\";position:absolute;inset:-40px -40px auto auto;width:120px;height:120px;background:radial-gradient(circle at 30% 30%,rgba(201,162,39,.25),rgba(201,162,39,0) 70%);transform:rotate(12deg)}',
+      '.save-slot-card.is-empty{border-style:dashed;background:linear-gradient(180deg,rgba(255,255,255,.72),rgba(255,255,255,.55))}',
+      '.save-slot-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}',
+      '.save-slot-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px;min-width:160px;flex-shrink:0}',
+      '.save-slot-main{display:flex;flex-direction:column;gap:4px;min-width:0}',
+      '.save-slot-name{font-weight:950;letter-spacing:.08em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+      '.save-slot-meta{font-size:12px;opacity:.75;line-height:1.35;text-align:right;word-break:break-word;flex-shrink:0}',
+      '.save-map-name{font-size:14px;font-weight:950;letter-spacing:.14em;color:#2f2317;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}',
+      '.save-map-sub{font-size:12px;opacity:.72;font-weight:800;letter-spacing:.04em;margin-top:2px}',
+      '.save-party-grid{display:flex;flex-wrap:nowrap;gap:10px;justify-content:flex-end;align-items:flex-start}',
+      '.save-party-grid{overflow-x:auto;max-width:420px;padding-bottom:2px}',
+      '.save-party-grid::-webkit-scrollbar{height:6px}',
+      '.save-party-grid::-webkit-scrollbar-thumb{background:rgba(61,43,31,.18);border-radius:999px}',
+      '.save-party-unit{width:72px;display:flex;flex-direction:column;align-items:center;gap:6px}',
+      '.save-party-avatar{position:relative;width:72px;height:72px;border-radius:12px;background:#c4b8a8;border:2px solid #8b7355;overflow:hidden;background-size:cover;background-position:center top;box-shadow:0 4px 14px rgba(0,0,0,.12)}',
+      '.save-party-avatar.empty{opacity:.35;filter:grayscale(.7)}',
+      '.save-party-name{font-size:12px;font-weight:900;color:#2f2317;max-width:72px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.06em}',
+      '.save-party-lv{position:absolute;right:6px;bottom:6px;background:rgba(26,21,14,.82);color:#f0e6d0;border:1px solid rgba(201,162,39,.55);border-radius:999px;padding:2px 6px;font-size:11px;font-weight:900;line-height:1;box-shadow:0 2px 8px rgba(0,0,0,.25)}',
+      '.save-slot-foot{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-top:10px}',
+      '.save-slot-foot .save-slot-actions{margin-top:0}',
+      '.save-slot-actions{display:flex;flex-wrap:wrap;gap:10px;flex:1 1 auto;min-width:220px}',
+      '.save-slot-foot .save-party-grid{flex:0 0 auto;align-self:flex-end;margin-top:0}',
+      '.save-slot-btn{appearance:none;border:1px solid rgba(61,43,31,.22);background:rgba(255,255,255,.86);color:#2f2317;border-radius:12px;padding:8px 12px;font-size:12px;font-weight:900;cursor:pointer;transition:transform .06s ease,background .12s ease,box-shadow .12s ease,opacity .12s ease;box-shadow:0 1px 0 rgba(0,0,0,.04)}',
+      '.save-slot-btn:hover{background:#fff;box-shadow:0 6px 14px rgba(0,0,0,.10)}',
+      '.save-slot-btn:active{transform:translateY(1px)}',
+      '.save-slot-btn[disabled]{opacity:.45;cursor:not-allowed;pointer-events:none}',
+      '.save-slot-btn.primary{background:linear-gradient(180deg,rgba(255,236,168,.95),rgba(255,224,120,.85));border-color:rgba(201,162,39,.55)}',
+      '.save-slot-btn.danger{background:linear-gradient(180deg,rgba(255,210,210,.90),rgba(255,185,185,.72));border-color:rgba(140,45,45,.40)}',
       '.bag-wrapper{height:100%;display:flex;flex-direction:column;overflow:hidden}',
       '.bag-header{font-size:26px;font-weight:bold;border-bottom:3px solid var(--gold-border);padding:25px 35px 15px;flex-shrink:0;color:#4a3c1a;display:flex;align-items:center;gap:10px}.bag-header-icon{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}.bag-header-icon svg{width:28px;height:28px;stroke:currentColor}',
       '.bag-list{flex:1;padding:15px 35px 35px;display:flex;flex-direction:column;gap:10px;overflow-y:auto;-webkit-overflow-scrolling:touch}',
@@ -14692,6 +14889,8 @@ yahei: 'font-yahei',
         if (miscBtn && miscBtn.contains(e.target)) return;
         var mapDrawerEl = document.getElementById('map-drawer');
         if (mapDrawerEl && mapDrawerEl.classList.contains('open') && mapDrawerEl.contains(e.target)) return;
+        var saveDrawerEl = document.getElementById('save-drawer');
+        if (saveDrawerEl && saveDrawerEl.classList.contains('open') && saveDrawerEl.contains(e.target)) return;
         hideMiscPanel();
         hideMapDrawer();
         $('.sidebar-btn[data-tab="misc"]').removeClass('active');
@@ -14708,6 +14907,7 @@ yahei: 'font-yahei',
         document.removeEventListener('click', closeMiscPanelOnClickOutside);
         hideMapDrawer();
         hideBagDrawer();
+        hideSaveDrawer();
       }
       var mapDrawer = document.getElementById('map-drawer');
       var mapDrawerContent = document.getElementById('map-drawer-content');
@@ -15112,9 +15312,9 @@ yahei: 'font-yahei',
               nodeType: realNode.type,
             };
           }
-          if (realNode && realNode.type === '普通战斗') {
+          if (realNode && (realNode.type === '普通战斗' || realNode.type === '精英战斗')) {
             if (typeof window.色色地牢_requestNormalBattleAiPrompt === 'function')
-              window.色色地牢_requestNormalBattleAiPrompt(m.area, id);
+              window.色色地牢_requestNormalBattleAiPrompt(m.area, id, realNode.type);
           }
         }, 0);
       }
@@ -15157,6 +15357,114 @@ yahei: 'font-yahei',
       function hideMapDrawer() {
         if (mapDrawer) mapDrawer.classList.remove('open');
         $('.misc-sub-btn[data-misc="map"]').removeClass('active');
+      }
+      var saveDrawer = document.getElementById('save-drawer');
+      function hideSaveDrawer() {
+        if (saveDrawer) saveDrawer.classList.remove('open');
+        $('.misc-sub-btn[data-misc="save"]').removeClass('active');
+      }
+      function renderSaveContent() {
+        var box = document.getElementById('save-drawer-content');
+        if (!box) return;
+        var api = typeof window !== 'undefined' ? window.色色地牢_save : null;
+        if (!api || typeof api.getSaveSlots !== 'function') {
+          box.innerHTML =
+            '<h3 class="save-drawer-title">存档</h3><div style="opacity:.85">当前环境未提供存档模块（backend/save.js）。</div>';
+          return;
+        }
+        var slots = api.getSaveSlots();
+        var last = typeof api.getLastSlotIndex === 'function' ? api.getLastSlotIndex() : 0;
+        var curMap = typeof getMapData === 'function' ? getMapData() : null;
+        var curArea = curMap && curMap.area ? String(curMap.area) : '地牢';
+        box.innerHTML =
+          '<h3 class="save-drawer-title"><span>存档</span></h3>' +
+          '<div class="save-slot-list">' +
+          slots
+            .map(function (s) {
+              var idx = s.index | 0;
+              var isEmpty = !s.hasData;
+              var isLast = !isEmpty && idx === (last | 0);
+              var area = isEmpty ? curArea : s.areaName ? String(s.areaName) : '';
+              var ps = Array.isArray(s.partySummary) ? s.partySummary : [];
+              var timeText = s.savedAt ? String(s.savedAt).replace('T', ' ').replace('Z', '') : '';
+              var metaText = timeText || '';
+              var partyHtml = '';
+              if (!isEmpty) {
+                partyHtml =
+                  '<div class="save-party-grid" aria-label="队伍成员">' +
+                  ps
+                    .map(function (u) {
+                      var nm = u && u.name ? String(u.name) : '';
+                      var lv = u && u.level != null ? parseInt(u.level, 10) || 1 : 1;
+                      var av = u && u.avatar ? String(u.avatar) : '';
+                      var bg = '';
+                      if (av) {
+                        // 兼容 http(s)/data/blob 等；用 encodeURI 避免引号/空格破坏 style
+                        bg = "background-image:url('" + encodeURI(av).replace(/'/g, '%27') + "')";
+                      }
+                      return (
+                        '<div class="save-party-unit">' +
+                        '<div class="save-party-avatar" style="' +
+                        bg +
+                        '">' +
+                        '<div class="save-party-lv">Lv' +
+                        lv +
+                        '</div>' +
+                        '</div>' +
+                        '<div class="save-party-name">' +
+                        nm.replace(/</g, '&lt;').replace(/>/g, '&gt;') +
+                        '</div>' +
+                        '</div>'
+                      );
+                    })
+                    .join('') +
+                  '</div>';
+              }
+              var leftHeadHtml = isEmpty
+                ? ''
+                : '<div class="save-slot-main">' +
+                  '<div class="save-map-name">' +
+                  (area || '地牢').replace(/</g, '&lt;').replace(/>/g, '&gt;') +
+                  '</div>' +
+                  '<div class="save-map-sub"></div>' +
+                  '</div>';
+              return (
+                '<div class="save-slot-card' +
+                (isEmpty ? ' is-empty' : '') +
+                '" data-save-slot="' +
+                idx +
+                '">' +
+                '<div class="save-slot-head">' +
+                leftHeadHtml +
+                '<div class="save-slot-right">' +
+                '<div class="save-slot-meta">' +
+                metaText.replace(/</g, '&lt;').replace(/>/g, '&gt;') +
+                '</div>' +
+                '</div>' +
+                '</div>' +
+                '<div class="save-slot-foot">' +
+                '<div class="save-slot-actions">' +
+                '<button type="button" class="save-slot-btn primary" data-act="save">' +
+                (isEmpty ? '保存为新存档' : '覆盖保存') +
+                '</button>' +
+                (isEmpty
+                  ? ''
+                  : '<button type="button" class="save-slot-btn" data-act="load">读取</button>' +
+                    '<button type="button" class="save-slot-btn danger" data-act="clear">删除</button>') +
+                '</div>' +
+                partyHtml +
+                '</div>' +
+                '</div>'
+              );
+            })
+            .join('') +
+          '</div>';
+      }
+      function showSaveDrawer() {
+        hideMapDrawer();
+        hideBagDrawer();
+        renderSaveContent();
+        if (saveDrawer) saveDrawer.classList.add('open');
       }
       var bagDrawer = document.getElementById('bag-drawer');
       var bagDrawerContent = document.getElementById('bag-drawer-content');
@@ -16475,7 +16783,7 @@ yahei: 'font-yahei',
         var idx = $(this).attr('data-avatar');
         if (idx) onCharacterAvatarClick(parseInt(idx, 10));
       });
-      $('.misc-sub-btn').on('click', function (e) {
+      $(document).on('click', '.misc-sub-btn', function (e) {
         e.stopPropagation();
         var btn = $(this);
         var wasActive = btn.hasClass('active');
@@ -16487,19 +16795,19 @@ yahei: 'font-yahei',
         else btn.removeClass('active');
         if (isMap) {
           hideBagDrawer();
+          hideSaveDrawer();
           if (!wasActive) showMapDrawer();
           else hideMapDrawer();
         } else if (isBag) {
           hideMapDrawer();
+          hideSaveDrawer();
           if (!wasActive) showBagDrawer();
           else hideBagDrawer();
-        } else if (isSave && typeof window.色色地牢_save !== 'undefined') {
-          var payload = getCurrentGameState();
-          var slotCount = window.色色地牢_save.SLOT_COUNT || 5;
-          var idx = window.色色地牢_save.getLastSlotIndex();
-          window.色色地牢_save.saveSlot(idx, payload);
-          if (typeof toastr !== 'undefined') toastr.info('已保存到槽位 ' + (idx + 1));
-          else console.info('[色色地牢] 已保存到槽位', idx + 1);
+        } else if (isSave) {
+          hideMapDrawer();
+          hideBagDrawer();
+          if (!wasActive) showSaveDrawer();
+          else hideSaveDrawer();
         }
       });
       var miscInner = miscPanel ? miscPanel.querySelector('.misc-panel-inner') : null;
@@ -16517,6 +16825,38 @@ yahei: 'font-yahei',
       });
       $('#bag-drawer-backdrop').on('click', function () {
         hideBagDrawer();
+      });
+      $('#save-drawer-backdrop').on('click', function () {
+        hideSaveDrawer();
+      });
+      $(document).on('click', '#save-drawer-content .save-slot-btn', function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        var act = this.getAttribute('data-act');
+        var card = this.closest('[data-save-slot]');
+        if (!card) return;
+        var idx = parseInt(card.getAttribute('data-save-slot'), 10);
+        if (isNaN(idx)) return;
+        var api = typeof window !== 'undefined' ? window.色色地牢_save : null;
+        if (!api) return;
+        if (act === 'save' && typeof api.saveSlot === 'function') {
+          var payload = getCurrentGameState();
+          api.saveSlot(idx, payload);
+          if (typeof toastr !== 'undefined') toastr.info('已保存');
+          // 延迟重绘：避免 click 冒泡到 document 时 target 已被替换，误触“点外部关闭”
+          setTimeout(renderSaveContent, 0);
+        } else if (act === 'load' && typeof api.loadSlot === 'function') {
+          var payload2 = api.loadSlot(idx);
+          if (payload2) {
+            applySavePayload(payload2);
+            if (typeof toastr !== 'undefined') toastr.info('已读取存档');
+          }
+          setTimeout(renderSaveContent, 0);
+        } else if (act === 'clear' && typeof api.clearSlot === 'function') {
+          api.clearSlot(idx);
+          if (typeof toastr !== 'undefined') toastr.info('已删除存档');
+          setTimeout(renderSaveContent, 0);
+        }
       });
       $('#character-detail-backdrop').on('click', function () {
         if (openDetailAvatar) hideCharacterDetail(true);
@@ -16806,6 +17146,7 @@ yahei: 'font-yahei',
       if (v && v.difficulty != null) meta.difficulty = v.difficulty;
       if (v && v.diffUid != null) meta.diffUid = v.diffUid;
       if (v && v.gold != null) meta.gold = v.gold;
+      var battleFloorTitle = v && v.battleFloorTitle != null ? String(v.battleFloorTitle) : '';
       return {
         party: party,
         enemyParty: enemyParty,
@@ -16817,6 +17158,7 @@ yahei: 'font-yahei',
           inv: m.inv,
           revealOrder: m.revealOrder,
         },
+        battleFloorTitle: battleFloorTitle,
         meta: meta,
         history: { recentBattleLog: recentLog },
         nodeStates: nodeStates,
@@ -17044,6 +17386,12 @@ yahei: 'font-yahei',
         }
       }
       if (payload.nodeStates && typeof payload.nodeStates === 'object') v.nodeStates = payload.nodeStates;
+      if (Object.prototype.hasOwnProperty.call(payload, 'battleFloorTitle')) {
+        v.battleFloorTitle = payload.battleFloorTitle != null ? String(payload.battleFloorTitle) : '';
+      } else {
+        // 兼容旧存档：不带该字段时也要清空，避免沿用上一局残留
+        v.battleFloorTitle = '';
+      }
       var pm = payload.meta && typeof payload.meta === 'object' ? payload.meta : {};
       if (pm.difficulty != null) v.difficulty = pm.difficulty;
       if (pm.diffUid != null) v.diffUid = pm.diffUid;
@@ -17755,6 +18103,7 @@ yahei: 'font-yahei',
         if (!v) v = {};
         v.party = party;
         v.enemyParty = emptyEnemyParty;
+        v.battleFloorTitle = '';
         v.map = initialMap;
         v.buffDefinitions = BUFF_DEFINITIONS;
         v.nodeStates = {};
@@ -17841,4 +18190,3 @@ yahei: 'font-yahei',
     </script>
   </body>
 </html>
-```

@@ -1099,7 +1099,8 @@
           loadSavePanel.style.display = 'flex';
           var slots = window.色色地牢_save.getSaveSlots();
           loadSaveList.innerHTML = '';
-          slots.forEach(function (s) {
+          // 仅展示有数据的槽位；save.getSaveSlots() 会额外附带 1 个空槽位供保存（此处不需要）
+          slots.filter(function (s) { return s && s.hasData; }).forEach(function (s) {
             var row = document.createElement('div');
             row.style.cssText =
               'padding:12px 16px;background:rgba(255,255,255,0.1);border:2px solid rgba(139,115,32,0.4);border-radius:8px;cursor:pointer;color:#e8e0d0;';

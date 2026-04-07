@@ -1,4 +1,3 @@
-```
 <!doctype html>
 <html lang="zh-CN">
   <head>
@@ -52,13 +51,7 @@
       <div class="game-inner">
         <!-- 左侧列表 -->
         <nav class="sidebar">
-          <div
-            id="dungeon-floor-hud"
-            class="dungeon-floor-hud"
-            role="status"
-            aria-live="polite"
-            title="当前探索进度"
-          >
+          <div id="dungeon-floor-hud" class="dungeon-floor-hud" role="status" aria-live="polite" title="当前探索进度">
             <div class="dungeon-floor-hud-title">大层</div>
             <div class="dungeon-floor-hud-major" id="dungeon-floor-major">1</div>
             <div class="dungeon-floor-hud-band" id="dungeon-floor-band">起点</div>
@@ -208,6 +201,11 @@
             <div id="bag-drawer-content" class="bag-drawer-content"></div>
           </div>
           <div class="bag-drawer-backdrop" id="bag-drawer-backdrop"></div>
+          <!-- 存档抽屉：点击杂项-存档后从左侧滑出，展示存档槽位列表 -->
+          <div class="save-drawer" id="save-drawer">
+            <div id="save-drawer-content" class="save-drawer-content"></div>
+          </div>
+          <div class="save-drawer-backdrop" id="save-drawer-backdrop"></div>
           <!-- 技能界面：战斗界面点击角色卡牌头像（非换位状态）时弹出，显示攻击、防御等 -->
           <div class="skill-popup" id="skill-popup"></div>
           <!-- 分支进阶弹窗：技能 Lv4 且未进阶时，点击进阶键打开 -->
@@ -349,4 +347,3 @@
     <script src="interface/app.js"></script>
   </body>
 </html>
-```

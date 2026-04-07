@@ -5,7 +5,9 @@
 (function () {
   var SETTINGS_EXIT_MS = 150;
 
-  function el(id) { return document.getElementById(id); }
+  function el(id) {
+    return document.getElementById(id);
+  }
 
   function openSettings() {
     var overlay = el('settings-overlay');

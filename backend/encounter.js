@@ -87,6 +87,78 @@
     return arr[Math.floor(Math.random() * arr.length)];
   }
 
+  function compositionScore(comp) {
+    if (!comp) return 0;
+    return (comp.z | 0) * 1 + (comp.p | 0) * 2 + (comp.q | 0) * 3 + (comp.e | 0) * 5 + (comp.b | 0) * 0;
+  }
+
+  function getNormalBudgetRange(layer) {
+    var L = layer | 0;
+    var key = 'tier13';
+    if (L >= 4 && L <= 6) key = 'tier46';
+    else if (L >= 7 && L <= 9) key = 'tier79';
+    else if (L >= 10 && L <= 14) key = 'tier1014';
+    else if (L >= 15) key = 'tier1014';
+    var arr = NORMAL_BATTLE_COMPOSITIONS[key] || [];
+    var min = Infinity;
+    var max = -Infinity;
+    for (var i = 0; i < arr.length; i++) {
+      var sc = compositionScore(arr[i]);
+      if (sc < min) min = sc;
+      if (sc > max) max = sc;
+    }
+    if (!isFinite(min) || !isFinite(max)) return { min: 0, max: 0, key: key };
+    return { min: min, max: max, key: key };
+  }
+
+  /**
+   * 4.3 精英战斗预算修正：
+   * - 精英怪物（5分值）必出 1 单位
+   * - 精英战斗总预算 = 当前层普通战斗预算 + 2
+   * - 剩余预算用于配置随从
+   */
+  function pickEliteBattleComposition(layer) {
+    var range = getNormalBudgetRange(layer);
+    var totalMin = (range.min | 0) + 2;
+    var totalMax = (range.max | 0) + 2;
+    if (totalMax < totalMin) totalMax = totalMin;
+    var total = totalMin + Math.floor(Math.random() * (totalMax - totalMin + 1));
+
+    var remainder = total - 5; // 先扣除 1 个精英（5 分）
+    if (remainder < 0) remainder = 0;
+
+    // 随从仅用 z/p/q（1/2/3 分），并限制总单位数不超过 6（精英占 1）
+    var followers = [];
+    for (var z = 0; z <= 5; z++) {
+      for (var p = 0; p <= 5; p++) {
+        for (var q = 0; q <= 5; q++) {
+          var units = z + p + q;
+          if (units > 5) continue;
+          var sc = z * 1 + p * 2 + q * 3;
+          if (sc !== remainder) continue;
+          followers.push({ z: z, p: p, q: q });
+        }
+      }
+    }
+
+    var f = followers.length ? followers[Math.floor(Math.random() * followers.length)] : { z: 0, p: 0, q: 0 };
+    return {
+      e: 1,
+      z: f.z | 0,
+      p: f.p | 0,
+      q: f.q | 0,
+      _budget: {
+        normalKey: range.key,
+        normalMin: range.min,
+        normalMax: range.max,
+        totalMin: totalMin,
+        totalMax: totalMax,
+        total: total,
+        remainder: remainder,
+      },
+    };
+  }
+
   function formatCompositionGenLine(comp) {
     if (!comp) return '生成';
     var parts = [];
@@ -111,10 +183,35 @@
   }
 
   /** @param {string} nodeId 地图节点 id，拼在标签行下一行：前往x-y（仅经 generate 发送，不写输入框） */
-  function buildNormalBattleAiPrompt(areaName, comp, nodeId) {
+  function buildNormalBattleAiPrompt(areaName, comp, nodeId, nodeType, layer) {
     var lines = getAreaNormalBattlePromptLines(areaName);
     var gen = formatCompositionGenLine(comp);
     var goLine = '前往' + (nodeId != null ? String(nodeId).trim() : '');
+    var extra = '';
+    if (nodeType === '精英战斗' && comp && comp._budget) {
+      var b = comp._budget;
+      extra =
+        '\n\n' +
+        '4.3 精英战斗的预算修正\n' +
+        '  精英怪物（5分值）为必出单位，剩余预算用于配置随从。\n' +
+        '  精英战斗总预算 = 当前层普通战斗预算 + 2。\n' +
+        '  示例：第7层精英战斗，预算 = 7至9 + 2 = 9至11。\n' +
+        '  组合：1精英(5)+2普通(4)=9 / 1精英(5)+1强力+1杂兵(4)=9 / 1精英(5)+1强力+1普通(5)=10。\n' +
+        '\n' +
+        '（本次：普通预算 ' +
+        b.normalMin +
+        '至' +
+        b.normalMax +
+        '，精英预算 ' +
+        b.totalMin +
+        '至' +
+        b.totalMax +
+        '，抽中总预算=' +
+        b.total +
+        '，随从预算=' +
+        b.remainder +
+        '）';
+    }
     return (
       lines.title +
       '\n' +
@@ -126,7 +223,8 @@
       '\n' +
       goLine +
       '\n' +
-      gen
+      gen +
+      extra
     );
   }
 
@@ -242,13 +340,21 @@
   }
 
   /** 进入「普通战斗」格时：按层数档位等概率抽组合，拼区域文案 +「生成…」，控制台输出并调用 generate（不经输入框） */
-  function requestNormalBattleAiPrompt(areaName, nodeId) {
+  function requestNormalBattleAiPrompt(areaName, nodeId, nodeType) {
     var layer = getLayerFromMapNodeId(nodeId);
-    var comp = pickNormalBattleComposition(layer);
-    var text = buildNormalBattleAiPrompt(areaName, comp, nodeId);
+    var t = nodeType != null ? String(nodeType).trim() : '普通战斗';
+    var comp = t === '精英战斗' ? pickEliteBattleComposition(layer) : pickNormalBattleComposition(layer);
+    var text = buildNormalBattleAiPrompt(areaName, comp, nodeId, t, layer);
     lastNormalBattleGenCtx = { areaName: areaName, nodeId: nodeId, text: text };
-    console.info('[色色地牢][普通战斗] 层数(列号)=' + layer + ' 组合=' + JSON.stringify(comp));
-    console.info('[色色地牢][普通战斗] 发送给 AI 的提示词:\n' + text);
+    console.info(
+      '[色色地牢][' +
+        t +
+        '] 层数(列号)=' +
+        layer +
+        ' 组合=' +
+        JSON.stringify(comp),
+    );
+    console.info('[色色地牢][' + t + '] 发送给 AI 的提示词:\n' + text);
     runNormalBattleGenerate(text, areaName, nodeId);
   }
 
@@ -268,6 +374,9 @@
       NORMAL_BATTLE_COMPOSITIONS: NORMAL_BATTLE_COMPOSITIONS,
       getLayerFromMapNodeId: getLayerFromMapNodeId,
       pickNormalBattleComposition: pickNormalBattleComposition,
+      pickEliteBattleComposition: pickEliteBattleComposition,
+      getNormalBudgetRange: getNormalBudgetRange,
+      compositionScore: compositionScore,
       formatCompositionGenLine: formatCompositionGenLine,
       getAreaNormalBattlePromptLines: getAreaNormalBattlePromptLines,
       buildNormalBattleAiPrompt: buildNormalBattleAiPrompt,

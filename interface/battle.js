@@ -1680,13 +1680,6 @@
         phase === BATTLE_PHASE.PLAYER_ACTION && !hasAnyLivingEnemy(enemies);
       btn.textContent = showContinue ? '继续前进' : '结束回合';
       btn.setAttribute('data-battle-btn-mode', showContinue ? 'continue-map' : 'end-turn');
-      if (showContinue && typeof window.色色地牢_onBattleVictoryUi === 'function') {
-        try {
-          window.色色地牢_onBattleVictoryUi();
-        } catch (eV) {
-          console.warn('[色色地牢] 色色地牢_onBattleVictoryUi', eV);
-        }
-      }
     }
     function renderEnemySlots(optionalEnemies) {
       var enemies = optionalEnemies != null && Array.isArray(optionalEnemies) ? optionalEnemies : getEnemyParty();
@@ -8433,6 +8426,13 @@
         endTurnBtn.addEventListener('click', function () {
           if (getBattlePhase() !== BATTLE_PHASE.PLAYER_ACTION) return;
           if (endTurnBtn.getAttribute('data-battle-btn-mode') === 'continue-map') {
+            if (typeof window.色色地牢_onBattleVictoryUi === 'function') {
+              try {
+                window.色色地牢_onBattleVictoryUi();
+              } catch (eV) {
+                console.warn('[色色地牢] 色色地牢_onBattleVictoryUi', eV);
+              }
+            }
             if (typeof window.色色地牢_commitPendingMapPosAfterBattle === 'function')
               window.色色地牢_commitPendingMapPosAfterBattle();
             if (typeof window.色色地牢_showMapDrawer === 'function') window.色色地牢_showMapDrawer({});

@@ -169,6 +169,42 @@
       '.bag-drawer-backdrop{position:absolute;inset:0;z-index:25;pointer-events:none;background:transparent;transition:background .2s}',
       '.bag-drawer.open ~ .bag-drawer-backdrop{pointer-events:auto;background:rgba(0,0,0,.12)}',
       '.bag-drawer-content{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column}',
+      '.save-drawer{position:absolute;left:0;top:0;bottom:0;right:0;width:100%;z-index:30;background:#e4d5b7;background-image:url("https://www.transparenttextures.com/patterns/paper-fibers.png");border-right:2px solid var(--ornate-dark);box-shadow:4px 0 24px rgba(0,0,0,.25);transform:translateX(-100%);transition:transform .3s cubic-bezier(0.19,1,0.22,1);overflow:hidden;display:flex;flex-direction:column}',
+      '.save-drawer.open{transform:translateX(0)}',
+      '.save-drawer-backdrop{position:absolute;inset:0;z-index:25;pointer-events:none;background:transparent;transition:background .2s}',
+      '.save-drawer.open ~ .save-drawer-backdrop{pointer-events:auto;background:rgba(0,0,0,.12)}',
+      '.save-drawer-content{flex:1;min-height:0;overflow:auto;padding:18px 18px 22px;display:flex;flex-direction:column;color:#3d2b1f}',
+      '.save-drawer-title{margin:0 0 14px;font-size:22px;font-weight:900;padding-bottom:12px;color:#2f2317;letter-spacing:.12em;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(61,43,31,.18)}',
+      '.save-slot-list{display:flex;flex-direction:column;gap:12px}',
+      '.save-slot-card{position:relative;background:linear-gradient(180deg,rgba(255,255,255,.82),rgba(255,255,255,.62));border:1px solid rgba(61,43,31,.22);border-radius:16px;padding:14px 14px 12px;box-shadow:0 10px 24px rgba(0,0,0,.10);overflow:hidden}',
+      '.save-slot-card::before{content:\"\";position:absolute;inset:-40px -40px auto auto;width:120px;height:120px;background:radial-gradient(circle at 30% 30%,rgba(201,162,39,.25),rgba(201,162,39,0) 70%);transform:rotate(12deg)}',
+      '.save-slot-card.is-empty{border-style:dashed;background:linear-gradient(180deg,rgba(255,255,255,.72),rgba(255,255,255,.55))}',
+      '.save-slot-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}',
+      '.save-slot-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px;min-width:160px;flex-shrink:0}',
+      '.save-slot-main{display:flex;flex-direction:column;gap:4px;min-width:0}',
+      '.save-slot-name{font-weight:950;letter-spacing:.08em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+      '.save-slot-meta{font-size:12px;opacity:.75;line-height:1.35;text-align:right;word-break:break-word;flex-shrink:0}',
+      '.save-map-name{font-size:14px;font-weight:950;letter-spacing:.14em;color:#2f2317;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}',
+      '.save-map-sub{font-size:12px;opacity:.72;font-weight:800;letter-spacing:.04em;margin-top:2px}',
+      '.save-party-grid{display:flex;flex-wrap:nowrap;gap:10px;justify-content:flex-end;align-items:flex-start}',
+      '.save-party-grid{overflow-x:auto;max-width:420px;padding-bottom:2px}',
+      '.save-party-grid::-webkit-scrollbar{height:6px}',
+      '.save-party-grid::-webkit-scrollbar-thumb{background:rgba(61,43,31,.18);border-radius:999px}',
+      '.save-party-unit{width:72px;display:flex;flex-direction:column;align-items:center;gap:6px}',
+      '.save-party-avatar{position:relative;width:72px;height:72px;border-radius:12px;background:#c4b8a8;border:2px solid #8b7355;overflow:hidden;background-size:cover;background-position:center top;box-shadow:0 4px 14px rgba(0,0,0,.12)}',
+      '.save-party-avatar.empty{opacity:.35;filter:grayscale(.7)}',
+      '.save-party-name{font-size:12px;font-weight:900;color:#2f2317;max-width:72px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.06em}',
+      '.save-party-lv{position:absolute;right:6px;bottom:6px;background:rgba(26,21,14,.82);color:#f0e6d0;border:1px solid rgba(201,162,39,.55);border-radius:999px;padding:2px 6px;font-size:11px;font-weight:900;line-height:1;box-shadow:0 2px 8px rgba(0,0,0,.25)}',
+      '.save-slot-foot{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-top:10px}',
+      '.save-slot-foot .save-slot-actions{margin-top:0}',
+      '.save-slot-actions{display:flex;flex-wrap:wrap;gap:10px;flex:1 1 auto;min-width:220px}',
+      '.save-slot-foot .save-party-grid{flex:0 0 auto;align-self:flex-end;margin-top:0}',
+      '.save-slot-btn{appearance:none;border:1px solid rgba(61,43,31,.22);background:rgba(255,255,255,.86);color:#2f2317;border-radius:12px;padding:8px 12px;font-size:12px;font-weight:900;cursor:pointer;transition:transform .06s ease,background .12s ease,box-shadow .12s ease,opacity .12s ease;box-shadow:0 1px 0 rgba(0,0,0,.04)}',
+      '.save-slot-btn:hover{background:#fff;box-shadow:0 6px 14px rgba(0,0,0,.10)}',
+      '.save-slot-btn:active{transform:translateY(1px)}',
+      '.save-slot-btn[disabled]{opacity:.45;cursor:not-allowed;pointer-events:none}',
+      '.save-slot-btn.primary{background:linear-gradient(180deg,rgba(255,236,168,.95),rgba(255,224,120,.85));border-color:rgba(201,162,39,.55)}',
+      '.save-slot-btn.danger{background:linear-gradient(180deg,rgba(255,210,210,.90),rgba(255,185,185,.72));border-color:rgba(140,45,45,.40)}',
       '.bag-wrapper{height:100%;display:flex;flex-direction:column;overflow:hidden}',
       '.bag-header{font-size:26px;font-weight:bold;border-bottom:3px solid var(--gold-border);padding:25px 35px 15px;flex-shrink:0;color:#4a3c1a;display:flex;align-items:center;gap:10px}.bag-header-icon{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}.bag-header-icon svg{width:28px;height:28px;stroke:currentColor}',
       '.bag-list{flex:1;padding:15px 35px 35px;display:flex;flex-direction:column;gap:10px;overflow-y:auto;-webkit-overflow-scrolling:touch}',
@@ -841,6 +877,8 @@
         if (miscBtn && miscBtn.contains(e.target)) return;
         var mapDrawerEl = document.getElementById('map-drawer');
         if (mapDrawerEl && mapDrawerEl.classList.contains('open') && mapDrawerEl.contains(e.target)) return;
+        var saveDrawerEl = document.getElementById('save-drawer');
+        if (saveDrawerEl && saveDrawerEl.classList.contains('open') && saveDrawerEl.contains(e.target)) return;
         hideMiscPanel();
         hideMapDrawer();
         $('.sidebar-btn[data-tab="misc"]').removeClass('active');
@@ -857,6 +895,7 @@
         document.removeEventListener('click', closeMiscPanelOnClickOutside);
         hideMapDrawer();
         hideBagDrawer();
+        hideSaveDrawer();
       }
       var mapDrawer = document.getElementById('map-drawer');
       var mapDrawerContent = document.getElementById('map-drawer-content');
@@ -1261,9 +1300,9 @@
               nodeType: realNode.type,
             };
           }
-          if (realNode && realNode.type === '普通战斗') {
+          if (realNode && (realNode.type === '普通战斗' || realNode.type === '精英战斗')) {
             if (typeof window.色色地牢_requestNormalBattleAiPrompt === 'function')
-              window.色色地牢_requestNormalBattleAiPrompt(m.area, id);
+              window.色色地牢_requestNormalBattleAiPrompt(m.area, id, realNode.type);
           }
         }, 0);
       }
@@ -1306,6 +1345,114 @@
       function hideMapDrawer() {
         if (mapDrawer) mapDrawer.classList.remove('open');
         $('.misc-sub-btn[data-misc="map"]').removeClass('active');
+      }
+      var saveDrawer = document.getElementById('save-drawer');
+      function hideSaveDrawer() {
+        if (saveDrawer) saveDrawer.classList.remove('open');
+        $('.misc-sub-btn[data-misc="save"]').removeClass('active');
+      }
+      function renderSaveContent() {
+        var box = document.getElementById('save-drawer-content');
+        if (!box) return;
+        var api = typeof window !== 'undefined' ? window.色色地牢_save : null;
+        if (!api || typeof api.getSaveSlots !== 'function') {
+          box.innerHTML =
+            '<h3 class="save-drawer-title">存档</h3><div style="opacity:.85">当前环境未提供存档模块（backend/save.js）。</div>';
+          return;
+        }
+        var slots = api.getSaveSlots();
+        var last = typeof api.getLastSlotIndex === 'function' ? api.getLastSlotIndex() : 0;
+        var curMap = typeof getMapData === 'function' ? getMapData() : null;
+        var curArea = curMap && curMap.area ? String(curMap.area) : '地牢';
+        box.innerHTML =
+          '<h3 class="save-drawer-title"><span>存档</span></h3>' +
+          '<div class="save-slot-list">' +
+          slots
+            .map(function (s) {
+              var idx = s.index | 0;
+              var isEmpty = !s.hasData;
+              var isLast = !isEmpty && idx === (last | 0);
+              var area = isEmpty ? curArea : s.areaName ? String(s.areaName) : '';
+              var ps = Array.isArray(s.partySummary) ? s.partySummary : [];
+              var timeText = s.savedAt ? String(s.savedAt).replace('T', ' ').replace('Z', '') : '';
+              var metaText = timeText || '';
+              var partyHtml = '';
+              if (!isEmpty) {
+                partyHtml =
+                  '<div class="save-party-grid" aria-label="队伍成员">' +
+                  ps
+                    .map(function (u) {
+                      var nm = u && u.name ? String(u.name) : '';
+                      var lv = u && u.level != null ? parseInt(u.level, 10) || 1 : 1;
+                      var av = u && u.avatar ? String(u.avatar) : '';
+                      var bg = '';
+                      if (av) {
+                        // 兼容 http(s)/data/blob 等；用 encodeURI 避免引号/空格破坏 style
+                        bg = "background-image:url('" + encodeURI(av).replace(/'/g, '%27') + "')";
+                      }
+                      return (
+                        '<div class="save-party-unit">' +
+                        '<div class="save-party-avatar" style="' +
+                        bg +
+                        '">' +
+                        '<div class="save-party-lv">Lv' +
+                        lv +
+                        '</div>' +
+                        '</div>' +
+                        '<div class="save-party-name">' +
+                        nm.replace(/</g, '&lt;').replace(/>/g, '&gt;') +
+                        '</div>' +
+                        '</div>'
+                      );
+                    })
+                    .join('') +
+                  '</div>';
+              }
+              var leftHeadHtml = isEmpty
+                ? ''
+                : '<div class="save-slot-main">' +
+                  '<div class="save-map-name">' +
+                  (area || '地牢').replace(/</g, '&lt;').replace(/>/g, '&gt;') +
+                  '</div>' +
+                  '<div class="save-map-sub"></div>' +
+                  '</div>';
+              return (
+                '<div class="save-slot-card' +
+                (isEmpty ? ' is-empty' : '') +
+                '" data-save-slot="' +
+                idx +
+                '">' +
+                '<div class="save-slot-head">' +
+                leftHeadHtml +
+                '<div class="save-slot-right">' +
+                '<div class="save-slot-meta">' +
+                metaText.replace(/</g, '&lt;').replace(/>/g, '&gt;') +
+                '</div>' +
+                '</div>' +
+                '</div>' +
+                '<div class="save-slot-foot">' +
+                '<div class="save-slot-actions">' +
+                '<button type="button" class="save-slot-btn primary" data-act="save">' +
+                (isEmpty ? '保存为新存档' : '覆盖保存') +
+                '</button>' +
+                (isEmpty
+                  ? ''
+                  : '<button type="button" class="save-slot-btn" data-act="load">读取</button>' +
+                    '<button type="button" class="save-slot-btn danger" data-act="clear">删除</button>') +
+                '</div>' +
+                partyHtml +
+                '</div>' +
+                '</div>'
+              );
+            })
+            .join('') +
+          '</div>';
+      }
+      function showSaveDrawer() {
+        hideMapDrawer();
+        hideBagDrawer();
+        renderSaveContent();
+        if (saveDrawer) saveDrawer.classList.add('open');
       }
       var bagDrawer = document.getElementById('bag-drawer');
       var bagDrawerContent = document.getElementById('bag-drawer-content');
@@ -2624,7 +2771,7 @@
         var idx = $(this).attr('data-avatar');
         if (idx) onCharacterAvatarClick(parseInt(idx, 10));
       });
-      $('.misc-sub-btn').on('click', function (e) {
+      $(document).on('click', '.misc-sub-btn', function (e) {
         e.stopPropagation();
         var btn = $(this);
         var wasActive = btn.hasClass('active');
@@ -2636,19 +2783,19 @@
         else btn.removeClass('active');
         if (isMap) {
           hideBagDrawer();
+          hideSaveDrawer();
           if (!wasActive) showMapDrawer();
           else hideMapDrawer();
         } else if (isBag) {
           hideMapDrawer();
+          hideSaveDrawer();
           if (!wasActive) showBagDrawer();
           else hideBagDrawer();
-        } else if (isSave && typeof window.色色地牢_save !== 'undefined') {
-          var payload = getCurrentGameState();
-          var slotCount = window.色色地牢_save.SLOT_COUNT || 5;
-          var idx = window.色色地牢_save.getLastSlotIndex();
-          window.色色地牢_save.saveSlot(idx, payload);
-          if (typeof toastr !== 'undefined') toastr.info('已保存到槽位 ' + (idx + 1));
-          else console.info('[色色地牢] 已保存到槽位', idx + 1);
+        } else if (isSave) {
+          hideMapDrawer();
+          hideBagDrawer();
+          if (!wasActive) showSaveDrawer();
+          else hideSaveDrawer();
         }
       });
       var miscInner = miscPanel ? miscPanel.querySelector('.misc-panel-inner') : null;
@@ -2666,6 +2813,38 @@
       });
       $('#bag-drawer-backdrop').on('click', function () {
         hideBagDrawer();
+      });
+      $('#save-drawer-backdrop').on('click', function () {
+        hideSaveDrawer();
+      });
+      $(document).on('click', '#save-drawer-content .save-slot-btn', function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        var act = this.getAttribute('data-act');
+        var card = this.closest('[data-save-slot]');
+        if (!card) return;
+        var idx = parseInt(card.getAttribute('data-save-slot'), 10);
+        if (isNaN(idx)) return;
+        var api = typeof window !== 'undefined' ? window.色色地牢_save : null;
+        if (!api) return;
+        if (act === 'save' && typeof api.saveSlot === 'function') {
+          var payload = getCurrentGameState();
+          api.saveSlot(idx, payload);
+          if (typeof toastr !== 'undefined') toastr.info('已保存');
+          // 延迟重绘：避免 click 冒泡到 document 时 target 已被替换，误触“点外部关闭”
+          setTimeout(renderSaveContent, 0);
+        } else if (act === 'load' && typeof api.loadSlot === 'function') {
+          var payload2 = api.loadSlot(idx);
+          if (payload2) {
+            applySavePayload(payload2);
+            if (typeof toastr !== 'undefined') toastr.info('已读取存档');
+          }
+          setTimeout(renderSaveContent, 0);
+        } else if (act === 'clear' && typeof api.clearSlot === 'function') {
+          api.clearSlot(idx);
+          if (typeof toastr !== 'undefined') toastr.info('已删除存档');
+          setTimeout(renderSaveContent, 0);
+        }
       });
       $('#character-detail-backdrop').on('click', function () {
         if (openDetailAvatar) hideCharacterDetail(true);
@@ -2955,6 +3134,7 @@
       if (v && v.difficulty != null) meta.difficulty = v.difficulty;
       if (v && v.diffUid != null) meta.diffUid = v.diffUid;
       if (v && v.gold != null) meta.gold = v.gold;
+      var battleFloorTitle = v && v.battleFloorTitle != null ? String(v.battleFloorTitle) : '';
       return {
         party: party,
         enemyParty: enemyParty,
@@ -2966,6 +3146,7 @@
           inv: m.inv,
           revealOrder: m.revealOrder,
         },
+        battleFloorTitle: battleFloorTitle,
         meta: meta,
         history: { recentBattleLog: recentLog },
         nodeStates: nodeStates,
@@ -3193,6 +3374,12 @@
         }
       }
       if (payload.nodeStates && typeof payload.nodeStates === 'object') v.nodeStates = payload.nodeStates;
+      if (Object.prototype.hasOwnProperty.call(payload, 'battleFloorTitle')) {
+        v.battleFloorTitle = payload.battleFloorTitle != null ? String(payload.battleFloorTitle) : '';
+      } else {
+        // 兼容旧存档：不带该字段时也要清空，避免沿用上一局残留
+        v.battleFloorTitle = '';
+      }
       var pm = payload.meta && typeof payload.meta === 'object' ? payload.meta : {};
       if (pm.difficulty != null) v.difficulty = pm.difficulty;
       if (pm.diffUid != null) v.diffUid = pm.diffUid;
@@ -3904,6 +4091,7 @@
         if (!v) v = {};
         v.party = party;
         v.enemyParty = emptyEnemyParty;
+        v.battleFloorTitle = '';
         v.map = initialMap;
         v.buffDefinitions = BUFF_DEFINITIONS;
         v.nodeStates = {};
