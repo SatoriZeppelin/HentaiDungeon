@@ -673,6 +673,23 @@
     (document.head || document.documentElement).appendChild(style);
   }
 
+  function injectEnemyIntentStyle() {
+    if (document.getElementById('battle-enemy-intent-style')) return;
+    var st = document.createElement('style');
+    st.id = 'battle-enemy-intent-style';
+    st.textContent =
+      '.slot-enemy-intent-ribbon{margin-top:6px;display:flex;flex-wrap:wrap;gap:4px;align-items:center;min-height:22px}' +
+      '.enemy-intent-chip{display:inline-flex;align-items:center;gap:4px;border-radius:8px;padding:2px 6px;font-size:11px;font-weight:900;line-height:1.15;border:1px solid rgba(0,0,0,.12);box-shadow:0 1px 2px rgba(0,0,0,.06)}' +
+      '.enemy-intent-chip .enemy-intent-nums{letter-spacing:.04em;font-variant-numeric:tabular-nums}' +
+      '.enemy-intent-chip .enemy-intent-icon{display:inline-flex;width:14px;height:14px;flex-shrink:0;align-items:center;justify-content:center}' +
+      '.enemy-intent-chip .enemy-intent-icon svg{width:12px;height:12px;display:block}' +
+      '.enemy-intent-chip--red{background:rgba(220,80,80,.22);border-color:rgba(160,40,40,.35);color:#6b1c1c}' +
+      '.enemy-intent-chip--blue{background:rgba(70,120,220,.20);border-color:rgba(40,80,180,.35);color:#1a2f6e}' +
+      '.enemy-intent-chip--green{background:rgba(60,170,100,.22);border-color:rgba(30,120,60,.35);color:#143d22}' +
+      '.enemy-intent-chip--pink{background:rgba(255,120,170,.24);border-color:rgba(200,70,130,.38);color:#8b1c4a}';
+    (document.head || document.documentElement).appendChild(st);
+  }
+
   /**
    * 进入技能目标选择模式：根据敌方槽位状态高亮可被选为目标的敌方槽位，点击某一高亮槽位后调用 onTargetSelected(槽位号 1～6) 并退出模式
    * @param {Array<object|null>} enemySlots 敌方 6 个槽位单位列表（同 getTargetableEnemySlotIndices 参数）
@@ -835,6 +852,10 @@
     phase: BATTLE_PHASE.PLAYER_ACTION,
     erika奉献TriggeredThisRound: false,
     currentActingAllySlot: null,
+    /** 是否在敌方卡上显示「本回合将执行的意图」预览（玩家回合为 true，敌方行动结束后为 false） */
+    showEnemyIntentUI: false,
+    /** 敌方 1～6 号位本回合锁定行动（与 pickEnemyActionType 返回值同格式）；不写入存档 */
+    plannedEnemyActions: [null, null, null, null, null, null],
   };
 
   function getBigRound() {
@@ -936,6 +957,12 @@
   function getPlayerCritRate(attacker) {
     var agi = num(attacker.agi);
     var rate = Math.min(100, Math.max(0, BASE_PLAYER_CRIT + agi * PLAYER_CRIT_PER_AGI));
+    // 清漓·福泽：每 1 点幸运(Luk) 额外获得 3% 暴击率（仅清漓自身）
+    if (attacker && attacker.name === '清漓') {
+      // 必须用 getDisplayStat：确保包含福泽等显示属性加成
+      var luk0 = typeof getDisplayStat === 'function' ? num(getDisplayStat(attacker, 'luk')) : num(attacker.luk);
+      rate = Math.min(100, Math.max(0, rate + luk0 * 3));
+    }
     if (
       attacker.name === '昼墨' &&
       attacker.specialSkillsUnlocked &&
@@ -987,6 +1014,21 @@
     var baseGetDisplayStat = options.getDisplayStat;
     var getDisplayStat = function (unit, key) {
       var v = baseGetDisplayStat ? baseGetDisplayStat(unit, key) : 0;
+      // 清漓·福泽：清漓存活时，全体友方幸运 +3
+      if (key === 'luk') {
+        try {
+          var party0 = getParty ? getParty() : null;
+          if (party0 && Array.isArray(party0)) {
+            for (var qi = 0; qi < party0.length; qi++) {
+              var q = party0[qi];
+              if (q && q.name === '清漓' && (parseInt(q.hp, 10) || 0) > 0) {
+                v += 3;
+                break;
+              }
+            }
+          }
+        } catch (eQ) {}
+      }
       if (
         unit &&
         unit.buffs &&
@@ -1354,6 +1396,9 @@
     var AP_FLAME_SVG = options.AP_FLAME_SVG || '';
     var SKILL_ATTACK_SVG = options.SKILL_ATTACK_SVG || '';
     var SKILL_DEFENSE_SVG = options.SKILL_DEFENSE_SVG || '';
+    var INTENT_CLOTHES_BREAK_SVG = options.INTENT_CLOTHES_BREAK_SVG || '';
+    var INTENT_BIND_CHAIN_SVG = options.INTENT_BIND_CHAIN_SVG || '';
+    var INTENT_LEWD_HEART_SVG = options.INTENT_LEWD_HEART_SVG || '';
     var SKILL_BAIYA_SVG = options.SKILL_BAIYA_SVG || '';
     var SKILL_WOLF_PACK_SVG = options.SKILL_WOLF_PACK_SVG || '';
     var SKILL_ROAR_SVG = options.SKILL_ROAR_SVG || '';
@@ -1774,6 +1819,14 @@
           '</span><span>' +
           def +
           '</span></span></div>' +
+          (battleState.showEnemyIntentUI &&
+          hp > 0 &&
+          battleState.plannedEnemyActions[i - 1] != null &&
+          battleState.plannedEnemyActions[i - 1] !== ''
+            ? '<div class="slot-enemy-intent-ribbon">' +
+              buildEnemyIntentRibbonHtml(en, battleState.plannedEnemyActions[i - 1]) +
+              '</div>'
+            : '') +
           '<div class="slot-char-buffs">' +
           renderBuffsHtml(en.buffs || []) +
           '</div>' +
@@ -2562,6 +2615,118 @@
       }
       return pickWeightedEnemyAction(buildEnemyActionWeights(monster, party, enemies, slot));
     }
+
+    /**
+     * 玩家回合开始时为每个存活敌方锁定本回合行动（敌方行动阶段按此执行，不写入存档）。
+     */
+    function planEnemyActionsForRound() {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      for (var s = 1; s <= 6; s++) {
+        battleState.plannedEnemyActions[s - 1] = null;
+        var e = enemies[s - 1];
+        if (!e || (parseInt(e.hp, 10) || 0) <= 0) continue;
+        battleState.plannedEnemyActions[s - 1] = pickEnemyActionType(e, { party: party, enemies: enemies, slot: s });
+      }
+    }
+
+    function getIntentColorFromAction(monster, actionType) {
+      if (!actionType) return 'red';
+      if (
+        actionType === 'prog_clothes_break' ||
+        actionType === 'prog_bind' ||
+        actionType === 'prog_forced_rape' ||
+        actionType === 'prog_lewd_grope'
+      )
+        return 'pink';
+      if (actionType.indexOf('intent:') === 0) {
+        var iix = parseInt(actionType.split(':')[1], 10);
+        var it0 = monster.intents && monster.intents[iix];
+        if (it0) {
+          var tgt0 = (it0.target || '').toLowerCase();
+          if (tgt0 === 'self') return 'green';
+          if (tgt0 === 'ally') return 'blue';
+        }
+        return 'red';
+      }
+      if (actionType === 'defense') return 'green';
+      return 'red';
+    }
+
+    function buildEnemyIntentNumsText(monster, actionType) {
+      if (actionType && actionType.indexOf('intent:') === 0) {
+        var iix2 = parseInt(actionType.split(':')[1], 10);
+        var it1 = monster.intents && monster.intents[iix2];
+        if (it1) {
+          var a = it1.param1 != null && String(it1.param1).trim() !== '' ? String(it1.param1).trim() : '';
+          var b = it1.param2 != null && String(it1.param2).trim() !== '' ? String(it1.param2).trim() : '';
+          if (a && b) return a + b;
+          if (a) return a;
+          if (b) return b;
+        }
+      }
+      return '';
+    }
+
+    function getIntentIconInnerHtml(monster, actionType) {
+      var atkSvg = SKILL_ATTACK_SVG || '';
+      var defSvg = SKILL_DEFENSE_SVG || '';
+      if (actionType && actionType.indexOf('intent:') === 0) {
+        var iix3 = parseInt(actionType.split(':')[1], 10);
+        var it2 = monster.intents && monster.intents[iix3];
+        if (it2) {
+          var act0 = (it2.action || '').toLowerCase();
+          var eff0 = (it2.effect || '').toLowerCase();
+          if (act0 === 'taunt' || eff0 === 'taunt') return defSvg;
+          if (act0 === 'attack' || act0 === 'multi_attack') return atkSvg;
+          if (act0 === 'debuff')
+            return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>';
+          if (act0 === 'buff' || act0 === 'heal')
+            return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.18L12 21z"/></svg>';
+        }
+      }
+      switch (actionType) {
+        case 'single_target':
+        case 'multi_hit':
+          return atkSvg;
+        case 'prog_clothes_break':
+          return INTENT_CLOTHES_BREAK_SVG || atkSvg;
+        case 'aoe':
+          return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>';
+        case 'defense':
+          return defSvg;
+        case 'prog_bind':
+          return INTENT_BIND_CHAIN_SVG || atkSvg;
+        case 'prog_forced_rape':
+        case 'prog_lewd_grope':
+          return INTENT_LEWD_HEART_SVG || atkSvg;
+        default:
+          return atkSvg;
+      }
+    }
+
+    function buildEnemyIntentRibbonHtml(monster, actionType) {
+      if (!actionType) return '';
+      var color = getIntentColorFromAction(monster, actionType);
+      var cls = 'enemy-intent-chip enemy-intent-chip--' + color;
+      var nums = buildEnemyIntentNumsText(monster, actionType) || '';
+      var numsHtml = nums
+        ? '<span class="enemy-intent-nums">' + nums.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span>'
+        : '';
+      var iconHtml = '<span class="enemy-intent-icon">' + getIntentIconInnerHtml(monster, actionType) + '</span>';
+      var title = formatEnemyActionLabel(monster, actionType);
+      return (
+        '<span class="' +
+        cls +
+        '" title="' +
+        title.replace(/"/g, '&quot;').replace(/</g, '&lt;') +
+        '">' +
+        numsHtml +
+        iconHtml +
+        '</span>'
+      );
+    }
+
     /** 执行 enemy_design 第 idx 条意图 */
     function applyEnemyIntentByIndex(monster, idx, party, enemies, enemySlotNum, onDone) {
       onDone = typeof onDone === 'function' ? onDone : function () {};
@@ -3321,7 +3486,10 @@
           return;
         }
         {
-          var actionType = pickEnemyActionType(enemy, { party: party, enemies: enemies, slot: slot });
+          var actionType =
+            battleState.plannedEnemyActions[slot - 1] != null && battleState.plannedEnemyActions[slot - 1] !== ''
+              ? battleState.plannedEnemyActions[slot - 1]
+              : pickEnemyActionType(enemy, { party: party, enemies: enemies, slot: slot });
           console.info(
             '[战斗] ' +
               slot +
@@ -8379,6 +8547,12 @@
     if (typeof window !== 'undefined' && window.BattleGrid) {
       window.BattleGrid.appendActionLog = appendActionLog;
       window.BattleGrid.refreshBattleView = function () {
+        // 遭遇写入 enemyParty、存档同步等会在此刷新；须与玩家回合「规划意图」同步，否则仅 initBattleUI 时规划一次会在敌方仍为空时锁定全 null，后续刷新不会补上。
+        if (getBattlePhase() === BATTLE_PHASE.PLAYER_ACTION) {
+          injectEnemyIntentStyle();
+          planEnemyActionsForRound();
+          battleState.showEnemyIntentUI = true;
+        }
         renderAllySlots();
         renderEnemySlots();
         updateBattlePhaseDisplay();
@@ -8413,10 +8587,20 @@
           }
           saveBattleData(party, getEnemyParty());
           renderAllySlots(party);
+          injectEnemyIntentStyle();
+          planEnemyActionsForRound();
+          battleState.showEnemyIntentUI = true;
           renderEnemySlots(getEnemyParty());
           done();
         } else if (next === 'player_resolution') resolvePlayerBuffs(done);
-        else if (next === 'enemy_action') resolveEnemyActions(done);
+        else if (next === 'enemy_action')
+          resolveEnemyActions(function () {
+            battleState.showEnemyIntentUI = false;
+            for (var pi = 0; pi < 6; pi++) battleState.plannedEnemyActions[pi] = null;
+            saveBattleData(getParty(), getEnemyParty());
+            renderEnemySlots(getEnemyParty());
+            done();
+          });
         else if (next === 'enemy_resolution') resolveEnemyBuffs(done);
         else done();
         return next;
@@ -8447,6 +8631,10 @@
           window.BattleGrid.advanceBattlePhase(runToNextPlayerAction);
         });
       }
+      injectEnemyIntentStyle();
+      planEnemyActionsForRound();
+      battleState.showEnemyIntentUI = true;
+      renderEnemySlots(getEnemyParty());
     }
     if (typeof window !== 'undefined' && window.BattleGrid) window.BattleGrid.resolveAttack = resolveAttack;
   }

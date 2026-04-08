@@ -175,7 +175,12 @@
       '.save-drawer.open ~ .save-drawer-backdrop{pointer-events:auto;background:rgba(0,0,0,.12)}',
       '.save-drawer-content{flex:1;min-height:0;overflow:auto;padding:18px 18px 22px;display:flex;flex-direction:column;color:#3d2b1f}',
       '.save-drawer-title{margin:0 0 14px;font-size:22px;font-weight:900;padding-bottom:12px;color:#2f2317;letter-spacing:.12em;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(61,43,31,.18)}',
+      '.save-drawer-title-left{display:flex;align-items:center;gap:12px;min-width:0}',
+      '.save-drawer-title-left>span{display:inline-flex;align-items:center}',
+      '.save-drawer-title-right{display:flex;align-items:center;gap:10px;min-width:0}',
       '.save-slot-list{display:flex;flex-direction:column;gap:12px}',
+      '.save-slot-list.two-col{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch}',
+      '.save-slot-list.two-col .save-slot-card{height:100%}',
       '.save-slot-card{position:relative;background:linear-gradient(180deg,rgba(255,255,255,.82),rgba(255,255,255,.62));border:1px solid rgba(61,43,31,.22);border-radius:16px;padding:14px 14px 12px;box-shadow:0 10px 24px rgba(0,0,0,.10);overflow:hidden}',
       '.save-slot-card::before{content:\"\";position:absolute;inset:-40px -40px auto auto;width:120px;height:120px;background:radial-gradient(circle at 30% 30%,rgba(201,162,39,.25),rgba(201,162,39,0) 70%);transform:rotate(12deg)}',
       '.save-slot-card.is-empty{border-style:dashed;background:linear-gradient(180deg,rgba(255,255,255,.72),rgba(255,255,255,.55))}',
@@ -205,6 +210,13 @@
       '.save-slot-btn[disabled]{opacity:.45;cursor:not-allowed;pointer-events:none}',
       '.save-slot-btn.primary{background:linear-gradient(180deg,rgba(255,236,168,.95),rgba(255,224,120,.85));border-color:rgba(201,162,39,.55)}',
       '.save-slot-btn.danger{background:linear-gradient(180deg,rgba(255,210,210,.90),rgba(255,185,185,.72));border-color:rgba(140,45,45,.40)}',
+      '.save-slot-card.snapshot-auto-slot{border-color:rgba(46,106,165,.55);background:linear-gradient(180deg,rgba(230,242,255,.92),rgba(210,228,248,.75));box-shadow:0 8px 20px rgba(46,106,165,.15)}',
+      '.save-slot-card.snapshot-auto-slot .save-map-name{color:#1a4a7a}',
+      '.snapshot-timeline-block{margin:0 0 14px;padding:12px;border:1px solid rgba(61,43,31,.18);border-radius:12px;background:rgba(255,255,255,.5)}',
+      '.snapshot-timeline-title{font-size:13px;font-weight:950;color:#2f2317;margin:0 0 8px;letter-spacing:.06em}',
+      '.snapshot-timeline-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-top:1px solid rgba(61,43,31,.12);font-size:12px}',
+      '.snapshot-timeline-row:first-of-type{border-top:none}',
+      '.snapshot-timeline-meta{opacity:.85;flex:1;min-width:0;line-height:1.35}',
       '.bag-wrapper{height:100%;display:flex;flex-direction:column;overflow:hidden}',
       '.bag-header{font-size:26px;font-weight:bold;border-bottom:3px solid var(--gold-border);padding:25px 35px 15px;flex-shrink:0;color:#4a3c1a;display:flex;align-items:center;gap:10px}.bag-header-icon{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}.bag-header-icon svg{width:28px;height:28px;stroke:currentColor}',
       '.bag-list{flex:1;padding:15px 35px 35px;display:flex;flex-direction:column;gap:10px;overflow-y:auto;-webkit-overflow-scrolling:touch}',
@@ -721,7 +733,13 @@
           '</span>'
         );
       });
-      return withCalcs.replace(/【([^】]+)】/g, function (_, n) {
+      // 特殊图标占位：在做完 HTML 转义后再替换为真实 SVG，避免被转义掉
+      var luckIconHtml =
+        '（<span class="attr-icon" style="color:#9c27b0;vertical-align:-2px">' +
+        '<svg class="attr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16.17 7.83 2 22"/><path d="M4.02 12a2.827 2.827 0 1 1 3.81-4.17A2.827 2.827 0 1 1 12 4.02a2.827 2.827 0 1 1 4.17 3.81A2.827 2.827 0 1 1 19.98 12a2.827 2.827 0 1 1-3.81 4.17A2.827 2.827 0 1 1 12 19.98a2.827 2.827 0 1 1-4.17-3.81A1 1 0 1 1 4 12"/><path d="m7.83 7.83 8.34 8.34"/></svg>' +
+        '</span>）';
+      var withIcons = withCalcs.replace(/（幸运的svg）/g, luckIconHtml);
+      return withIcons.replace(/【([^】]+)】/g, function (_, n) {
         var id = n.trim();
         return '<span class="buff-ref" data-buff-id="' + escapeHtml(id) + '">【' + escapeHtml(id) + '】</span>';
       });
@@ -1351,6 +1369,25 @@
         if (saveDrawer) saveDrawer.classList.remove('open');
         $('.misc-sub-btn[data-misc="save"]').removeClass('active');
       }
+      function syncSaveDrawerCardLayout() {
+        var box = document.getElementById('save-drawer-content');
+        if (!box) return;
+        var list = box.querySelector('.save-slot-list');
+        if (!list) return;
+        // 规则：若容器宽度二等分后仍能容纳卡片内容，则用两列；否则单列占满。
+        // 经验下限：actions(min 220) + partyGrid(max 420) + gap/head 约 24 ≈ 664
+        var minHalf = 664;
+        var w = box.clientWidth || 0;
+        if (w > 0 && w / 2 >= minHalf) list.classList.add('two-col');
+        else list.classList.remove('two-col');
+      }
+      if (typeof window !== 'undefined' && !window.__色色地牢_saveDrawerResizeHooked) {
+        window.__色色地牢_saveDrawerResizeHooked = true;
+        window.addEventListener('resize', function () {
+          var drawer = document.getElementById('save-drawer');
+          if (drawer && drawer.classList.contains('open')) syncSaveDrawerCardLayout();
+        });
+      }
       function renderSaveContent() {
         var box = document.getElementById('save-drawer-content');
         if (!box) return;
@@ -1364,61 +1401,182 @@
         var last = typeof api.getLastSlotIndex === 'function' ? api.getLastSlotIndex() : 0;
         var curMap = typeof getMapData === 'function' ? getMapData() : null;
         var curArea = curMap && curMap.area ? String(curMap.area) : '地牢';
+        var newSaveIndex = slots && slots.length ? (slots[0].index | 0) : 0;
+        var autoWrap = typeof api.readAutoSnapshotWrap === 'function' ? api.readAutoSnapshotWrap() : null;
+        var autoTime =
+          autoWrap && autoWrap.savedAt
+            ? String(autoWrap.savedAt).replace('T', ' ').replace(/\.\d{3}Z?$/, '').replace('Z', '')
+            : '尚无自动快照';
+        var autoPos = autoWrap && autoWrap.mapPos ? String(autoWrap.mapPos) : '—';
+        var autoArea =
+          autoWrap && autoWrap.areaName
+            ? String(autoWrap.areaName)
+            : autoWrap && autoWrap.payload && autoWrap.payload.map && autoWrap.payload.map.area
+              ? String(autoWrap.payload.map.area)
+              : '';
+        var autoDisabled = !autoWrap || !autoWrap.payload;
+        var autoPartyHtml = '';
+        if (!autoDisabled && autoWrap && autoWrap.payload && Array.isArray(autoWrap.payload.party)) {
+          try {
+            var psAuto = autoWrap.payload.party
+              .map(function (ch) {
+                if (!ch) return null;
+                return {
+                  name: ch.name || '',
+                  level: ch.level != null ? ch.level : 1,
+                  avatar: ch.avatar || '',
+                };
+              })
+              .filter(Boolean)
+              .slice(0, 4);
+            autoPartyHtml =
+              '<div class="save-party-grid" aria-label="队伍成员">' +
+              psAuto
+                .map(function (u) {
+                  var nm = u && u.name ? String(u.name) : '';
+                  var lv = u && u.level != null ? parseInt(u.level, 10) || 1 : 1;
+                  var av = u && u.avatar ? String(u.avatar) : '';
+                  var bg = '';
+                  if (av) {
+                    bg = "background-image:url('" + encodeURI(av).replace(/'/g, '%27') + "')";
+                  }
+                  return (
+                    '<div class="save-party-unit">' +
+                    '<div class="save-party-avatar" style="' +
+                    bg +
+                    '">' +
+                    '<div class="save-party-lv">Lv' +
+                    lv +
+                    '</div>' +
+                    '</div>' +
+                    '<div class="save-party-name">' +
+                    nm.replace(/</g, '&lt;').replace(/>/g, '&gt;') +
+                    '</div>' +
+                    '</div>'
+                  );
+                })
+                .join('') +
+              '</div>';
+          } catch (eAutoPs) {
+            autoPartyHtml = '';
+          }
+        }
+        var autoCard =
+          '<div class="save-slot-card snapshot-auto-slot" data-snapshot-auto="1">' +
+          '<div class="save-slot-head">' +
+          '<div class="save-slot-main">' +
+          '<div class="save-map-name">' +
+          escapeHtml(autoArea || curArea || '地牢') +
+          '</div>' +
+          '<div class="save-map-sub"></div>' +
+          '</div>' +
+          '<div class="save-slot-right">' +
+          '<div class="save-slot-meta">' +
+          escapeHtml(autoTime) +
+          '</div>' +
+          '</div>' +
+          '</div>' +
+          '<div class="save-slot-foot">' +
+          '<div class="save-slot-actions">' +
+          '<button type="button" class="save-slot-btn primary" data-act="load-autosnapshot"' +
+          (autoDisabled ? ' disabled' : '') +
+          '>读取自动快照</button>' +
+          '</div>' +
+          autoPartyHtml +
+          '</div></div>';
+        var timelineRows = '';
+        for (var tj = snapshotTimeline.length - 1; tj >= 0; tj--) {
+          var te = snapshotTimeline[tj];
+          if (!te) continue;
+          var tTime = te.capturedAt
+            ? String(te.capturedAt).replace('T', ' ').replace(/\.\d{3}Z?$/, '').replace('Z', '')
+            : '';
+          var tPos = te.mapPos ? String(te.mapPos) : '—';
+          timelineRows +=
+            '<div class="snapshot-timeline-row" data-timeline-index="' +
+            tj +
+            '">' +
+            '<div class="snapshot-timeline-meta">' +
+            escapeHtml(tTime) +
+            ' · 格 <b>' +
+            escapeHtml(tPos) +
+            '</b> · ' +
+            escapeHtml(te.areaName || '') +
+            '</div>' +
+            '<button type="button" class="save-slot-btn" data-act="load-timeline">读取</button>' +
+            '</div>';
+        }
+        var timelineBlock =
+          snapshotTimeline.length > 0
+            ? '<div class="snapshot-timeline-block">' +
+              '<div class="snapshot-timeline-title">本局快照时间线（内存，新档重置）</div>' +
+              timelineRows +
+              '</div>'
+            : '';
         box.innerHTML =
-          '<h3 class="save-drawer-title"><span>存档</span></h3>' +
+          '<h3 class="save-drawer-title">' +
+          '<span class="save-drawer-title-left">' +
+          '<span>存档</span>' +
+          '<button type="button" class="save-slot-btn primary" data-act="save-new" data-new-index="' +
+          newSaveIndex +
+          '">保存为新存档</button>' +
+          '</span>' +
+          '<span class="save-drawer-title-right"></span>' +
+          '</h3>' +
+          autoCard +
+          timelineBlock +
           '<div class="save-slot-list">' +
           slots
+            .filter(function (s) {
+              return !!(s && s.hasData);
+            })
             .map(function (s) {
               var idx = s.index | 0;
-              var isEmpty = !s.hasData;
-              var isLast = !isEmpty && idx === (last | 0);
-              var area = isEmpty ? curArea : s.areaName ? String(s.areaName) : '';
+              var isLast = idx === (last | 0);
+              var area = s.areaName ? String(s.areaName) : curArea;
               var ps = Array.isArray(s.partySummary) ? s.partySummary : [];
               var timeText = s.savedAt ? String(s.savedAt).replace('T', ' ').replace('Z', '') : '';
               var metaText = timeText || '';
               var partyHtml = '';
-              if (!isEmpty) {
-                partyHtml =
-                  '<div class="save-party-grid" aria-label="队伍成员">' +
-                  ps
-                    .map(function (u) {
-                      var nm = u && u.name ? String(u.name) : '';
-                      var lv = u && u.level != null ? parseInt(u.level, 10) || 1 : 1;
-                      var av = u && u.avatar ? String(u.avatar) : '';
-                      var bg = '';
-                      if (av) {
-                        // 兼容 http(s)/data/blob 等；用 encodeURI 避免引号/空格破坏 style
-                        bg = "background-image:url('" + encodeURI(av).replace(/'/g, '%27') + "')";
-                      }
-                      return (
-                        '<div class="save-party-unit">' +
-                        '<div class="save-party-avatar" style="' +
-                        bg +
-                        '">' +
-                        '<div class="save-party-lv">Lv' +
-                        lv +
-                        '</div>' +
-                        '</div>' +
-                        '<div class="save-party-name">' +
-                        nm.replace(/</g, '&lt;').replace(/>/g, '&gt;') +
-                        '</div>' +
-                        '</div>'
-                      );
-                    })
-                    .join('') +
-                  '</div>';
-              }
-              var leftHeadHtml = isEmpty
-                ? ''
-                : '<div class="save-slot-main">' +
-                  '<div class="save-map-name">' +
-                  (area || '地牢').replace(/</g, '&lt;').replace(/>/g, '&gt;') +
-                  '</div>' +
-                  '<div class="save-map-sub"></div>' +
-                  '</div>';
+              partyHtml =
+                '<div class="save-party-grid" aria-label="队伍成员">' +
+                ps
+                  .map(function (u) {
+                    var nm = u && u.name ? String(u.name) : '';
+                    var lv = u && u.level != null ? parseInt(u.level, 10) || 1 : 1;
+                    var av = u && u.avatar ? String(u.avatar) : '';
+                    var bg = '';
+                    if (av) {
+                      // 兼容 http(s)/data/blob 等；用 encodeURI 避免引号/空格破坏 style
+                      bg = "background-image:url('" + encodeURI(av).replace(/'/g, '%27') + "')";
+                    }
+                    return (
+                      '<div class="save-party-unit">' +
+                      '<div class="save-party-avatar" style="' +
+                      bg +
+                      '">' +
+                      '<div class="save-party-lv">Lv' +
+                      lv +
+                      '</div>' +
+                      '</div>' +
+                      '<div class="save-party-name">' +
+                      nm.replace(/</g, '&lt;').replace(/>/g, '&gt;') +
+                      '</div>' +
+                      '</div>'
+                    );
+                  })
+                  .join('') +
+                '</div>';
+              var leftHeadHtml =
+                '<div class="save-slot-main">' +
+                '<div class="save-map-name">' +
+                (area || '地牢').replace(/</g, '&lt;').replace(/>/g, '&gt;') +
+                '</div>' +
+                '<div class="save-map-sub"></div>' +
+                '</div>';
               return (
                 '<div class="save-slot-card' +
-                (isEmpty ? ' is-empty' : '') +
+                (isLast ? ' is-last-save' : '') +
                 '" data-save-slot="' +
                 idx +
                 '">' +
@@ -1433,12 +1591,10 @@
                 '<div class="save-slot-foot">' +
                 '<div class="save-slot-actions">' +
                 '<button type="button" class="save-slot-btn primary" data-act="save">' +
-                (isEmpty ? '保存为新存档' : '覆盖保存') +
+                '覆盖保存' +
                 '</button>' +
-                (isEmpty
-                  ? ''
-                  : '<button type="button" class="save-slot-btn" data-act="load">读取</button>' +
-                    '<button type="button" class="save-slot-btn danger" data-act="clear">删除</button>') +
+                '<button type="button" class="save-slot-btn" data-act="load">读取</button>' +
+                '<button type="button" class="save-slot-btn danger" data-act="clear">删除</button>' +
                 '</div>' +
                 partyHtml +
                 '</div>' +
@@ -1447,6 +1603,7 @@
             })
             .join('') +
           '</div>';
+        requestAnimationFrame(syncSaveDrawerCardLayout);
       }
       function showSaveDrawer() {
         hideMapDrawer();
@@ -2003,6 +2160,10 @@
           ? '<div class="slot-char-buffs">' + renderBuffs(buffList) + '</div>'
           : '<div style="color:#888;font-size:12px;text-align:center;padding:15px">暂无状态效果</div>';
         var luk = stats && stats.luk != null ? Number(stats.luk) : ch ? getDisplayStat(ch, 'luk') || 0 : 0;
+        // 数据报表在“属性分配预览”等场景会传入 stats，从而绕过 getDisplayStat 的被动加成；
+        // 这里补上清漓·福泽对全体友方幸运 +3 的影响，确保命中/暴击等报表一致。
+        if (ch && stats && stats.luk != null && typeof hasAliveQingliInParty === 'function' && hasAliveQingliInParty())
+          luk += 3;
         var agi = stats && stats.agi != null ? Number(stats.agi) : ch ? getDisplayStat(ch, 'agi') || 0 : 0;
         var hitRate = ch ? Math.min(100, Math.max(0, 50 + luk * 5)) : 0;
         var dodgeRate = agi * 2;
@@ -2015,7 +2176,10 @@
         }
         var has心眼 =
           ch && ch.name === '昼墨' && ch.specialSkillsUnlocked && ch.specialSkillsUnlocked.indexOf('心眼') !== -1;
-        var critRate = ch ? Math.min(100, Math.max(0, baseCrit + (has心眼 ? 攻势L * 5 : 0))) : 0;
+        var qingliExtraCrit = ch && ch.name === '清漓' ? luk * 3 : 0;
+        var critRate = ch
+          ? Math.min(100, Math.max(0, baseCrit + (has心眼 ? 攻势L * 5 : 0) + qingliExtraCrit))
+          : 0;
         function reportAttrHtml(attrKey) {
           if (attrKey === '攻势') {
             return '<span class="report-attr-name" style="color:#1a1a1a">攻势</span>';
@@ -2049,26 +2213,15 @@
           ? reportAttrHtml('agi') + '×2 = ' + agi + '×2 = ' + dodgeRate + '%。对方命中率计算时会减去此值。'
           : null;
         var sourceCrit = ch
-          ? has心眼 && 攻势L > 0
-            ? '20 + ' +
-              reportAttrHtml('agi') +
-              '×1 + ' +
-              reportAttrHtml('攻势') +
-              '×5 = 20 + ' +
-              agi +
-              ' + ' +
-              攻势L +
-              '×5 = ' +
-              critRate +
-              '%。'
-            : '20 + ' +
-              reportAttrHtml('agi') +
-              '×1 = 20 + ' +
-              agi +
-              ' = ' +
-              critRate +
-              '%。' +
-              (has心眼 ? ' 若拥有【攻势】层数，心眼被动会额外增加暴击率（攻势×5%）。' : '')
+          ? (function () {
+              var parts = [];
+              parts.push('20 + ' + reportAttrHtml('agi') + '×1 = 20 + ' + agi + ' = ' + baseCrit + '%');
+              if (has心眼 && 攻势L > 0)
+                parts.push('+' + reportAttrHtml('攻势') + '×5 = +' + 攻势L + '×5 = +' + 攻势L * 5 + '%');
+              if (ch && ch.name === '清漓')
+                parts.push('+' + reportAttrHtml('luk') + '×3 = +' + luk + '×3 = +' + qingliExtraCrit + '%（福泽）');
+              return parts.join(' ') + '，合计 ' + critRate + '%。' + (has心眼 ? '（心眼：攻势×5%）' : '');
+            })()
           : null;
         var sourceCritDmg = ch ? '基础暴击伤害 200%（暴击时最终伤害为普通伤害的 200%）。' : null;
         var reportRows = [
@@ -2821,21 +2974,60 @@
         ev.preventDefault();
         ev.stopPropagation();
         var act = this.getAttribute('data-act');
+        var api = typeof window !== 'undefined' ? window.色色地牢_save : null;
+        if (!api) return;
+        if (act === 'save-new' && typeof api.saveSlot === 'function') {
+          var nIdx = parseInt(this.getAttribute('data-new-index'), 10);
+          if (isNaN(nIdx)) nIdx = 0;
+          var payloadNew = getCurrentGameState();
+          logGamePayloadDetail(
+            '存档',
+            '手动写入 localStorage 新槽位 index=' +
+              nIdx +
+              '（含 party / enemyParty / map·含pos与nodes与inv / gold / buff表 / 战斗日志 / nodeStates 等）',
+            payloadNew,
+          );
+          api.saveSlot(nIdx, payloadNew);
+          if (typeof toastr !== 'undefined') toastr.info('已保存为新存档');
+          setTimeout(renderSaveContent, 0);
+          return;
+        }
+        if (act === 'load-autosnapshot') {
+          var pAuto = typeof api.readAutoSnapshotPayload === 'function' ? api.readAutoSnapshotPayload() : null;
+          if (pAuto) {
+            applySavePayload(pAuto);
+            if (typeof toastr !== 'undefined') toastr.info('已读取自动快照');
+          }
+          setTimeout(renderSaveContent, 0);
+          return;
+        }
+        if (act === 'load-timeline') {
+          var row = this.closest('[data-timeline-index]');
+          if (!row) return;
+          var tix = parseInt(row.getAttribute('data-timeline-index'), 10);
+          if (isNaN(tix)) return;
+          var tEnt = snapshotTimeline[tix];
+          if (tEnt && tEnt.payload) {
+            applySavePayload(tEnt.payload);
+            if (typeof toastr !== 'undefined') toastr.info('已读取本局时间线快照');
+          }
+          setTimeout(renderSaveContent, 0);
+          return;
+        }
         var card = this.closest('[data-save-slot]');
         if (!card) return;
         var idx = parseInt(card.getAttribute('data-save-slot'), 10);
         if (isNaN(idx)) return;
-        var api = typeof window !== 'undefined' ? window.色色地牢_save : null;
-        if (!api) return;
         if (act === 'save' && typeof api.saveSlot === 'function') {
           var payload = getCurrentGameState();
+          logGamePayloadDetail('存档', '手动写入 localStorage 槽位 index=' + idx + '（含 party / enemyParty / map·含pos与nodes与inv / gold / buff表 / 战斗日志 / nodeStates 等）', payload);
           api.saveSlot(idx, payload);
           if (typeof toastr !== 'undefined') toastr.info('已保存');
-          // 延迟重绘：避免 click 冒泡到 document 时 target 已被替换，误触“点外部关闭”
           setTimeout(renderSaveContent, 0);
         } else if (act === 'load' && typeof api.loadSlot === 'function') {
           var payload2 = api.loadSlot(idx);
           if (payload2) {
+            snapshotTimeline.length = 0;
             applySavePayload(payload2);
             if (typeof toastr !== 'undefined') toastr.info('已读取存档');
           }
@@ -2882,6 +3074,9 @@
     var SWAP_SVG = svg.SWAP_SVG || '';
     var SKILL_ATTACK_SVG = svg.SKILL_ATTACK_SVG || '';
     var SKILL_DEFENSE_SVG = svg.SKILL_DEFENSE_SVG || '';
+    var INTENT_CLOTHES_BREAK_SVG = svg.INTENT_CLOTHES_BREAK_SVG || '';
+    var INTENT_BIND_CHAIN_SVG = svg.INTENT_BIND_CHAIN_SVG || '';
+    var INTENT_LEWD_HEART_SVG = svg.INTENT_LEWD_HEART_SVG || '';
     var SKILL_BAIYA_SVG = svg.SKILL_BAIYA_SVG || '';
     var SKILL_WOLF_PACK_SVG = svg.SKILL_WOLF_PACK_SVG || '';
     var SKILL_ROAR_SVG = svg.SKILL_ROAR_SVG || '';
@@ -2951,6 +3146,9 @@
     var _lastKnownEnemies = null;
     /** 同上：无酒馆变量或 getVariables 未同步时，地图仍用本次生成/读档的 map（避免总显示内联 DEFAULT） */
     var _lastKnownMap = null;
+    /** AI 遭遇成功后追加的本局快照时间线（内存）；读档不恢复本数组 */
+    var SNAPSHOT_TIMELINE_CAP = 40;
+    var snapshotTimeline = [];
     /** replaceVariables 后 getVariables 可能尚未返回 gold，侧边栏金币用此缓存与 getVariables 对齐 */
     var _lastKnownChatGold = null;
     /** replaceVariables 为全量替换：部分写入时若 v 缺少 gold，用缓存补回，避免战斗保存等把金币清空 */
@@ -3088,6 +3286,14 @@
         window.BattleGrid.refreshBattleView();
       console.info('[色色地牢][enemy_design] 已写入 enemyParty（聊天变量）并刷新战斗视图');
       if (typeof toastr !== 'undefined') toastr.info('敌方阵容已同步到战斗界面');
+      setTimeout(function () {
+        try {
+          if (typeof window.色色地牢_capturePostEncounterSnapshot === 'function')
+            window.色色地牢_capturePostEncounterSnapshot(plan);
+        } catch (eSnap) {
+          console.warn('[色色地牢][快照] 遭遇后快照失败', eSnap);
+        }
+      }, 0);
       return true;
     }
     if (typeof window !== 'undefined') {
@@ -3152,6 +3358,115 @@
         nodeStates: nodeStates,
       };
     }
+
+    function summarizePartyForLog(party) {
+      if (!Array.isArray(party)) return [];
+      return party.map(function (ch, i) {
+        if (!ch) return { slot: i + 1, empty: true };
+        return {
+          slot: i + 1,
+          name: ch.name,
+          level: ch.level,
+          hp: ch.hp,
+          maxHp: ch.maxHp,
+          currentAp: ch.currentAp,
+          buffCount: ch.buffs && ch.buffs.length ? ch.buffs.length : 0,
+        };
+      });
+    }
+
+    function summarizeEnemyForLog(enemies) {
+      if (!Array.isArray(enemies)) return [];
+      return enemies.map(function (en, i) {
+        if (!en) return { slot: i + 1, empty: true };
+        return { slot: i + 1, name: en.name, hp: en.hp, maxHp: en.maxHp };
+      });
+    }
+
+    /** 控制台：可折叠摘要，下拉为结构化字段 + 完整 payload */
+    function logGamePayloadDetail(kind, title, payload) {
+      if (!payload) {
+        console.warn('[色色地牢][' + kind + '] ' + title + ' — 无数据');
+        return;
+      }
+      var map = payload.map || {};
+      var meta = payload.meta || {};
+      var inv = Array.isArray(map.inv) ? map.inv : [];
+      var logLines = payload.history && Array.isArray(payload.history.recentBattleLog) ? payload.history.recentBattleLog : [];
+      console.groupCollapsed('[色色地牢][' + kind + '] ' + title);
+      console.log('摘要（关键字段）', {
+        mapPos: map.pos,
+        area: map.area,
+        gold: meta.gold,
+        invCount: inv.length,
+        battleLogLines: logLines.length,
+        nodeStateKeys: payload.nodeStates ? Object.keys(payload.nodeStates).length : 0,
+        battleFloorTitle: payload.battleFloorTitle || '',
+      });
+      console.log('己方队伍', summarizePartyForLog(payload.party));
+      console.log('敌方队伍', summarizeEnemyForLog(payload.enemyParty));
+      if (inv.length) console.log('背包/遗物 map.rawInv', inv);
+      if (logLines.length) console.log('战斗日志 recentBattleLog', logLines);
+      if (payload.buffDefinitions && payload.buffDefinitions.length)
+        console.log('buffDefinitions 条数', payload.buffDefinitions.length);
+      console.log('完整存档 payload（原始对象）', payload);
+      console.groupEnd();
+    }
+
+    /** 遭遇写入后：地图 pos 对齐当前战斗格，nodes/inv 仍为已探索完整的聊天地图 */
+    function buildSnapshotPayloadForEncounter(plan) {
+      var base = getCurrentGameState();
+      var copy;
+      try {
+        copy = JSON.parse(JSON.stringify(base));
+      } catch (e) {
+        copy = base;
+      }
+      var nodeId = null;
+      if (plan && plan.nodeId != null && String(plan.nodeId).trim() !== '')
+        nodeId = String(plan.nodeId).trim();
+      else if (window._色色地牢_lastBattleIntent && window._色色地牢_lastBattleIntent.nodeId)
+        nodeId = String(window._色色地牢_lastBattleIntent.nodeId);
+      if (nodeId && copy.map) copy.map.pos = nodeId;
+      return copy;
+    }
+
+    function capturePostEncounterSnapshot(plan) {
+      var payload = buildSnapshotPayloadForEncounter(plan);
+      var mapPos = (payload.map && payload.map.pos) || '';
+      var area = (payload.map && payload.map.area) || '';
+      var entry = {
+        capturedAt: new Date().toISOString(),
+        mapPos: mapPos,
+        areaName: area,
+        trigger: 'post_ai_encounter',
+        payload: payload,
+      };
+      snapshotTimeline.push(entry);
+      if (snapshotTimeline.length > SNAPSHOT_TIMELINE_CAP) snapshotTimeline.shift();
+      if (typeof window.色色地牢_save === 'undefined' || typeof window.色色地牢_save.writeAutoSnapshot !== 'function') {
+        logGamePayloadDetail('快照', '已生成（未写入本地：存档模块不可用）', payload);
+        return;
+      }
+      window.色色地牢_save.writeAutoSnapshot(payload, {
+        mapPos: mapPos,
+        areaName: area,
+        trigger: 'post_ai_encounter',
+      });
+      logGamePayloadDetail(
+        '快照',
+        '遭遇后自动快照 → 已覆盖「蓝色快照」+ 本局时间线第 ' + snapshotTimeline.length + ' 条 · 格 ' + mapPos,
+        payload,
+      );
+    }
+
+    if (typeof window !== 'undefined') {
+      window.色色地牢_capturePostEncounterSnapshot = capturePostEncounterSnapshot;
+      window.色色地牢_getSnapshotTimeline = function () {
+        return snapshotTimeline.slice();
+      };
+    }
+
     /** 地图节点 id（如 0-0、12-2）→ 累计层数 N：起点为 0，列号 1–15 为当前区域内第 N 层（与 README 列号=层号一致） */
     function getMapPosForFloorHUD() {
       var v = null;
@@ -3346,6 +3661,13 @@
     /** 存档：将读取的 payload 写回 chat 并刷新战斗/地图视图 */
     function applySavePayload(payload) {
       if (!payload) return;
+      logGamePayloadDetail(
+        '读档',
+        '即将应用数据 → replaceVariables(chat)：同步 party、enemyParty、map(含 pos/nodes/inv)、buffDefinitions、battleFloorTitle、nodeStates、meta·金币难度、战斗日志 等',
+        payload,
+      );
+      // 重要：replaceVariables 后 getVariables 可能短时间仍返回旧值/空值，会导致 UI 回退 defaultParty（看起来像“读出来 4 人”）。
+      // 因此这里先把内存缓存立即对齐到 payload，确保 refreshBattleView/render 即时使用读档数据。
       _lastKnownParty = null;
       _lastKnownEnemies = null;
       _lastKnownMap = null;
@@ -3354,8 +3676,28 @@
         if (typeof getVariables === 'function') v = getVariables({ type: 'chat' });
       } catch (e) {}
       if (!v) v = {};
-      if (Array.isArray(payload.party)) v.party = payload.party;
-      if (Array.isArray(payload.enemyParty)) v.enemyParty = payload.enemyParty;
+      if (Array.isArray(payload.party)) {
+        // 读档时清理历史残留：清漓仅保留基础攻击/防御（避免旧版本/旧存档多技能）
+        v.party = payload.party.map(function (ch) {
+          if (!ch || ch.name !== '清漓') return ch;
+          try {
+            var c2 = JSON.parse(JSON.stringify(ch));
+            if (Array.isArray(c2.skills)) c2.skills = c2.skills.slice(0, 2);
+            return c2;
+          } catch (e2) {
+            if (ch && Array.isArray(ch.skills)) ch.skills = ch.skills.slice(0, 2);
+            return ch;
+          }
+        });
+        // 保持 6 槽长度，避免后续逻辑按槽位读取时意外越界/回退
+        while (v.party.length < 6) v.party.push(null);
+        _lastKnownParty = v.party;
+      }
+      if (Array.isArray(payload.enemyParty)) {
+        v.enemyParty = payload.enemyParty;
+        while (v.enemyParty.length < 6) v.enemyParty.push(null);
+        _lastKnownEnemies = v.enemyParty;
+      }
       if (Array.isArray(payload.buffDefinitions)) v.buffDefinitions = payload.buffDefinitions;
       if (payload.map && typeof payload.map === 'object') {
         v.map = payload.map;
@@ -3465,10 +3807,26 @@
         : function (s) {
             return s && s.tags != null ? String(s.tags) : '';
           };
+    function hasAliveQingliInParty() {
+      try {
+        var p = getParty ? getParty() : null;
+        if (!p || !Array.isArray(p)) return false;
+        for (var i = 0; i < p.length; i++) {
+          var u = p[i];
+          if (!u || u.name !== '清漓') continue;
+          var hpRaw = u.hp;
+          var hp = hpRaw == null ? 1 : parseInt(hpRaw, 10) || 0;
+          if (hp > 0) return true;
+        }
+      } catch (e) {}
+      return false;
+    }
     function getDisplayStat(ch, key) {
       if (!ch) return 0;
       var base = parseInt(ch[key], 10) || 0;
       if (BONUS_KEYS[key] != null) base += parseInt(ch[BONUS_KEYS[key]], 10) || 0;
+      // 清漓·福泽：清漓存活时，全体友方幸运 +3（用于属性面板渲染）
+      if (key === 'luk' && hasAliveQingliInParty()) base += 3;
       if (ch.name === '达芙妮' && (key === 'str' || key === 'def'))
         base += Math.floor((ch.level != null ? ch.level : 1) * 2);
       if (ch.name === '达芙妮' && key === 'def') {
@@ -3508,6 +3866,17 @@
     function getDisplayStatBreakdown(ch, key) {
       var total = getDisplayStat(ch, key);
       if (!ch) return { total: total, base: total, passive: null };
+      if (key === 'luk' && hasAliveQingliInParty()) {
+        var baseOnly = parseInt(ch[key], 10) || 0;
+        if (BONUS_KEYS[key] != null) baseOnly += parseInt(ch[BONUS_KEYS[key]], 10) || 0;
+        var passiveVal = 3;
+        return {
+          total: total,
+          base: baseOnly,
+          passive: { value: passiveVal, name: '福泽' },
+          sourceText: baseOnly + '+' + passiveVal + '（福泽）',
+        };
+      }
       if (ch.name === '达芙妮' && (key === 'str' || key === 'def')) {
         var baseOnly = parseInt(ch[key], 10) || 0;
         if (BONUS_KEYS[key] != null) baseOnly += parseInt(ch[BONUS_KEYS[key]], 10) || 0;
@@ -3677,6 +4046,9 @@
           AP_FLAME_SVG: AP_FLAME_SVG,
           SKILL_ATTACK_SVG: SKILL_ATTACK_SVG,
           SKILL_DEFENSE_SVG: SKILL_DEFENSE_SVG,
+          INTENT_CLOTHES_BREAK_SVG: INTENT_CLOTHES_BREAK_SVG,
+          INTENT_BIND_CHAIN_SVG: INTENT_BIND_CHAIN_SVG,
+          INTENT_LEWD_HEART_SVG: INTENT_LEWD_HEART_SVG,
           SKILL_BAIYA_SVG: SKILL_BAIYA_SVG,
           SKILL_WOLF_PACK_SVG: SKILL_WOLF_PACK_SVG,
           SKILL_ROAR_SVG: SKILL_ROAR_SVG,
@@ -3975,15 +4347,81 @@
     if (typeof window !== 'undefined') {
       window.beginingOptionChosen = function (optionId) {
         if (optionId === 'continue-game' && window.色色地牢_save) {
-          var last = window.色色地牢_save.getLastSlotIndex();
-          var payload = window.色色地牢_save.loadSlot(last);
-          if (payload) applySavePayload(payload);
+          var api = window.色色地牢_save;
+          var payload =
+            typeof api.readAutoSnapshotPayload === 'function' ? api.readAutoSnapshotPayload() : null;
+          if (payload) {
+            snapshotTimeline.length = 0;
+            applySavePayload(payload);
+          } else {
+            console.warn('[色色地牢][继续游戏] 未找到自动快照，已取消继续');
+          }
+        } else if (optionId === 'test-mode') {
+          // 测试模式：加载默认队伍顺序 + 默认地图（不走新游戏四步）
+          snapshotTimeline.length = 0;
+          var portraits = window.CHARACTER_PORTRAITS || {};
+          var party = buildDefaultParty();
+          // 给默认队伍补 avatar（buildDefaultParty 里已经做，但这里防守）
+          try {
+            for (var pi = 0; pi < party.length; pi++) {
+              if (party[pi] && !party[pi].avatar) party[pi].avatar = portraits[party[pi].name] || '';
+            }
+          } catch (eAv) {}
+          var emptyEnemyParty = [null, null, null, null, null, null];
+          var initialMap = {
+            area: '地牢',
+            pos: '0-0',
+            nodes: DEFAULT_MAP_NODES.slice(),
+            inv: [],
+          };
+          try {
+            _lastKnownMap = JSON.parse(JSON.stringify(initialMap));
+          } catch (eMapT) {
+            _lastKnownMap = { area: initialMap.area, pos: initialMap.pos, nodes: initialMap.nodes.slice(), inv: [] };
+          }
+          var v = null;
+          try {
+            if (typeof getVariables === 'function') v = getVariables({ type: 'chat' });
+          } catch (eV) {}
+          if (!v) v = {};
+          v.party = party;
+          v.enemyParty = emptyEnemyParty;
+          v.battleFloorTitle = '';
+          v.map = initialMap;
+          if (!v.buffDefinitions || !Array.isArray(v.buffDefinitions) || v.buffDefinitions.length === 0)
+            v.buffDefinitions = BUFF_DEFINITIONS;
+          if (!v.nodeStates || typeof v.nodeStates !== 'object') v.nodeStates = {};
+          // 测试模式默认金币
+          if (v.gold == null || v.gold === '') v.gold = 100;
+          _lastKnownChatGold = parseInt(v.gold, 10) || 0;
+          mergePreserveChatGold(v);
+          if (typeof replaceVariables === 'function') replaceVariables(v, { type: 'chat' });
+          _lastKnownParty = party;
+          _lastKnownEnemies = emptyEnemyParty;
+          if (typeof window.BattleGrid !== 'undefined' && typeof window.BattleGrid.setBattleLog === 'function')
+            window.BattleGrid.setBattleLog([]);
+          if (window.色色地牢_save && typeof window.色色地牢_save.writeAutoSnapshot === 'function') {
+            var payload0 = getCurrentGameState();
+            window.色色地牢_save.writeAutoSnapshot(payload0, {
+              mapPos: '0-0',
+              areaName: initialMap.area,
+              trigger: 'test_mode',
+            });
+            logGamePayloadDetail('快照', '测试模式：已写入自动快照（0-0）', payload0);
+          }
+          if (typeof window.BattleGrid !== 'undefined' && typeof window.BattleGrid.refreshBattleView === 'function')
+            window.BattleGrid.refreshBattleView();
+          if (typeof window.色色地牢_refreshMap === 'function') window.色色地牢_refreshMap({});
+          updateDungeonFloorHUD();
         }
       };
       window.beginingLoadSaveSlot = function (index) {
         if (window.色色地牢_save) {
           var payload = window.色色地牢_save.loadSlot(index);
-          if (payload) applySavePayload(payload);
+          if (payload) {
+            snapshotTimeline.length = 0;
+            applySavePayload(payload);
+          }
         }
       };
       /** 将角色重置为 README「角色初始状态」：Lv1、exp 0、自由点 0、无 buff/特殊技能解锁、可升级技能一级且无进阶、locked 与模板一致 */
@@ -4011,10 +4449,13 @@
           /* 与模板一致：仅当模板显式 locked:true 时为锁定；避免 hasOwnProperty/delete 在部分环境下与克隆对象不一致 */
           cs.locked = ts.locked === true;
         }
+        // 关键：截断多余技能（旧存档/旧对象可能带多出来的技能，导致“莫名其妙的技能”残留）
+        if (Array.isArray(ch.skills) && ch.skills.length > tsks.length) ch.skills = ch.skills.slice(0, tsks.length);
       }
       /** 新游戏 4 步选完后点击「开始冒险」：将所选两名角色写入 autosave 并替换当前角色槽，保存难度与初始祝福到 autosave，应用祝福效果 */
       window.beginingNewGameStart = function (selections) {
         if (!selections || !Array.isArray(selections.characters) || selections.characters.length < 2) return;
+        snapshotTimeline.length = 0;
         var chars = window.CHARACTERS;
         var portraits = window.CHARACTER_PORTRAITS || {};
         var party = [null, null, null, null, null, null];
@@ -4116,27 +4557,19 @@
         _lastKnownEnemies = emptyEnemyParty;
         if (typeof window.BattleGrid !== 'undefined' && typeof window.BattleGrid.setBattleLog === 'function')
           window.BattleGrid.setBattleLog([]);
-        if (window.色色地牢_save) {
-          var characterNames = party.filter(Boolean).map(function (c) {
-            return c.name;
-          });
-          var meta = {
-            areaName: areaName,
-            characterNames: characterNames,
-            difficulty: selections.difficulty,
-            diffUid: selections.diffUid,
-            gold: gold,
-          };
-          window.色色地牢_save.saveSlot(0, {
-            party: party,
-            enemyParty: emptyEnemyParty,
-            buffDefinitions: BUFF_DEFINITIONS,
-            map: initialMap,
-            meta: meta,
-            history: { recentBattleLog: [] },
-            nodeStates: {},
-          });
-          window.色色地牢_save.setLastSlotIndex(0);
+        // 开局 0-0：不写入“普通存档槽位”，而是写入自动快照（蓝色槽），供「继续游戏」直接读取。
+        try {
+          if (window.色色地牢_save && typeof window.色色地牢_save.writeAutoSnapshot === 'function') {
+            var payload0 = getCurrentGameState();
+            window.色色地牢_save.writeAutoSnapshot(payload0, {
+              mapPos: '0-0',
+              areaName: areaName,
+              trigger: 'new_game_start',
+            });
+            logGamePayloadDetail('快照', '开局自动快照（0-0）→ 已覆盖「蓝色快照」', payload0);
+          }
+        } catch (eSnap0) {
+          console.warn('[色色地牢][快照] 开局自动快照写入失败', eSnap0);
         }
         if (typeof window.BattleGrid !== 'undefined' && typeof window.BattleGrid.refreshBattleView === 'function')
           window.BattleGrid.refreshBattleView();

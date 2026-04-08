@@ -14,6 +14,7 @@
     黯: 'https://files.catbox.moe/sjtzl5.png',
     夜露: 'https://files.catbox.moe/kxlnsd.png',
     艾丽卡: 'https://files.catbox.moe/a0jzae.png',
+    清漓: 'https://files.catbox.moe/9stlm0.png',
   };
   // 短链处理：不以 http 开头的非空字符串补上 catbox 前缀
   (function () {

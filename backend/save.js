@@ -1,11 +1,14 @@
 /**
  * 色色地牢 - 存档模块（浏览器 localStorage）
  * 单槽位含：party, enemyParty, buffDefinitions, map, meta, history.recentBattleLog, nodeStates
+ * 另：SNAPSHOT_LATEST_KEY 存 AI 遭遇成功后自动覆盖的「最新快照」（蓝色槽），与手动槽位独立。
  */
 (function () {
   'use strict';
 
   var STORAGE_KEY = '色色地牢_saves';
+  /** AI 遭遇成功后自动覆盖的「蓝色快照」槽（单条 JSON，非 slots 数组索引） */
+  var SNAPSHOT_LATEST_KEY = '色色地牢_snapshot_latest';
   // 槽位无限：仅持久化实际存在的数据槽位；UI 额外显示 1 个空槽位供保存
   var SLOT_COUNT = null;
   var RECENT_LOG_CAP = 100;
@@ -109,7 +112,7 @@
       map: slot && typeof slot.map === 'object' ? slot.map : null,
       history: slot.history && typeof slot.history === 'object' ? slot.history : null,
       nodeStates: slot.nodeStates && typeof slot.nodeStates === 'object' ? slot.nodeStates : null,
-      meta: slot.meta && typeof slot.meta === 'object' ? slot.meta : {}
+      meta: slot.meta && typeof slot.meta === 'object' ? slot.meta : {},
     };
   }
 
@@ -125,9 +128,10 @@
     while (data.slots.length <= i) data.slots.push(null);
     var party = Array.isArray(payload.party) ? payload.party : null;
     var enemyParty = Array.isArray(payload.enemyParty) ? payload.enemyParty : null;
-    var recentLog = (payload.history && Array.isArray(payload.history.recentBattleLog))
-      ? payload.history.recentBattleLog.slice(-RECENT_LOG_CAP)
-      : [];
+    var recentLog =
+      payload.history && Array.isArray(payload.history.recentBattleLog)
+        ? payload.history.recentBattleLog.slice(-RECENT_LOG_CAP)
+        : [];
     var nodeStates = payload.nodeStates && typeof payload.nodeStates === 'object' ? payload.nodeStates : {};
     var keys = Object.keys(nodeStates);
     if (keys.length > NODE_STATES_CAP) {
@@ -142,7 +146,12 @@
     if (!meta.savedAt) meta.savedAt = new Date().toISOString();
     if (map && map.area && !meta.areaName) meta.areaName = map.area;
     if (party && !meta.characterNames) {
-      meta.characterNames = party.filter(Boolean).map(function (ch) { return ch.name; }).filter(Boolean);
+      meta.characterNames = party
+        .filter(Boolean)
+        .map(function (ch) {
+          return ch.name;
+        })
+        .filter(Boolean);
     }
     data.slots[i] = {
       party: party,
@@ -151,7 +160,7 @@
       map: map,
       meta: meta,
       history: { recentBattleLog: recentLog },
-      nodeStates: nodeStates
+      nodeStates: nodeStates,
     };
     data.lastIndex = i;
     saveRaw(data);
@@ -174,6 +183,48 @@
     return loadRaw().lastIndex;
   }
 
+  /**
+   * 写入自动快照（浏览器 localStorage，每次覆盖同一键）。
+   * @param {object} payload getCurrentGameState 同类结构
+   * @param {{ mapPos?: string, areaName?: string, trigger?: string }} [meta]
+   */
+  function writeAutoSnapshot(payload, meta) {
+    meta = meta || {};
+    try {
+      var wrap = {
+        savedAt: new Date().toISOString(),
+        mapPos: meta.mapPos != null ? String(meta.mapPos) : '',
+        areaName: meta.areaName != null ? String(meta.areaName) : '',
+        trigger: meta.trigger != null ? String(meta.trigger) : 'post_ai_encounter',
+        payload: payload,
+      };
+      localStorage.setItem(SNAPSHOT_LATEST_KEY, JSON.stringify(wrap));
+    } catch (e) {
+      console.warn('[色色地牢] 自动快照写入失败', e);
+    }
+  }
+
+  /**
+   * @returns {{ savedAt: string, mapPos: string, areaName: string, trigger: string, payload: object } | null}
+   */
+  function readAutoSnapshotWrap() {
+    try {
+      var raw = localStorage.getItem(SNAPSHOT_LATEST_KEY);
+      if (!raw) return null;
+      var data = JSON.parse(raw);
+      if (!data || typeof data !== 'object' || !data.payload) return null;
+      return data;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /** @returns {object | null} 仅 payload，便于读档 */
+  function readAutoSnapshotPayload() {
+    var w = readAutoSnapshotWrap();
+    return w && w.payload ? w.payload : null;
+  }
+
   function setLastSlotIndex(n) {
     var data = loadRaw();
     data.lastIndex = Math.max(0, parseInt(n, 10) || 0);
@@ -189,7 +240,10 @@
       clearSlot: clearSlot,
       getLastSlotIndex: getLastSlotIndex,
       setLastSlotIndex: setLastSlotIndex,
-      SLOT_COUNT: SLOT_COUNT
+      writeAutoSnapshot: writeAutoSnapshot,
+      readAutoSnapshotWrap: readAutoSnapshotWrap,
+      readAutoSnapshotPayload: readAutoSnapshotPayload,
+      SLOT_COUNT: SLOT_COUNT,
     };
   }
 })();

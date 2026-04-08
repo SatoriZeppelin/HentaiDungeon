@@ -510,9 +510,13 @@
       slotAssignment: 'random',
       slotsUsed: slots.slice(),
       units: units,
-      floorName: parsed.floorName != null && String(parsed.floorName).trim() !== '' ? String(parsed.floorName).trim() : '',
+      floorName:
+        parsed.floorName != null && String(parsed.floorName).trim() !== '' ? String(parsed.floorName).trim() : '',
       note: '按 units[].enemySlot 填入 enemyParty；stats 由 window.色色地牢_enemyStats 计算。调用方应 commitSpawnPlanToBattle(plan) 写入变量并刷新战斗视图。',
     };
+    if (options.nodeId != null && String(options.nodeId).trim() !== '') {
+      plan.nodeId = String(options.nodeId).trim();
+    }
     if (
       typeof window.色色地牢_enemyStats !== 'undefined' &&
       window.色色地牢_enemyStats &&

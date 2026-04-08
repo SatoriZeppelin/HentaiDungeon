@@ -80,6 +80,7 @@
     { en: 'New Game', zh: '新游戏', id: 'new-game' },
     { en: 'Continue Game', zh: '继续游戏', id: 'continue-game' },
     { en: 'Load Save', zh: '读取存档', id: 'load-save' },
+    { en: 'Test Mode', zh: '测试模式', id: 'test-mode' },
   ];
 
   /** 新开局选项界面（参考 色色地牢参考-开局.html） */
@@ -1012,16 +1013,29 @@
     for (var i = 0; i < START_OPTIONS.length; i++) {
       optionsWrap.appendChild(createOptionRow(START_OPTIONS[i]));
     }
+    function hasAutoSnapshot() {
+      try {
+        var api0 = typeof window !== 'undefined' ? window.色色地牢_save : null;
+        return !!(api0 && typeof api0.readAutoSnapshotPayload === 'function' && api0.readAutoSnapshotPayload());
+      } catch (e) {
+        return false;
+      }
+    }
+    function syncContinueGameVisibility() {
+      var contEl = optionsWrap.querySelector('.begining-option[data-option-id="continue-game"]');
+      if (!contEl) return;
+      contEl.style.display = hasAutoSnapshot() ? '' : 'none';
+    }
     startMenu.appendChild(optionsWrap);
     var loadSavePanel = document.createElement('div');
     loadSavePanel.id = 'begining-load-save-panel';
     loadSavePanel.style.cssText =
-      'display:none;flex-direction:column;align-items:flex-start;width:100%;max-width:360px;';
+      'display:none;flex-direction:column;align-items:flex-start;width:max-content;max-width:calc(100vw - 80px);';
     var loadSaveTitle = document.createElement('div');
     loadSaveTitle.style.cssText = 'font-size:18px;font-weight:bold;color:#e8e0d0;margin-bottom:16px;';
     loadSaveTitle.textContent = '选择存档';
     var loadSaveList = document.createElement('div');
-    loadSaveList.style.cssText = 'display:flex;flex-direction:column;gap:10px;width:100%;';
+    loadSaveList.style.cssText = 'display:flex;flex-direction:column;gap:10px;width:max-content;max-width:100%;';
     var loadSaveBack = document.createElement('button');
     loadSaveBack.textContent = '← 返回';
     loadSaveBack.style.cssText =
@@ -1058,6 +1072,8 @@
       cover.style.opacity = '0';
       startMenu.style.opacity = '1';
       startMenu.style.pointerEvents = 'auto';
+      // 此时通常 backend/save.js 已加载；动态决定是否显示「继续游戏」
+      syncContinueGameVisibility();
       setTimeout(function () {
         cover.style.display = 'none';
       }, 400);
@@ -1076,9 +1092,16 @@
 
     function closeOverlay(optionId) {
       overlay.style.display = 'none';
-      if (typeof window.beginingOptionChosen === 'function') {
-        window.beginingOptionChosen(optionId);
-      }
+      // app.js 可能尚未加载完成：重试调用 beginingOptionChosen，避免“点击无反应”
+      var tries = 0;
+      (function tryCall() {
+        tries++;
+        if (typeof window.beginingOptionChosen === 'function') {
+          window.beginingOptionChosen(optionId);
+          return;
+        }
+        if (tries < 30) setTimeout(tryCall, 100);
+      })();
     }
 
     overlay.addEventListener('click', function (e) {
@@ -1095,30 +1118,113 @@
         goToNewGameSetup();
       } else if (id === 'load-save') {
         if (typeof window.色色地牢_save !== 'undefined' && window.色色地牢_save.getSaveSlots) {
+          function esc(s) {
+            return String(s == null ? '' : s)
+              .replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;')
+              .replace(/"/g, '&quot;');
+          }
+          function safeTime(t) {
+            var s = t ? String(t) : '';
+            if (!s) return '';
+            return s.replace('T', ' ').replace(/\.\d{3}Z?$/, '').replace('Z', '');
+          }
+          // 复用主界面存档卡片风格（在开局面板内注入一份精简 CSS）
+          if (!document.getElementById('begining-load-save-style')) {
+            var st = document.createElement('style');
+            st.id = 'begining-load-save-style';
+            st.textContent =
+              '.begining-save-card{position:relative;background:transparent;border:2px solid rgba(139,115,32,.42);border-radius:14px;padding:14px 14px 12px;box-shadow:none;overflow:hidden;cursor:pointer;color:#e8e0d0;transition:transform .12s ease}' +
+              '.begining-save-card:hover{transform:none;box-shadow:none}' +
+              '.begining-save-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}' +
+              '.begining-save-main{display:flex;flex-direction:column;gap:4px;min-width:0}' +
+              '.begining-save-name{font-size:16px;font-weight:900;letter-spacing:.12em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px}' +
+              '.begining-save-meta{font-size:12px;opacity:.78;line-height:1.3;text-align:right;white-space:nowrap;flex-shrink:0}' +
+              '.begining-save-foot{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}' +
+              '.begining-save-actions{display:flex;gap:10px;flex:1 1 auto}' +
+              '.begining-save-btn{appearance:none;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.14);color:#fff;border-radius:12px;padding:8px 12px;font-size:12px;font-weight:900;cursor:pointer;transition:transform .06s ease,background .12s ease,box-shadow .12s ease;box-shadow:0 1px 0 rgba(0,0,0,.10)}' +
+              '.begining-save-btn:hover{background:rgba(255,255,255,.20);box-shadow:0 8px 18px rgba(0,0,0,.18)}' +
+              '.begining-save-btn:active{transform:translateY(1px)}' +
+              '.begining-party-grid{display:flex;flex-wrap:nowrap;gap:10px;justify-content:flex-end;align-items:flex-start;overflow-x:auto;max-width:520px;padding-bottom:2px}' +
+              '.begining-party-grid::-webkit-scrollbar{height:6px}' +
+              '.begining-party-grid::-webkit-scrollbar-thumb{background:rgba(255,255,255,.22);border-radius:999px}' +
+              '.begining-party-unit{width:66px;display:flex;flex-direction:column;align-items:center;gap:6px;flex:0 0 auto}' +
+              '.begining-party-avatar{position:relative;width:66px;height:66px;border-radius:12px;background:rgba(0,0,0,.18);border:2px solid rgba(139,115,32,.55);overflow:hidden;background-size:cover;background-position:center top;box-shadow:0 4px 14px rgba(0,0,0,.20)}' +
+              '.begining-party-lv{position:absolute;right:6px;bottom:6px;background:rgba(0,0,0,.62);color:#fff;border:1px solid rgba(201,162,39,.55);border-radius:999px;padding:2px 6px;font-size:11px;font-weight:900;line-height:1}' +
+              '.begining-party-name{font-size:12px;font-weight:900;max-width:66px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.92}';
+            overlay.appendChild(st);
+          }
           optionsWrap.style.display = 'none';
           loadSavePanel.style.display = 'flex';
           var slots = window.色色地牢_save.getSaveSlots();
           loadSaveList.innerHTML = '';
           // 仅展示有数据的槽位；save.getSaveSlots() 会额外附带 1 个空槽位供保存（此处不需要）
-          slots.filter(function (s) { return s && s.hasData; }).forEach(function (s) {
-            var row = document.createElement('div');
-            row.style.cssText =
-              'padding:12px 16px;background:rgba(255,255,255,0.1);border:2px solid rgba(139,115,32,0.4);border-radius:8px;cursor:pointer;color:#e8e0d0;';
-            var label = '槽位 ' + (s.index + 1);
-            if (s.hasData && s.savedAt)
-              label += ' · ' + (s.areaName || '') + ' · ' + (s.savedAt.slice(0, 16).replace('T', ' ') || '');
-            if (!s.hasData) row.style.opacity = '0.7';
-            row.textContent = s.hasData ? label : '槽位 ' + (s.index + 1) + ' （空）';
-            row.addEventListener('click', function () {
-              if (!s.hasData) return;
-              if (typeof window.beginingLoadSaveSlot === 'function') window.beginingLoadSaveSlot(s.index);
-              closeOverlay('load-save');
+          slots
+            .filter(function (s) {
+              return s && s.hasData;
+            })
+            .forEach(function (s) {
+              var ps = Array.isArray(s.partySummary) ? s.partySummary : [];
+              var partyHtml =
+                '<div class="begining-party-grid" aria-label="队伍成员">' +
+                ps
+                  .map(function (u) {
+                    var nm = u && u.name ? String(u.name) : '';
+                    var lv = u && u.level != null ? parseInt(u.level, 10) || 1 : 1;
+                    var av = u && u.avatar ? String(u.avatar) : '';
+                    var bg = av ? "background-image:url('" + encodeURI(av).replace(/'/g, '%27') + "')" : '';
+                    return (
+                      '<div class="begining-party-unit">' +
+                      '<div class="begining-party-avatar" style="' +
+                      bg +
+                      '">' +
+                      '<div class="begining-party-lv">Lv' +
+                      lv +
+                      '</div>' +
+                      '</div>' +
+                      '<div class="begining-party-name">' +
+                      esc(nm) +
+                      '</div>' +
+                      '</div>'
+                    );
+                  })
+                  .join('') +
+                '</div>';
+
+              var timeText = safeTime(s.savedAt);
+              var card = document.createElement('div');
+              card.className = 'begining-save-card';
+              card.innerHTML =
+                '<div class="begining-save-head">' +
+                '<div class="begining-save-main">' +
+                '<div class="begining-save-name">' +
+                esc(s.areaName || '') +
+                '</div>' +
+                '</div>' +
+                '<div class="begining-save-meta">' +
+                esc(timeText) +
+                '</div>' +
+                '</div>' +
+                '<div class="begining-save-foot">' +
+                '<div class="begining-save-actions">' +
+                '<button type="button" class="begining-save-btn">读取</button>' +
+                '</div>' +
+                partyHtml +
+                '</div>';
+              card.addEventListener('click', function (ev2) {
+                ev2.preventDefault();
+                ev2.stopPropagation();
+                if (typeof window.beginingLoadSaveSlot === 'function') window.beginingLoadSaveSlot(s.index);
+                closeOverlay('load-save');
+              });
+              loadSaveList.appendChild(card);
             });
-            loadSaveList.appendChild(row);
-          });
         } else {
           closeOverlay(id);
         }
+      } else if (id === 'test-mode') {
+        closeOverlay(id);
       } else {
         closeOverlay(id);
       }

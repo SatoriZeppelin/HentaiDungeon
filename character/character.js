@@ -1263,10 +1263,59 @@
       ],
       specialSkillsUnlocked: [],
     },
+    清漓: {
+      name: '清漓',
+      from: 'OC',
+      introduce: '冒险者',
+      level: 1,
+      sta: 8,
+      exp: 0,
+      str: 12,
+      agi: 10,
+      int: 6,
+      def: 4,
+      luk: 10,
+      cha: 8,
+      bonusStr: 0,
+      bonusAgi: 0,
+      bonusInt: 0,
+      bonusSta: 0,
+      bonusDef: 0,
+      passiveSkills: [
+        {
+          name: '福泽',
+          effect:
+            '清漓的龙族血脉散发祥瑞之气。全体友方单位获得3的幸运。此外，清漓自身每拥有1的幸运，额外获得3%暴击率。',
+        },
+      ],
+      skills: [
+        {
+          name: '攻击',
+          ap: 1,
+          effect: '对所选单位造成 [Str × 1] 点伤害',
+          basic: true,
+          attribute1: '物理',
+          attribute2: '近战',
+          attribute3: '单体',
+        },
+        {
+          name: '防御',
+          ap: 1,
+          effect: '对自身给予 [Def × 1] 点护盾，持续到自己的下个回合开始',
+          basic: true,
+          attribute1: '增益',
+          attribute2: '自身',
+          attribute3: '单体',
+        },
+      ],
+      specialSkills: [],
+      specialSkillsUnlocked: [],
+      buffs: [],
+    },
   };
 
   /** 默认队伍顺序：按槽位 1～6 填角色名，空位用 null */
-  window.DEFAULT_PARTY_ORDER = ['岚', '黯', '夜露', null, null, '艾丽卡'];
+  window.DEFAULT_PARTY_ORDER = ['清漓', '黯', '夜露', null, null, '艾丽卡'];
 
   function getSpecialSkillsForChar(ch) {
     if (!ch) return [];
