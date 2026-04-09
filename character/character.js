@@ -1272,8 +1272,8 @@
     },
     清漓: {
       name: '清漓',
-      from: 'OC',
-      introduce: '冒险者',
+      from: '幻界',
+      introduce: '醉太懒狗还没写',
       level: 5,
       sta: 8,
       exp: 0,

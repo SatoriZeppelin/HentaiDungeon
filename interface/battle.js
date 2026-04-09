@@ -1453,6 +1453,10 @@
     var SKILL_ZANYUE_SVG = options.SKILL_ZANYUE_SVG || '';
     var SKILL_JIANQIE_SVG = options.SKILL_JIANQIE_SVG || '';
     var SKILL_JUHE_SVG = options.SKILL_JUHE_SVG || '';
+    var SKILL_LINGXI_SVG = options.SKILL_LINGXI_SVG || '';
+    var SKILL_BILUO_SVG = options.SKILL_BILUO_SVG || '';
+    var SKILL_TALANGXINGGE_SVG = options.SKILL_TALANGXINGGE_SVG || '';
+    var SKILL_XIANGRUIPUYOU_SVG = options.SKILL_XIANGRUIPUYOU_SVG || '';
     var SKILL_NADAO_SVG = options.SKILL_NADAO_SVG || '';
     var SKILL_CUOJIN_SVG = options.SKILL_CUOJIN_SVG || '';
     var SKILL_BAIYE_SVG = options.SKILL_BAIYE_SVG || '';
@@ -3970,7 +3974,7 @@
           setTimeout(function () {
             if (defenderSlotEl && attackerSlotEl) {
               playStrikeShake(attackerSlotEl, defenderSlotEl, function () {
-                playAnimationOnSlot(defenderSlotEl, 'Slash5', function () {
+                playAnimationOnSlot(defenderSlotEl, 'Slash6', function () {
                   doSecondHit();
                 });
               });
@@ -3986,7 +3990,7 @@
       if (attackerSlotEl && defenderSlotEl) {
         playStrikeShake(attackerSlotEl, defenderSlotEl, function () {
           if (result1.hit) {
-            playAnimationOnSlot(defenderSlotEl, 'Slash5', function () {
+            playAnimationOnSlot(defenderSlotEl, 'Slash6', function () {
               applyAfterFirstHit();
             });
           } else {
@@ -4492,7 +4496,7 @@
       if (attackerSlotEl && defenderSlotEl) {
         playStrikeShake(attackerSlotEl, defenderSlotEl, function () {
           if (result.hit) {
-            playAnimationOnSlot(defenderSlotEl, 'Slash5', function () {
+            playAnimationOnSlot(defenderSlotEl, 'Slash6', function () {
               apply沧澜Damage();
             });
           } else {
@@ -4560,7 +4564,7 @@
       var attackerSlotEl = document.querySelector('.slot[data-slot="ally-' + allySlot + '"]');
       var enemySideEl = document.querySelector('.side-enemy');
       playStrikeShake(attackerSlotEl, null, function () {
-        playAnimationOnContainer(enemySideEl, 'SlashSpecial1', function () {
+        playAnimationOnContainer(enemySideEl, 'SlashIce', function () {
           for (var t = 0; t < targets.length; t++) {
             var defender = targets[t].defender;
             var result = targets[t].result;
@@ -4688,7 +4692,7 @@
       var enemySideEl = document.querySelector('.side-enemy');
       var allySideEl = document.querySelector('.side-ally');
       if (enemySideEl && allySideEl) {
-        playAnimationOnContainer(allySideEl, 'Holy5', function () {});
+        playAnimationOnContainer(allySideEl, 'Cure2', function () {});
       }
     }
     function executePlayerAttack(allySlot, enemySlotNum, skillIndex, specialId) {
@@ -5089,7 +5093,9 @@
           (skill.name || '') === '遒劲猛击'
             ? 'Claw'
             : (skill.name || '') === '斩月' || (skill.name || '') === '居合'
-              ? 'Slash5'
+              ? attacker && attacker.name === '清漓'
+                ? 'Slash6'
+                : 'Slash5'
               : (skill.name || '') === '斩杀'
                 ? 'E-blood1'
                 : skill.id === '狼群围猎' || (skill.name || '') === '狼群围猎'
@@ -9015,13 +9021,13 @@
                           : s.name === '见切'
                             ? SKILL_JIANQIE_SVG || SKILL_SHIELD_SWORD_SVG || SKILL_DEFENSE_SVG
                             : s.name === '灵犀'
-                              ? SKILL_JUHE_SVG || SKILL_ATTACK_SVG
+                              ? SKILL_LINGXI_SVG || SKILL_JUHE_SVG || SKILL_ATTACK_SVG
                             : s.name === '护卫'
                               ? SKILL_SHIELD_SWORD_SVG || SKILL_DEFENSE_SVG
                               : s.name === '沧澜'
                                 ? SKILL_ZANYUE_SVG || SKILL_JUHE_SVG || SKILL_ATTACK_SVG
                               : s.name === '碧落'
-                                ? SKILL_WHIRLWIND_SVG || SKILL_ZANYUE_SVG || SKILL_ATTACK_SVG
+                                ? SKILL_BILUO_SVG || SKILL_WHIRLWIND_SVG || SKILL_ZANYUE_SVG || SKILL_ATTACK_SVG
                               : s.name === '居合'
                               ? SKILL_JUHE_SVG || SKILL_ATTACK_SVG
                               : s.name === '纳刀'
@@ -9177,9 +9183,12 @@
                                                               : sk.id === '圣火净世'
                                                                 ? SKILL_SHENGHUOJINGSHI_SVG || SKILL_ATTACK_SVG
                                                                 : sk.id === '踏浪行歌'
-                                                                  ? SKILL_MAOBU_SVG || SKILL_DEFENSE_SVG
+                                                                  ? SKILL_TALANGXINGGE_SVG || SKILL_MAOBU_SVG || SKILL_DEFENSE_SVG
                                                                   : sk.id === '祥瑞庇佑'
-                                                                    ? SKILL_SHENENJISHU_SVG || SKILL_SHENGUANGZHAN_SVG || SKILL_ATTACK_SVG
+                                                                    ? SKILL_XIANGRUIPUYOU_SVG ||
+                                                                      SKILL_SHENENJISHU_SVG ||
+                                                                      SKILL_SHENGUANGZHAN_SVG ||
+                                                                      SKILL_ATTACK_SVG
                                                                     : SKILL_ATTACK_SVG;
                     opts.push(
                       '<div class="skill-popup-opt' +

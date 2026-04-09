@@ -6,78 +6,78 @@
 (function () {
   window.ANIMATIONS = {
     // ---------- Slash 组（斩击/挥砍）----------
-    Slash: 'https://files.catbox.moe/c0gbkh.png',
-    SlashFire: 'https://files.catbox.moe/hbvi0u.png',
-    SlashIce: 'https://files.catbox.moe/kogf76.png',
-    SlashPhoton: 'https://files.catbox.moe/3bbf4m.png',
-    SlashSpecial1: 'https://files.catbox.moe/ll7gpp.png',
-    SlashSpecial2: 'https://files.catbox.moe/n2jd29.png',
-    SlashSpecial3: 'https://files.catbox.moe/hilznn.png',
-    SlashThunder: 'https://files.catbox.moe/aulcf6.png',
-    'Slash4': 'https://files.catbox.moe/oljwi2.png',
-    'Slash5': 'https://files.catbox.moe/27e561.png',
-    'Slash6': 'https://files.catbox.moe/48gr5j.png',
+    Slash: 'https://files.catbox.moe/c0gbkh.png', //黄色单斩击
+    SlashFire: 'https://files.catbox.moe/hbvi0u.png', //橙色火焰斩击
+    SlashIce: 'https://files.catbox.moe/kogf76.png', //蓝色冰斩击
+    SlashPhoton: 'https://files.catbox.moe/3bbf4m.png', //类似弹幕的黄色打击
+    SlashSpecial1: 'https://files.catbox.moe/ll7gpp.png', //三次斩击然后圆弧斩黄色
+    SlashSpecial2: 'https://files.catbox.moe/n2jd29.png', //V型橙红色斩击
+    SlashSpecial3: 'https://files.catbox.moe/hilznn.png', //紫色斩击加符文
+    SlashThunder: 'https://files.catbox.moe/aulcf6.png', //雷电斩击
+    Slash4: 'https://files.catbox.moe/oljwi2.png', //红色斩击衔接爆炸
+    Slash5: 'https://files.catbox.moe/27e561.png', //蓝色弧形斩击
+    Slash6: 'https://files.catbox.moe/48gr5j.png', //绿色弧形斩击
 
     // ---------- Recovery 组（恢复）----------
-    Recovery3: 'https://files.catbox.moe/93lwsw.png',
-    Recovery4: 'https://files.catbox.moe/7rec4w.png', // 护盾
-    Recovery5: 'https://files.catbox.moe/whjkry.png',
-    Recovery1: 'https://files.catbox.moe/p7ncto.png',
-    Recovery2: 'https://files.catbox.moe/zs6zme.png',
-    Revival1: 'https://files.catbox.moe/bn9b4z.png',
-    Revival2: 'https://files.catbox.moe/n7srtm.png',
+    Recovery3: 'https://files.catbox.moe/93lwsw.png', //白色护盾
+    Recovery4: 'https://files.catbox.moe/7rec4w.png', // 获得护盾/传送
+    Recovery5: 'https://files.catbox.moe/whjkry.png', //淡绿色特效
+    Recovery1: 'https://files.catbox.moe/p7ncto.png', //绿色螺旋上升随后类似召唤
+    Recovery2: 'https://files.catbox.moe/zs6zme.png', //治愈
+    Revival1: 'https://files.catbox.moe/bn9b4z.png', //黄色上升随后类似召唤
+    Revival2: 'https://files.catbox.moe/n7srtm.png', //橙黄色类似从上到下降临
 
     // ---------- State 组（状态）----------
-    StateSilent: 'https://files.catbox.moe/iv8908.png',
-    StateUp1: 'https://files.catbox.moe/2k25uo.png',
-    StateUp2: 'https://files.catbox.moe/gnyl2h.png',
-    StateDeath: 'https://files.catbox.moe/xbmjeq.png',
-    StateDown1: 'https://files.catbox.moe/8y60sw.png',
-    StateDown2: 'https://files.catbox.moe/vq2lf2.png',
-    StateDown3: 'https://files.catbox.moe/6l1vwo.png',
-    StateParalys: 'https://files.catbox.moe/kyadpt.png',
-    StatePoison: 'https://files.catbox.moe/8icirp.png',
-    StateSleep: 'https://files.catbox.moe/t05nzx.png',
-    StateChaos: 'https://files.catbox.moe/1lishy.png',
-    StateDark: 'https://files.catbox.moe/e7manc.png',
-    'up-1': 'https://files.catbox.moe/gy30k9.png',
+    StateSilent: 'https://files.catbox.moe/iv8908.png', //沉默
+    StateUp1: 'https://files.catbox.moe/2k25uo.png', //类似从下往上喷发/召唤
+    StateUp2: 'https://files.catbox.moe/gnyl2h.png', //蓝色令牌召唤
+    StateDeath: 'https://files.catbox.moe/xbmjeq.png', //骷髅和画X
+    StateDown1: 'https://files.catbox.moe/8y60sw.png', //从上往下淡蓝色类似封印
+    StateDown2: 'https://files.catbox.moe/vq2lf2.png', //从下往上类似紫色缠绕
+    StateDown3: 'https://files.catbox.moe/6l1vwo.png', //绘画封印然后破碎
+    StateParalys: 'https://files.catbox.moe/kyadpt.png', //类似黄色闪电？
+    StatePoison: 'https://files.catbox.moe/8icirp.png', //中毒
+    StateSleep: 'https://files.catbox.moe/t05nzx.png', //蓝色聚集涡流效果
+    StateChaos: 'https://files.catbox.moe/1lishy.png', //困惑
+    StateDark: 'https://files.catbox.moe/e7manc.png', //深蓝色漩涡
+    'up-1': 'https://files.catbox.moe/gy30k9.png', //黄色向上喷发
 
     // ---------- Stick 组（棍棒/杖）----------
-    Stick: 'https://files.catbox.moe/2oj7p8.png',
-    StickPhoton: 'https://files.catbox.moe/tvi6jh.png',
-    StickSpecial1: 'https://files.catbox.moe/umrsse.png',
-    StickSpecial2: 'https://files.catbox.moe/zb758o.png',
-    StickSpecial3: 'https://files.catbox.moe/zz09h4.png',
+    Stick: 'https://files.catbox.moe/2oj7p8.png', //黄色打击
+    StickPhoton: 'https://files.catbox.moe/tvi6jh.png', //类似弹幕的黄色打击
+    StickSpecial1: 'https://files.catbox.moe/umrsse.png', //两次打击
+    StickSpecial2: 'https://files.catbox.moe/zb758o.png', //大打击
+    StickSpecial3: 'https://files.catbox.moe/zz09h4.png', //另一种大爆炸
 
     // ---------- PreSpecial 组（预备特技）----------
-    PreSpecial1: 'https://files.catbox.moe/j234hu.png',
-    PreSpecial2: 'https://files.catbox.moe/mn2ves.png',
-    PreSpecial3: 'https://files.catbox.moe/7b0n3j.png',
+    PreSpecial1: 'https://files.catbox.moe/j234hu.png', //黄色雷电符文+爆炸
+    PreSpecial2: 'https://files.catbox.moe/mn2ves.png', //白色雷电符文+爆炸
+    PreSpecial3: 'https://files.catbox.moe/7b0n3j.png', //紫黑色雷电符文+爆炸
 
     // ---------- Claw 组（爪击）----------
-    Claw: 'https://files.catbox.moe/a8qolj.png',
-    ClawSpecial1: 'https://files.catbox.moe/qqp75m.png',
-    ClawSpecial2: 'https://files.catbox.moe/p5ew2q.png',
+    Claw: 'https://files.catbox.moe/a8qolj.png', //深褐色爪击
+    ClawSpecial1: 'https://files.catbox.moe/qqp75m.png', //深红色三次爪击
+    ClawSpecial2: 'https://files.catbox.moe/p5ew2q.png', //深红色大爪击
 
     // ---------- Cure 组（治疗）----------
-    Cure2: 'https://files.catbox.moe/g99nvd.png',
-    Cure3: 'https://files.catbox.moe/vyba15.png',
-    Cure4: 'https://files.catbox.moe/itjw17.png',
-    Cure1: 'https://files.catbox.moe/et7yzj.png',
-    Cure5: 'https://files.catbox.moe/poy68z.png',
-    Cure6: 'https://files.catbox.moe/4cg22n.png',
-    'E-cure1': 'https://files.catbox.moe/ua02um.png',
+    Cure2: 'https://files.catbox.moe/g99nvd.png', //淡蓝色圆形+特效
+    Cure3: 'https://files.catbox.moe/vyba15.png', //淡蓝色螺旋上升
+    Cure4: 'https://files.catbox.moe/itjw17.png', //淡蓝色环绕轨道/淡蓝色球形斩击
+    Cure1: 'https://files.catbox.moe/et7yzj.png', //蓝色星星上升
+    Cure5: 'https://files.catbox.moe/poy68z.png', //淡蓝色旋转特效
+    Cure6: 'https://files.catbox.moe/4cg22n.png', //淡蓝色旋转特效（慢）
+    'E-cure1': 'https://files.catbox.moe/ua02um.png', //淡蓝色椭圆
 
     // ---------- Hit 组（受击/命中）----------
-    Hit1: 'https://files.catbox.moe/eufbw3.png',
-    Hit2: 'https://files.catbox.moe/uey48b.png',
-    HitFire: 'https://files.catbox.moe/66c4bc.png',
-    HitIce: 'https://files.catbox.moe/x478q5.png',
-    HitPhoton: 'https://files.catbox.moe/c2i2sc.png',
-    HitSpecial2: 'https://files.catbox.moe/qgx8uq.png',
-    HitSpecial1: 'https://files.catbox.moe/clh62v.png',
-    HitThunder: 'https://files.catbox.moe/a0ls1f.png',
-    Hit3: 'https://files.catbox.moe/3484nt.png',
+    Hit1: 'https://files.catbox.moe/eufbw3.png', //黄色打击
+    Hit2: 'https://files.catbox.moe/uey48b.png', //橙色打击
+    HitFire: 'https://files.catbox.moe/66c4bc.png', //橙色爆炸
+    HitIce: 'https://files.catbox.moe/x478q5.png', //蓝色冰爆炸
+    HitPhoton: 'https://files.catbox.moe/c2i2sc.png', //类似子弹打击
+    HitSpecial2: 'https://files.catbox.moe/qgx8uq.png', //橙色椭圆爆炸
+    HitSpecial1: 'https://files.catbox.moe/clh62v.png', //黄色打击
+    HitThunder: 'https://files.catbox.moe/a0ls1f.png', //雷电打击
+    Hit3: 'https://files.catbox.moe/3484nt.png', //红色打击
 
     // ---------- Fire 组（火焰）----------
     Fire2: 'https://files.catbox.moe/tyt73c.png',
