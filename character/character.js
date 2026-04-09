@@ -1407,6 +1407,7 @@
           ap: 2,
           level: 5,
           advancement: 'B',
+          locked: true,
           attribute1: '物理',
           attribute2: '远程',
           attribute3: '群体',
