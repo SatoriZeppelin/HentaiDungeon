@@ -285,7 +285,7 @@
       '.char-detail-grid .skill-card{background:rgba(255,255,255,.5);border:1px solid var(--gold-border);padding:8px 10px;border-radius:6px}.char-detail-grid .skill-card-locked-wrap{position:relative}.char-detail-grid .skill-card-locked-overlay{position:absolute;inset:0;background:rgba(255,255,255,.7);border-radius:6px;display:flex;align-items:center;justify-content:center;padding:8px}.char-detail-grid .skill-unlock-btn{padding:8px 14px;border:2px solid var(--gold-border);border-radius:8px;background:#1a150e;color:#e4d5b7;font-size:12px;font-weight:bold;cursor:pointer;transition:transform .2s,box-shadow .2s}.char-detail-grid .skill-unlock-btn:hover:not(:disabled){transform:scale(1.05);box-shadow:0 0 10px rgba(201,162,39,.4)}.char-detail-grid .skill-unlock-btn:disabled{opacity:.6;cursor:not-allowed}',
       '.char-detail-grid .skill-name{font-weight:bold;font-size:12px;color:#5c3a21;border-bottom:1px solid rgba(139,115,32,.25);display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;padding-bottom:4px}.char-detail-grid .skill-name-left{display:inline-flex;align-items:center;gap:6px}.char-detail-grid .skill-name-right{display:inline-flex;align-items:center;gap:6px;flex-shrink:0}.char-detail-grid .skill-lv{font-size:11px;color:#5c4d10;font-weight:bold}.char-detail-grid .skill-level-actions{display:inline-flex;align-items:center;gap:2px}.char-detail-grid .skill-btn-minus,.char-detail-grid .skill-btn-plus{width:20px;height:20px;padding:0;border:1px solid #5c4a3a;border-radius:4px;background:rgba(255,255,255,.9);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;color:#3d3529;transition:background .2s}.char-detail-grid .skill-btn-minus:hover,.char-detail-grid .skill-btn-plus:hover{background:#e4d5b7}.char-detail-grid .skill-btn-minus:disabled,.char-detail-grid .skill-btn-plus:disabled{opacity:.5;cursor:not-allowed}.char-detail-grid .skill-btn-minus svg,.char-detail-grid .skill-btn-plus svg{width:12px;height:12px;stroke:currentColor}.char-detail-grid .skill-advance-btn{width:22px;height:22px;padding:0;border:none;border-radius:6px;background:#c83c3c;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;color:#d4af37;transition:background .2s,transform .15s}.char-detail-grid .skill-advance-btn:hover{background:#a82d2d;transform:scale(1.05)}.char-detail-grid .skill-advance-btn svg{width:14px;height:14px;stroke:currentColor}',
       '.advancement-popup{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;pointer-events:none}.advancement-popup.show{display:flex;pointer-events:auto}.advancement-popup-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.4)}.advancement-popup-panel{position:relative;z-index:1;background:#1a150e;color:#e4d5b7;border:2px solid var(--gold-border);border-radius:12px;padding:0;min-width:280px;max-width:90vw;box-shadow:0 8px 32px rgba(0,0,0,.5);display:flex;flex-direction:column}.advancement-popup-title{font-size:16px;font-weight:bold;color:var(--ornate-gold);padding:14px 44px 12px 16px;border-bottom:1px solid rgba(139,115,32,.4)}.advancement-popup-close{position:absolute;top:10px;right:10px;width:28px;height:28px;padding:0;border:none;border-radius:6px;background:transparent;color:#8b7355;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s,color .2s}.advancement-popup-close:hover{background:rgba(139,115,32,.25);color:#e4d5b7}.advancement-popup-close svg{width:18px;height:18px;stroke:currentColor}.advancement-popup-body{padding:16px;display:flex;flex-direction:column;gap:12px}.advancement-opt{background:rgba(255,255,255,.06);border:1px solid rgba(139,115,32,.35);border-radius:8px;padding:12px 14px;cursor:pointer;transition:background .15s,border-color .15s}.advancement-opt:hover{background:rgba(201,162,39,.12);border-color:var(--gold-border)}.advancement-opt.selected{background:rgba(201,162,39,.2);border-color:var(--ornate-gold)}.advancement-opt-name{font-weight:bold;color:var(--ornate-gold);margin-bottom:6px}.advancement-opt-effect{font-size:12px;color:#c4b8a8;line-height:1.4}.advancement-popup-footer{padding:12px 16px 16px;border-top:1px solid rgba(139,115,32,.3)}.advancement-confirm-btn{width:100%;padding:10px 20px;border:2px solid var(--gold-border);border-radius:8px;background:rgba(201,162,39,.15);color:var(--ornate-gold);font-weight:bold;cursor:pointer;transition:background .2s}.advancement-confirm-btn:hover{background:rgba(201,162,39,.3)}.advancement-confirm-btn:disabled{opacity:.5;cursor:not-allowed}',
-      '.char-detail-grid .skill-desc{font-size:11px;color:#555;line-height:1.35;white-space:pre-line}.char-detail-grid .skill-desc-advancement{font-size:11px;color:#555;line-height:1.35;margin-top:4px;white-space:pre-line}.buff-ref{color:#1e88e5;cursor:pointer;text-decoration:none}.skill-calc{font-weight:bold;cursor:help;border-bottom:1px dotted currentColor}.skill-calc-str{color:var(--hp-red)}.skill-calc-agi{color:#2e7d32}.skill-calc-int{color:#1565c0}.skill-calc-sta{color:#e65100}.skill-calc-def{color:#5d4037}.skill-calc-level{color:#6a1b9a}.skill-calc-atk{color:#c62828}.skill-calc-cha{color:#c2185b}.skill-calc-纳刀伤害{color:#5d4037}.skill-calc-白夜即死{color:#9c27b0}.skill-calc-心眼闪避{color:#2e7d32}.skill-calc-心眼暴击{color:#c62828}#buff-tooltip-popup{position:fixed;z-index:2147483647;display:none;max-width:280px;padding:8px 12px;font-size:12px;line-height:1.4;color:#1a150e;background:#f5f0e1;border:1px solid var(--gold-border);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.2);pointer-events:none}#buff-tooltip-popup.show{display:block}#buff-tooltip-popup .report-attr-name{display:inline}#buff-tooltip-popup .report-attr-icon{display:inline-flex;align-items:center;vertical-align:middle;margin-left:2px}#buff-tooltip-popup .report-attr-icon .attr-icon-svg{width:14px;height:14px}.char-detail-grid .passive-skills-section,.char-detail-grid .basic-skills-section,.char-detail-grid .active-skills-section{display:flex;flex-direction:column;gap:10px}.char-detail-grid .passive-skills-section{margin-bottom:12px}.char-detail-grid .basic-skills-section{margin-bottom:12px}.char-detail-grid .active-skills-section{margin-bottom:8px}.char-detail-grid .skill-subtitle{font-size:11px;font-weight:bold;color:#5c4d10;margin-bottom:6px;padding-bottom:2px;border-bottom:1px solid rgba(139,115,32,.2)}.char-detail-grid .special-skill-open-btn{padding:4px 10px;border:2px solid var(--gold-border);border-radius:6px;background:#1a150e;color:var(--ornate-gold);font-size:12px;font-weight:bold;cursor:pointer;margin-right:8px}.char-detail-grid .special-skill-open-btn:hover{background:rgba(201,162,39,.2)}.char-detail-grid .special-skills-section{margin-top:14px;padding-top:10px;border-top:1px solid rgba(139,115,32,.25)}.special-skill-popup{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;pointer-events:none}.special-skill-popup.show{display:flex;pointer-events:auto}.special-skill-popup-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.4)}.special-skill-popup-panel{position:relative;z-index:1;background:#1a150e;color:#e4d5b7;border:2px solid var(--gold-border);border-radius:12px;padding:0;min-width:300px;max-width:90vw;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,.5)}.special-skill-popup-title{padding:14px 44px 12px 16px;font-size:16px;font-weight:bold;color:var(--ornate-gold);border-bottom:1px solid rgba(139,115,32,.4)}.special-skill-popup-close{position:absolute;top:10px;right:10px;width:28px;height:28px;padding:0;border:none;border-radius:6px;background:transparent;color:#8b7355;cursor:pointer;display:flex;align-items:center;justify-content:center}.special-skill-popup-close:hover{background:rgba(139,115,32,.25);color:#e4d5b7}.special-skill-popup-body{padding:16px;overflow-y:auto;flex:1;min-height:0}.special-skill-opt{background:rgba(255,255,255,.06);border:1px solid rgba(139,115,32,.35);border-radius:8px;padding:12px 14px;margin-bottom:10px;display:flex;flex-direction:column;gap:6px}.special-skill-opt-name{font-weight:bold;color:var(--ornate-gold)}.special-skill-opt-effect{font-size:12px;color:#c4b8a8;line-height:1.4}.special-skill-opt-unlock{align-self:flex-start;padding:6px 12px;border:2px solid var(--gold-border);border-radius:6px;background:rgba(201,162,39,.15);color:var(--ornate-gold);font-size:12px;cursor:pointer}.special-skill-opt-unlock:hover{background:rgba(201,162,39,.3)}.special-skill-opt-unlock:disabled{opacity:.5;cursor:not-allowed}.char-detail-grid .skill-card-passive .skill-name .skill-passive-tag{font-size:10px;color:#7a6b5c;font-weight:normal;margin-left:0}.char-detail-grid .skill-tags{font-size:10px;color:#7a6b5c;margin-bottom:4px;padding-bottom:2px}',
+      '.char-detail-grid .skill-desc{font-size:11px;color:#555;line-height:1.35;white-space:pre-line}.char-detail-grid .skill-desc-advancement{font-size:11px;color:#555;line-height:1.35;margin-top:4px;white-space:pre-line}.buff-ref{color:#1e88e5;cursor:pointer;text-decoration:none}.skill-calc{font-weight:bold;cursor:help;border-bottom:1px dotted currentColor}.skill-calc-str{color:var(--hp-red)}.skill-calc-agi{color:#2e7d32}.skill-calc-int{color:#1565c0}.skill-calc-sta{color:#e65100}.skill-calc-def{color:#5d4037}.skill-calc-level{color:#6a1b9a}.skill-calc-atk{color:#c62828}.skill-calc-cha{color:#c2185b}.skill-calc-纳刀伤害{color:#5d4037}.skill-calc-白夜即死{color:#9c27b0}.skill-calc-心眼闪避{color:#2e7d32}.skill-calc-心眼暴击{color:#c62828}.skill-calc-沧澜伤害{color:#209991}#buff-tooltip-popup{position:fixed;z-index:2147483647;display:none;max-width:280px;padding:8px 12px;font-size:12px;line-height:1.4;color:#1a150e;background:#f5f0e1;border:1px solid var(--gold-border);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.2);pointer-events:none}#buff-tooltip-popup.show{display:block}#buff-tooltip-popup .report-attr-name{display:inline}#buff-tooltip-popup .report-attr-icon{display:inline-flex;align-items:center;vertical-align:middle;margin-left:2px}#buff-tooltip-popup .report-attr-icon .attr-icon-svg{width:14px;height:14px}#buff-tooltip-popup .attr-icon{display:inline-flex;align-items:center;vertical-align:middle;margin:0 1px}#buff-tooltip-popup .attr-icon .attr-icon-svg{width:16px;height:16px}.char-detail-grid .passive-skills-section,.char-detail-grid .basic-skills-section,.char-detail-grid .active-skills-section{display:flex;flex-direction:column;gap:10px}.char-detail-grid .passive-skills-section{margin-bottom:12px}.char-detail-grid .basic-skills-section{margin-bottom:12px}.char-detail-grid .active-skills-section{margin-bottom:8px}.char-detail-grid .skill-subtitle{font-size:11px;font-weight:bold;color:#5c4d10;margin-bottom:6px;padding-bottom:2px;border-bottom:1px solid rgba(139,115,32,.2)}.char-detail-grid .special-skill-open-btn{padding:4px 10px;border:2px solid var(--gold-border);border-radius:6px;background:#1a150e;color:var(--ornate-gold);font-size:12px;font-weight:bold;cursor:pointer;margin-right:8px}.char-detail-grid .special-skill-open-btn:hover{background:rgba(201,162,39,.2)}.char-detail-grid .special-skills-section{margin-top:14px;padding-top:10px;border-top:1px solid rgba(139,115,32,.25)}.special-skill-popup{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;pointer-events:none}.special-skill-popup.show{display:flex;pointer-events:auto}.special-skill-popup-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.4)}.special-skill-popup-panel{position:relative;z-index:1;background:#1a150e;color:#e4d5b7;border:2px solid var(--gold-border);border-radius:12px;padding:0;min-width:300px;max-width:90vw;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,.5)}.special-skill-popup-title{padding:14px 44px 12px 16px;font-size:16px;font-weight:bold;color:var(--ornate-gold);border-bottom:1px solid rgba(139,115,32,.4)}.special-skill-popup-close{position:absolute;top:10px;right:10px;width:28px;height:28px;padding:0;border:none;border-radius:6px;background:transparent;color:#8b7355;cursor:pointer;display:flex;align-items:center;justify-content:center}.special-skill-popup-close:hover{background:rgba(139,115,32,.25);color:#e4d5b7}.special-skill-popup-body{padding:16px;overflow-y:auto;flex:1;min-height:0}.special-skill-opt{background:rgba(255,255,255,.06);border:1px solid rgba(139,115,32,.35);border-radius:8px;padding:12px 14px;margin-bottom:10px;display:flex;flex-direction:column;gap:6px}.special-skill-opt-name{font-weight:bold;color:var(--ornate-gold)}.special-skill-opt-effect{font-size:12px;color:#c4b8a8;line-height:1.4}.special-skill-opt-unlock{align-self:flex-start;padding:6px 12px;border:2px solid var(--gold-border);border-radius:6px;background:rgba(201,162,39,.15);color:var(--ornate-gold);font-size:12px;cursor:pointer}.special-skill-opt-unlock:hover{background:rgba(201,162,39,.3)}.special-skill-opt-unlock:disabled{opacity:.5;cursor:not-allowed}.char-detail-grid .skill-card-passive .skill-name .skill-passive-tag{font-size:10px;color:#7a6b5c;font-weight:normal;margin-left:0}.char-detail-grid .skill-tags{font-size:10px;color:#7a6b5c;margin-bottom:4px;padding-bottom:2px}',
       '.char-detail-grid .relic-slots{display:flex;flex-direction:column;gap:8px}',
       '.char-detail-grid .relic-card{background:linear-gradient(135deg,#fff,#fdf5e6);border:2px solid var(--gold-border);padding:10px;border-radius:6px}',
       '.char-detail-grid .relic-name{font-weight:bold;font-size:13px;color:#8b4513;margin-bottom:4px}.char-detail-grid .relic-effect{font-size:11px;color:#555}',
@@ -715,16 +715,40 @@
     function escapeHtml(s) {
       return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
+    var SKILL_FORMULA_CANG_COEF_RE = /^__CANG_FORMULA__([\d.]+)__$/;
+    var SKILL_FORMULA_ATTR_STR_ICON =
+      '<span class="attr-icon" style="color:#d32f2f;vertical-align:-2px">' +
+      '<svg class="attr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.596 12.768a2 2 0 1 0 2.829-2.829l-1.768-1.767a2 2 0 0 0 2.828-2.829l-2.828-2.828a2 2 0 0 0-2.829 2.828l-1.767-1.768a2 2 0 1 0-2.829 2.829z"/><path d="m2.5 21.5 1.4-1.4"/><path d="m20.1 3.9 1.4-1.4"/><path d="M5.343 21.485a2 2 0 1 0 2.829-2.828l1.767 1.768a2 2 0 1 0 2.829-2.829l-6.364-6.364a2 2 0 1 0-2.829 2.829l1.768 1.767a2 2 0 0 0-2.828 2.829z"/><path d="m9.6 14.4 4.8-4.8"/></svg></span>';
+    var SKILL_FORMULA_ATTR_AGI_ICON =
+      '<span class="attr-icon" style="color:#2e7d32;vertical-align:-2px">' +
+      '<svg class="attr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>';
     /** 将描述中的【buff名】转为蓝色可悬停/点击的 span；将计算占位符转为加粗、按属性着色的 span（悬停/点击显示公式），并做 HTML 转义 */
     function wrapBuffRefs(text) {
       if (!text) return '';
       var escaped = String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       var withCalcs = escaped.replace(SKILL_CALC_PLACEHOLDER_RE, function (_, key, formula, value) {
-        var formulaEsc = escapeHtml(formula);
+        var cangCoef = SKILL_FORMULA_CANG_COEF_RE.exec(formula);
+        var formulaIsHtml = false;
+        var formulaForAttr = formula;
+        if (cangCoef) {
+          formulaIsHtml = true;
+          formulaForAttr =
+            '（力量' +
+            SKILL_FORMULA_ATTR_STR_ICON +
+            '+敏捷' +
+            SKILL_FORMULA_ATTR_AGI_ICON +
+            '）x剑势x' +
+            cangCoef[1];
+        }
+        var formulaEsc = formulaIsHtml
+          ? formulaForAttr.replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+          : escapeHtml(formula);
         return (
           '<span class="skill-calc skill-calc-' +
           escapeHtml(key) +
-          '" data-formula="' +
+          '"' +
+          (formulaIsHtml ? ' data-formula-html="1"' : '') +
+          ' data-formula="' +
           formulaEsc +
           '" data-value="' +
           escapeHtml(value) +
@@ -3138,6 +3162,28 @@
       }
       return party;
     }
+    /** 仅测试模式：右侧 6 槽史莱姆（100 HP，10 攻 10 防），字段与 spawn plan 写入的 enemyParty 一致 */
+    function buildTestModeSlimeEnemyParty() {
+      var arr = [];
+      for (var si = 0; si < 6; si++) {
+        arr.push({
+          name: '史莱姆',
+          species: '史莱姆',
+          gender: '',
+          bodySize: 'medium',
+          rank: 'normal',
+          level: 'Normal',
+          hp: 100,
+          maxHp: 100,
+          atk: 10,
+          def: 10,
+          buffs: [],
+          intents: [],
+          currentShield: 0,
+        });
+      }
+      return arr;
+    }
     var defaultParty = buildDefaultParty();
     /** 敌方默认阵容（6 槽全空）；可从聊天变量 v.enemyParty 覆盖 */
     var defaultEnemyParty = [null, null, null, null, null, null];
@@ -3677,15 +3723,15 @@
       } catch (e) {}
       if (!v) v = {};
       if (Array.isArray(payload.party)) {
-        // 读档时清理历史残留：清漓仅保留基础攻击/防御（避免旧版本/旧存档多技能）
+        // 读档时清理历史残留：清漓保留 灵犀+攻击+防御（避免旧版本/旧存档多技能）
         v.party = payload.party.map(function (ch) {
           if (!ch || ch.name !== '清漓') return ch;
           try {
             var c2 = JSON.parse(JSON.stringify(ch));
-            if (Array.isArray(c2.skills)) c2.skills = c2.skills.slice(0, 2);
+            if (Array.isArray(c2.skills)) c2.skills = c2.skills.slice(0, 3);
             return c2;
           } catch (e2) {
-            if (ch && Array.isArray(ch.skills)) ch.skills = ch.skills.slice(0, 2);
+            if (ch && Array.isArray(ch.skills)) ch.skills = ch.skills.slice(0, 3);
             return ch;
           }
         });
@@ -4143,9 +4189,10 @@
           popup.style.top = top + 'px';
         });
       }
-      function showCalcAt(x, y, formula) {
+      function showCalcAt(x, y, formula, isHtml) {
         if (!formula) return;
-        popup.textContent = formula;
+        if (isHtml) popup.innerHTML = formula;
+        else popup.textContent = formula;
         popup.classList.add('show');
         var pad = 12;
         requestAnimationFrame(function () {
@@ -4269,9 +4316,12 @@
         });
         $(document).on('mouseenter', '.skill-calc', function (e) {
           if (!buffTooltipOpenByClick) {
-            var formula = e.target.getAttribute('data-formula');
-            var value = e.target.getAttribute('data-value');
-            if (formula != null) showCalcAt(e.clientX, e.clientY, formula);
+            var el = e.target && e.target.closest ? e.target.closest('.skill-calc') : null;
+            if (!el && e.target && e.target.classList && e.target.classList.contains('skill-calc')) el = e.target;
+            if (!el) return;
+            var formula = el.getAttribute('data-formula');
+            var isHtml = el.getAttribute('data-formula-html') === '1';
+            if (formula != null) showCalcAt(e.clientX, e.clientY, formula, isHtml);
           }
         });
         $(document).on('mouseleave', '.skill-calc', function () {
@@ -4279,11 +4329,14 @@
         });
         $(document).on('click', '.skill-calc', function (e) {
           e.preventDefault();
-          var formula = e.target.getAttribute('data-formula');
-          var value = e.target.getAttribute('data-value');
+          var el = e.target && e.target.closest ? e.target.closest('.skill-calc') : null;
+          if (!el && e.target && e.target.classList && e.target.classList.contains('skill-calc')) el = e.target;
+          if (!el) return;
+          var formula = el.getAttribute('data-formula');
+          var isHtml = el.getAttribute('data-formula-html') === '1';
           if (formula != null) {
             buffTooltipOpenByClick = true;
-            showCalcAt(e.clientX, e.clientY, formula || '');
+            showCalcAt(e.clientX, e.clientY, formula || '', isHtml);
           }
         });
         $(document).on('mouseenter', '.attr-val-breakdown', function (e) {
@@ -4367,7 +4420,16 @@
               if (party[pi] && !party[pi].avatar) party[pi].avatar = portraits[party[pi].name] || '';
             }
           } catch (eAv) {}
-          var emptyEnemyParty = [null, null, null, null, null, null];
+          var testEnemyParty = buildTestModeSlimeEnemyParty();
+          if (
+            typeof window !== 'undefined' &&
+            window.BattleGrid &&
+            typeof window.BattleGrid.capUnitBuffs === 'function'
+          ) {
+            testEnemyParty.forEach(function (en) {
+              if (en) window.BattleGrid.capUnitBuffs(en);
+            });
+          }
           var initialMap = {
             area: '地牢',
             pos: '0-0',
@@ -4385,7 +4447,7 @@
           } catch (eV) {}
           if (!v) v = {};
           v.party = party;
-          v.enemyParty = emptyEnemyParty;
+          v.enemyParty = testEnemyParty;
           v.battleFloorTitle = '';
           v.map = initialMap;
           if (!v.buffDefinitions || !Array.isArray(v.buffDefinitions) || v.buffDefinitions.length === 0)
@@ -4397,7 +4459,7 @@
           mergePreserveChatGold(v);
           if (typeof replaceVariables === 'function') replaceVariables(v, { type: 'chat' });
           _lastKnownParty = party;
-          _lastKnownEnemies = emptyEnemyParty;
+          _lastKnownEnemies = testEnemyParty;
           if (typeof window.BattleGrid !== 'undefined' && typeof window.BattleGrid.setBattleLog === 'function')
             window.BattleGrid.setBattleLog([]);
           if (window.色色地牢_save && typeof window.色色地牢_save.writeAutoSnapshot === 'function') {

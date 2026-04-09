@@ -175,8 +175,10 @@
 
   /**
    * 游戏内 buff 定义。desc：用于显示的描述（悬停/说明均读此字段）；maxLayers：层数上限，不设或 0 表示无上限。
+   * 条目顺序：①通用增益 ②通用减益（debuff）③色情类减益 ④角色专属（仅特定角色技能施加；含 characterExclusive 便于检索）。
    */
   const BUFF_DEFINITIONS = [
+    // ---------- ① 通用增益 ----------
     { id: '护盾', name: '护盾', desc: '抵消伤害', tooltip: '抵消伤害。' },
     {
       id: '力量强化',
@@ -219,6 +221,49 @@
       desc: '回合结束时恢复等同于当前层数的生命值',
       tooltip: '回合结束时恢复等同于当前层数的生命值。无上限。',
     },
+    {
+      id: '坚韧',
+      name: '坚韧',
+      desc: '受到的所有伤害-10%',
+      tooltip: '受到的所有伤害-10%。回合结束阶段-1层。上限5层。',
+      maxLayers: 5,
+    },
+    {
+      id: '锁定',
+      name: '锁定',
+      desc: '下一次远程技能伤害+20%',
+      tooltip: '下一次远程技能伤害+20%。触发后消耗一层。玩家结算回合清空。',
+      maxLayers: 1,
+    },
+    {
+      id: '扑杀',
+      name: '扑杀',
+      desc: '下一次近战技能伤害+20%',
+      tooltip: '下一次近战技能伤害+20%。触发后消耗一层。玩家结算回合清空。',
+      maxLayers: 1,
+    },
+    {
+      id: '剑势',
+      name: '剑势',
+      desc: '灵犀·涟漪、沧澜等技能累积的剑意',
+      tooltip: '上限20层。不会在回合结束时被清除；进入新一场战斗（切换楼层遭遇）时清空。',
+      maxLayers: 20,
+    },
+    {
+      id: '踏浪',
+      name: '踏浪',
+      desc: '踏浪行歌：每使用一个消耗 AP 的指令后额外获得1层【剑势】',
+      tooltip: '持续至下个玩家行动回合开始。',
+      maxLayers: 1,
+    },
+    {
+      id: '虚无',
+      name: '虚无',
+      desc: '完全不可选中，持续至下回合开始',
+      tooltip: '相位转移中：无法被敌方攻击，无法接受友方增益和治疗。回合开始时解除并对敌方全体造成伤害。',
+      maxLayers: 1,
+    },
+    // ---------- ② 通用减益（debuff）----------
     {
       id: '力量削弱',
       name: '力量削弱',
@@ -310,7 +355,8 @@
       id: '眩晕',
       name: '眩晕',
       desc: '无效化该角色任意一次行动',
-      tooltip: '无效化该角色任意一次行动',
+      tooltip:
+        '每次尝试行动会消去 1 层，该次不产生技能效果，但仍消耗该行动对应的 AP（潮汐沧澜、猎手本能等 0 AP 项除外）。不随回合结束衰减。',
       maxLayers: 3,
     },
     {
@@ -340,77 +386,6 @@
       desc: '将行动目标随机更换为场上除自己外任意角色',
       tooltip: '将该行动目标随机更换为场上除自己以外的任意角色',
       maxLayers: 3,
-    },
-    {
-      id: '嘲讽',
-      name: '嘲讽',
-      desc: '被视为优先攻击的对象',
-      tooltip: '被视为优先攻击的对象',
-      maxLayers: 3,
-    },
-    {
-      id: '虚无',
-      name: '虚无',
-      desc: '完全不可选中，持续至下回合开始',
-      tooltip: '相位转移中：无法被敌方攻击，无法接受友方增益和治疗。回合开始时解除并对敌方全体造成伤害。',
-      maxLayers: 1,
-    },
-    {
-      id: '发情',
-      name: '发情',
-      desc: '暴击率-N%（每层5%，上限15%）',
-      tooltip: '暴击率-5%。上限3层。',
-      maxLayers: 3,
-    },
-    {
-      id: '羞耻',
-      name: '羞耻',
-      desc: '命中率-N%（每层5%，上限15%）',
-      tooltip: '命中率-5%。上限3层。',
-      maxLayers: 3,
-    },
-    { id: '轻微破损', name: '轻微破损', desc: '防御-10%', tooltip: '防御-10%。永久（无自动结算）。' },
-    { id: '中度破损', name: '中度破损', desc: '防御-20%', tooltip: '防御-20%。永久（无自动结算）。' },
-    { id: '严重破损', name: '严重破损', desc: '防御-30%', tooltip: '防御-30%。永久（无自动结算）。' },
-    {
-      id: '攻势',
-      name: '攻势',
-      desc: '力量+2',
-      tooltip: '每层力量+2。结算回合清空身上所有的攻势。层数无上限。',
-    },
-    {
-      id: '守势',
-      name: '守势',
-      desc: '敏捷+2',
-      tooltip: '每层敏捷+2。结算回合清空身上所有的守势。层数无上限。',
-    },
-    {
-      id: '锁定',
-      name: '锁定',
-      desc: '下一次远程技能伤害+20%',
-      tooltip: '下一次远程技能伤害+20%。触发后消耗一层。玩家结算回合清空。',
-      maxLayers: 1,
-    },
-    {
-      id: '扑杀',
-      name: '扑杀',
-      desc: '下一次近战技能伤害+20%',
-      tooltip: '下一次近战技能伤害+20%。触发后消耗一层。玩家结算回合清空。',
-      maxLayers: 1,
-    },
-    {
-      id: '心满意足',
-      name: '心满意足',
-      desc: '力量+1，敏捷+1',
-      tooltip: '每层力量+1、敏捷+1。上限10层。',
-      maxLayers: 10,
-    },
-    {
-      id: '坚韧',
-      name: '坚韧',
-      desc: '受到的所有伤害-10%',
-      tooltip: '受到的所有伤害-10%。回合结束阶段-1层。上限5层。',
-      maxLayers: 5,
     },
     {
       id: '麻痹',
@@ -454,12 +429,46 @@
       tooltip: '命中-10%。回合结束阶段-1层。上限5层。',
       maxLayers: 5,
     },
+    // ---------- ③ 色情类减益 ----------
+    {
+      id: '发情',
+      name: '发情',
+      desc: '暴击率-N%（每层5%，上限15%）',
+      tooltip: '暴击率-5%。上限3层。',
+      maxLayers: 3,
+    },
+    {
+      id: '羞耻',
+      name: '羞耻',
+      desc: '命中率-N%（每层5%，上限15%）',
+      tooltip: '命中率-5%。上限3层。',
+      maxLayers: 3,
+    },
+    { id: '轻微破损', name: '轻微破损', desc: '防御-10%', tooltip: '防御-10%。永久（无自动结算）。' },
+    { id: '中度破损', name: '中度破损', desc: '防御-20%', tooltip: '防御-20%。永久（无自动结算）。' },
+    { id: '严重破损', name: '严重破损', desc: '防御-30%', tooltip: '防御-30%。永久（无自动结算）。' },
+    // ---------- ④ 角色专属 buff ----------
+    {
+      id: '攻势',
+      name: '攻势',
+      desc: '力量+2',
+      tooltip: '每层力量+2。结算回合清空身上所有的攻势。层数无上限。',
+      characterExclusive: '昼墨',
+    },
+    {
+      id: '守势',
+      name: '守势',
+      desc: '敏捷+2',
+      tooltip: '每层敏捷+2。结算回合清空身上所有的守势。层数无上限。',
+      characterExclusive: '昼墨',
+    },
     {
       id: '灵巧',
       name: '灵巧',
       desc: '闪避+10%',
       tooltip: '闪避+10%。回合结束阶段-1层。持续回合数由施加技能指定。上限5层。',
       maxLayers: 5,
+      characterExclusive: '黯 / 岚',
     },
     {
       id: '专注',
@@ -467,6 +476,7 @@
       desc: '命中+10%',
       tooltip: '命中+10%。回合结束阶段-1层。持续回合数由施加技能指定。上限5层。',
       maxLayers: 5,
+      characterExclusive: '岚',
     },
     {
       id: '精准',
@@ -474,6 +484,15 @@
       desc: '暴击+10%',
       tooltip: '暴击+10%。回合结束阶段-1层。持续回合数由施加技能指定。上限5层。',
       maxLayers: 5,
+      characterExclusive: '岚',
+    },
+    {
+      id: '心满意足',
+      name: '心满意足',
+      desc: '力量+1，敏捷+1',
+      tooltip: '每层力量+1、敏捷+1。上限10层。',
+      maxLayers: 10,
+      characterExclusive: '岚',
     },
     {
       id: '激励',
@@ -481,6 +500,7 @@
       desc: '造成的所有伤害+10%',
       tooltip: '造成的所有伤害+10%。回合结束阶段-1层。持续回合数由施加技能指定。上限5层。',
       maxLayers: 5,
+      characterExclusive: '预留（当前无技能叠加，仅结算公式读取）',
     },
     {
       id: '格挡',
@@ -488,6 +508,7 @@
       desc: '受到的物理伤害-10%',
       tooltip: '受到的物理伤害-10%。回合结束阶段-1层。持续回合数由施加技能指定。上限5层。',
       maxLayers: 5,
+      characterExclusive: '预留（当前无技能叠加，仅结算公式读取）',
     },
     {
       id: '扰魔',
@@ -495,10 +516,20 @@
       desc: '受到的魔法伤害-10%',
       tooltip: '受到的魔法伤害-10%。回合结束阶段-1层。持续回合数由施加技能指定。上限5层。',
       maxLayers: 5,
+      characterExclusive: '预留（当前无技能叠加，仅结算公式读取）',
+    },
+    {
+      id: '嘲讽',
+      name: '嘲讽',
+      desc: '被视为优先攻击的对象',
+      tooltip: '被视为优先攻击的对象。上限2层。',
+      maxLayers: 2,
+      characterExclusive: '达芙妮 / 艾丽卡；敌方意图可自施',
     },
   ];
-  /** 净化斩击等驱散技能视为「增益」的 buff id 列表（驱散时只移除此类） */
+  /** 净化斩击等驱散技能视为「增益」的 buff id 列表（驱散时只移除此类）。顺序：通用增益 → 角色专属。 */
   var POSITIVE_BUFF_IDS = [
+    // 通用增益
     '护盾',
     '力量强化',
     '敏捷强化',
@@ -506,21 +537,26 @@
     '攻击强化',
     '防御强化',
     '再生',
+    '坚韧',
+    '锁定',
+    '扑杀',
+    '剑势',
+    '踏浪',
+    // 角色专属
     '攻势',
     '守势',
-    '坚韧',
     '灵巧',
     '专注',
     '精准',
+    '心满意足',
     '激励',
     '格挡',
+    '扰魔',
     '嘲讽',
-    '心满意足',
-    '锁定',
-    '扑杀',
   ];
-  /** 救赎等清除负面状态时移除的 debuff id 列表 */
+  /** 救赎等清除负面状态时移除的 debuff id 列表。顺序：通用减益 → 色情类减益。 */
   var NEGATIVE_DEBUFF_IDS = [
+    // 通用减益
     '虚弱',
     '脆弱',
     '破甲',
@@ -537,13 +573,14 @@
     '恍惚',
     '迟钝',
     '迟缓',
-    '发情',
-    '羞耻',
     '力量削弱',
     '敏捷削弱',
     '智力削弱',
     '攻击削弱',
     '防御削弱',
+    // 色情类减益
+    '发情',
+    '羞耻',
   ];
   /** 取 buff 的层数上限，无则返回 null（表示不封顶） */
   function getBuffMaxLayers(buffId) {
@@ -563,57 +600,63 @@
     }
   }
 
-  /** buff 外观主题：id → { fill: 半透明填充, border: 边框色, color: 层数/名字文字色 }，用于角色卡上的 buff 标签 */
+  /** buff 外观主题：id → { fill, border, color }，用于角色卡上的 buff 标签。顺序与 BUFF_DEFINITIONS 一致：通用增益 → debuff → 色情减益 → 角色专属。 */
   var BUFF_THEME = {
-    重伤: { fill: 'rgba(179,36,36,0.45)', border: '#b32424', color: '#b32424' },
-    流血: { fill: 'rgba(179,36,36,0.45)', border: '#b32424', color: '#b32424' },
-    燃烧: { fill: 'rgba(230,81,0,0.45)', border: '#e65100', color: '#e65100' },
-    中毒: { fill: 'rgba(123,31,162,0.45)', border: '#7b1fa2', color: '#7b1fa2' },
-    虚弱: { fill: 'rgba(97,97,97,0.5)', border: '#616161', color: '#424242' },
-    脆弱: { fill: 'rgba(179,36,36,0.4)', border: '#b32424', color: '#b32424' },
-    破甲: { fill: 'rgba(139,90,43,0.5)', border: '#5d4037', color: '#5d4037' },
-    碎魔: { fill: 'rgba(21,101,192,0.45)', border: '#1565c0', color: '#1565c0' },
-    力量削弱: { fill: 'rgba(179,36,36,0.35)', border: '#8b0000', color: '#8b0000' },
-    敏捷削弱: { fill: 'rgba(179,36,36,0.35)', border: '#8b0000', color: '#8b0000' },
-    智力削弱: { fill: 'rgba(179,36,36,0.35)', border: '#8b0000', color: '#8b0000' },
-    攻击削弱: { fill: 'rgba(179,36,36,0.35)', border: '#8b0000', color: '#8b0000' },
-    防御削弱: { fill: 'rgba(179,36,36,0.35)', border: '#8b0000', color: '#8b0000' },
+    // --- ① 通用增益 ---
+    护盾: { fill: 'rgba(25,118,210,0.4)', border: '#1976d2', color: '#1976d2' },
     力量强化: { fill: 'rgba(46,125,50,0.45)', border: '#2e7d32', color: '#2e7d32' },
     敏捷强化: { fill: 'rgba(46,125,50,0.45)', border: '#2e7d32', color: '#2e7d32' },
     智力强化: { fill: 'rgba(46,125,50,0.45)', border: '#2e7d32', color: '#2e7d32' },
     攻击强化: { fill: 'rgba(46,125,50,0.45)', border: '#2e7d32', color: '#2e7d32' },
     防御强化: { fill: 'rgba(46,125,50,0.45)', border: '#2e7d32', color: '#2e7d32' },
     再生: { fill: 'rgba(46,125,50,0.5)', border: '#2e7d32', color: '#2e7d32' },
-    护盾: { fill: 'rgba(25,118,210,0.4)', border: '#1976d2', color: '#1976d2' },
+    坚韧: { fill: 'rgba(139,90,43,0.45)', border: '#5d4037', color: '#5d4037' },
+    锁定: { fill: 'rgba(33,150,243,0.45)', border: '#1976d2', color: '#1976d2' },
+    扑杀: { fill: 'rgba(244,67,54,0.45)', border: '#e65100', color: '#e65100' },
+    剑势: { fill: 'rgba(32,153,145,0.35)', border: '#209991', color: '#209991' },
+    踏浪: { fill: 'rgba(0,172,193,0.35)', border: '#0097a7', color: '#00838f' },
+    // --- ② 通用减益 ---
+    力量削弱: { fill: 'rgba(179,36,36,0.35)', border: '#8b0000', color: '#8b0000' },
+    敏捷削弱: { fill: 'rgba(179,36,36,0.35)', border: '#8b0000', color: '#8b0000' },
+    智力削弱: { fill: 'rgba(179,36,36,0.35)', border: '#8b0000', color: '#8b0000' },
+    攻击削弱: { fill: 'rgba(179,36,36,0.35)', border: '#8b0000', color: '#8b0000' },
+    防御削弱: { fill: 'rgba(179,36,36,0.35)', border: '#8b0000', color: '#8b0000' },
+    虚弱: { fill: 'rgba(97,97,97,0.5)', border: '#616161', color: '#424242' },
+    脆弱: { fill: 'rgba(179,36,36,0.4)', border: '#b32424', color: '#b32424' },
+    破甲: { fill: 'rgba(139,90,43,0.5)', border: '#5d4037', color: '#5d4037' },
+    碎魔: { fill: 'rgba(21,101,192,0.45)', border: '#1565c0', color: '#1565c0' },
+    燃烧: { fill: 'rgba(230,81,0,0.45)', border: '#e65100', color: '#e65100' },
+    流血: { fill: 'rgba(179,36,36,0.45)', border: '#b32424', color: '#b32424' },
+    重伤: { fill: 'rgba(179,36,36,0.45)', border: '#b32424', color: '#b32424' },
+    中毒: { fill: 'rgba(123,31,162,0.45)', border: '#7b1fa2', color: '#7b1fa2' },
     眩晕: { fill: 'rgba(97,97,97,0.5)', border: '#616161', color: '#424242' },
     魅惑: { fill: 'rgba(156,39,176,0.45)', border: '#9c27b0', color: '#9c27b0' },
     沉默: { fill: 'rgba(97,97,97,0.5)', border: '#616161', color: '#424242' },
     缴械: { fill: 'rgba(97,97,97,0.5)', border: '#616161', color: '#424242' },
     混乱: { fill: 'rgba(97,97,97,0.5)', border: '#616161', color: '#424242' },
-    嘲讽: { fill: 'rgba(244,67,54,0.45)', border: '#f44336', color: '#f44336' },
-    发情: { fill: 'rgba(233,30,99,0.4)', border: '#e91e63', color: '#e91e63' },
-    羞耻: { fill: 'rgba(233,30,99,0.4)', border: '#e91e63', color: '#e91e63' },
-    轻微破损: { fill: 'rgba(97,97,97,0.4)', border: '#616161', color: '#424242' },
-    中度破损: { fill: 'rgba(97,97,97,0.45)', border: '#616161', color: '#424242' },
-    严重破损: { fill: 'rgba(97,97,97,0.5)', border: '#616161', color: '#424242' },
-    攻势: { fill: 'rgba(0,0,0,0.5)', border: '#1a1a1a', color: '#1a1a1a' },
-    守势: { fill: 'rgba(250,250,250,0.7)', border: '#e0e0e0', color: '#333333' },
-    锁定: { fill: 'rgba(33,150,243,0.45)', border: '#1976d2', color: '#1976d2' },
-    扑杀: { fill: 'rgba(244,67,54,0.45)', border: '#e65100', color: '#e65100' },
-    心满意足: { fill: 'rgba(255,193,7,0.45)', border: '#ffa000', color: '#f57c00' },
-    坚韧: { fill: 'rgba(139,90,43,0.45)', border: '#5d4037', color: '#5d4037' },
     麻痹: { fill: 'rgba(121,85,72,0.5)', border: '#5d4037', color: '#4e342e' },
     冻结: { fill: 'rgba(33,150,243,0.5)', border: '#1976d2', color: '#0d47a1' },
     暗蚀: { fill: 'rgba(63,81,181,0.5)', border: '#3949ab', color: '#1a237e' },
     迟缓: { fill: 'rgba(158,158,158,0.5)', border: '#616161', color: '#424242' },
     迟钝: { fill: 'rgba(96,125,139,0.5)', border: '#546e7a', color: '#37474f' },
     恍惚: { fill: 'rgba(158,158,158,0.5)', border: '#757575', color: '#424242' },
+    // --- ③ 色情类减益 ---
+    发情: { fill: 'rgba(233,30,99,0.4)', border: '#e91e63', color: '#e91e63' },
+    羞耻: { fill: 'rgba(233,30,99,0.4)', border: '#e91e63', color: '#e91e63' },
+    轻微破损: { fill: 'rgba(97,97,97,0.4)', border: '#616161', color: '#424242' },
+    中度破损: { fill: 'rgba(97,97,97,0.45)', border: '#616161', color: '#424242' },
+    严重破损: { fill: 'rgba(97,97,97,0.5)', border: '#616161', color: '#424242' },
+    // --- ④ 角色专属（配色与 BUFF_DEFINITIONS ④ 一致）---
+    攻势: { fill: 'rgba(0,0,0,0.5)', border: '#1a1a1a', color: '#1a1a1a' },
+    守势: { fill: 'rgba(250,250,250,0.7)', border: '#e0e0e0', color: '#333333' },
     灵巧: { fill: 'rgba(76,175,80,0.5)', border: '#43a047', color: '#2e7d32' },
     专注: { fill: 'rgba(255,193,7,0.5)', border: '#ffc107', color: '#f57f17' },
     精准: { fill: 'rgba(233,30,99,0.45)', border: '#e91e63', color: '#ad1457' },
+    心满意足: { fill: 'rgba(255,193,7,0.45)', border: '#ffa000', color: '#f57c00' },
     激励: { fill: 'rgba(255,152,0,0.5)', border: '#ff9800', color: '#e65100' },
     格挡: { fill: 'rgba(96,125,139,0.5)', border: '#607d8b', color: '#455a64' },
     扰魔: { fill: 'rgba(103,58,183,0.5)', border: '#673ab7', color: '#4527a0' },
+    嘲讽: { fill: 'rgba(244,67,54,0.45)', border: '#f44336', color: '#f44336' },
   };
   function getBuffTheme(buffId) {
     return BUFF_THEME[buffId] || { fill: 'rgba(97,97,97,0.4)', border: '#757575', color: '#616161' };
@@ -2295,6 +2338,10 @@
     function resolvePlayerBuffs(onDone) {
       var party = getParty();
       var enemies = getEnemyParty();
+      run清漓沧澜潮汐End(party, enemies);
+      saveBattleData(party, enemies);
+      renderAllySlots(party);
+      renderEnemySlots(enemies);
       /** 结算回合清空所有单位身上的【攻势】与【守势】与本回合攻势守势获得标记；若己方有昼墨且解锁心眼，回合开始获得2层攻势与2层守势。（见切·弹返在进入下一回合玩家行动时清除，以便怪物行动时护盾被打破能反击） */
       function clear攻势守势(p, e) {
         var i, u;
@@ -3485,6 +3532,10 @@
           goNextSlot();
           return;
         }
+        if (tryConsume眩晕浪费行动(enemy)) {
+          goNextSlot();
+          return;
+        }
         {
           var actionType =
             battleState.plannedEnemyActions[slot - 1] != null && battleState.plannedEnemyActions[slot - 1] !== ''
@@ -3800,6 +3851,846 @@
       }
       doOneHit();
     }
+    /** 清漓·灵犀：主段 Str×系数；暴击时追加敏捷段；Lv5-A 破浪命中施加破甲+迟钝；Lv5-B 涟漪每次暴击叠【剑势】（剑势不随回合清除，新战斗由 preparePartyForNewBattle 清空） */
+    function executePlayer灵犀(allySlot, enemySlotNum, skillIndex) {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      var attacker = party[allySlot - 1];
+      var defender = enemies[enemySlotNum - 1];
+      if (!attacker || !defender || isAllyDefeated(attacker)) return;
+      var skill =
+        skillIndex >= 0 && attacker.skills && attacker.skills[skillIndex] ? attacker.skills[skillIndex] : null;
+      if (!skill || (skill.name || '') !== '灵犀') return;
+      var skillAp = skill.ap != null ? skill.ap : 1;
+      var maxAp = getApByLevel(attacker.level);
+      var curAp =
+        attacker.currentAp !== undefined && attacker.currentAp !== null ? parseInt(attacker.currentAp, 10) : maxAp;
+      if (curAp < skillAp) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('AP 不足，无法使用该技能');
+        return;
+      }
+      var lv = Math.max(1, parseInt(skill.level, 10) || 1);
+      var strM = lv === 1 ? 1.0 : lv === 2 ? 1.1 : lv === 3 ? 1.1 : 1.2;
+      var agiM = lv === 1 ? 0.3 : lv === 2 ? 0.3 : lv === 3 ? 0.4 : 0.4;
+      var str = getDisplayStat(attacker, 'str') || 0;
+      var agi = getDisplayStat(attacker, 'agi') || 0;
+      var baseDamage = Math.max(0, Math.floor(str * strM));
+      var bonusDamage = Math.max(0, Math.floor(agi * agiM));
+      var skillDisplayName = '灵犀';
+      if (lv >= 5 && skill.advancement === 'A') skillDisplayName = '灵犀·破浪';
+      else if (lv >= 5 && skill.advancement === 'B') skillDisplayName = '灵犀·涟漪';
+      var result1 = resolveAttack(attacker, defender, baseDamage, true, { isMelee: true });
+      if (result1.crit && attacker.纳刀共鸣暴击加成 != null) {
+        result1.finalDamage = Math.max(1, Math.floor(result1.finalDamage * (1 + attacker.纳刀共鸣暴击加成)));
+        attacker.纳刀共鸣暴击加成 = null;
+      }
+      var attName = attacker.name || '己方';
+      var defName = defender.name || '敌方';
+      var damageCalcStr1 = '力量×' + strM + '=' + baseDamage;
+      var attackerSlotEl = document.querySelector('.slot[data-slot="ally-' + allySlot + '"]');
+      var defenderSlotEl = document.querySelector('.slot[data-slot="enemy-' + enemySlotNum + '"]');
+      function applyAfterFirstHit() {
+        applyDamageToTarget(
+          defender,
+          result1.finalDamage,
+          result1.shadowDamage ? { shadowDamage: result1.shadowDamage } : undefined,
+        );
+        var curAp2 =
+          attacker.currentAp !== undefined && attacker.currentAp !== null ? parseInt(attacker.currentAp, 10) : maxAp;
+        attacker.currentAp = Math.max(0, curAp2 - skillAp);
+        if (result1.hit && lv >= 5 && skill.advancement === 'A') {
+          addBuffLayers(defender, '破甲', '破甲', 1, attacker);
+          addBuffLayers(defender, '迟钝', '迟钝', 1, attacker);
+        }
+        if (lv >= 5 && skill.advancement === 'B' && result1.hit && result1.crit) {
+          addBuffLayers(attacker, '剑势', '剑势', 1, attacker);
+          capUnitBuffs(attacker);
+        }
+        saveBattleData(party, enemies);
+        renderAllySlots(party);
+        renderEnemySlots(enemies);
+        appendCombatLog(
+          formatAttackLogLine(
+            attName,
+            skillDisplayName,
+            defName,
+            result1,
+            baseDamage,
+            null,
+            null,
+            defender.hp,
+            damageCalcStr1,
+          ),
+        );
+        function finish灵犀清漓钩子() {
+          if (attacker.name === '清漓')
+            on清漓指令完成(attacker, skill, { apCost: skillAp, commandUniqueKey: '灵犀' });
+        }
+        function doSecondHit() {
+          if (!result1.crit || !result1.hit || bonusDamage <= 0) {
+            if (typeof window.toastr !== 'undefined') window.toastr.success(result1.message);
+            finish灵犀清漓钩子();
+            return;
+          }
+          var result2 = resolveAttack(attacker, defender, bonusDamage, true, { isMelee: true });
+          if (result2.crit && attacker.纳刀共鸣暴击加成 != null) {
+            result2.finalDamage = Math.max(1, Math.floor(result2.finalDamage * (1 + attacker.纳刀共鸣暴击加成)));
+            attacker.纳刀共鸣暴击加成 = null;
+          }
+          applyDamageToTarget(
+            defender,
+            result2.finalDamage,
+            result2.shadowDamage ? { shadowDamage: result2.shadowDamage } : undefined,
+          );
+          if (lv >= 5 && skill.advancement === 'B' && result2.hit && result2.crit) {
+            addBuffLayers(attacker, '剑势', '剑势', 1, attacker);
+            capUnitBuffs(attacker);
+          }
+          saveBattleData(party, enemies);
+          renderAllySlots(party);
+          renderEnemySlots(enemies);
+          var calc2 = '敏捷×' + agiM + '=' + bonusDamage;
+          appendCombatLog(
+            formatAttackLogLine(
+              attName,
+              skillDisplayName + '（追击）',
+              defName,
+              result2,
+              bonusDamage,
+              null,
+              null,
+              defender.hp,
+              calc2,
+            ),
+          );
+          if (typeof window.toastr !== 'undefined') window.toastr.success(result1.message + '（追击）');
+          finish灵犀清漓钩子();
+        }
+        if (result1.crit && result1.hit && bonusDamage > 0) {
+          setTimeout(function () {
+            if (defenderSlotEl && attackerSlotEl) {
+              playStrikeShake(attackerSlotEl, defenderSlotEl, function () {
+                playAnimationOnSlot(defenderSlotEl, 'Slash5', function () {
+                  doSecondHit();
+                });
+              });
+            } else {
+              doSecondHit();
+            }
+          }, 380);
+        } else {
+          if (typeof window.toastr !== 'undefined') window.toastr.success(result1.message);
+          finish灵犀清漓钩子();
+        }
+      }
+      if (attackerSlotEl && defenderSlotEl) {
+        playStrikeShake(attackerSlotEl, defenderSlotEl, function () {
+          if (result1.hit) {
+            playAnimationOnSlot(defenderSlotEl, 'Slash5', function () {
+              applyAfterFirstHit();
+            });
+          } else {
+            playMissEffect(defenderSlotEl);
+            applyAfterFirstHit();
+          }
+        });
+      } else {
+        applyAfterFirstHit();
+      }
+    }
+    /** 清漓·护卫：1 AP，自身护盾 Def×a + Agi×b（随等级）；Lv5-A 叠浪再给当前生命比例最低的友方 50% 护盾；Lv5-B 剑心额外 +1【剑势】+1【精准】 */
+    function executePlayer护卫(allySlot, skillIndex) {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      var attacker = party[allySlot - 1];
+      if (!attacker || attacker.name !== '清漓' || isAllyDefeated(attacker)) return;
+      var skill =
+        skillIndex >= 0 && attacker.skills && attacker.skills[skillIndex] ? attacker.skills[skillIndex] : null;
+      if (!skill || (skill.name || '') !== '护卫') return;
+      var skillAp = skill.ap != null ? skill.ap : 1;
+      var maxAp = getApByLevel(attacker.level);
+      var curAp =
+        attacker.currentAp !== undefined && attacker.currentAp !== null ? parseInt(attacker.currentAp, 10) : maxAp;
+      if (curAp < skillAp) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('AP 不足，无法使用该技能');
+        return;
+      }
+      var lv = Math.max(1, parseInt(skill.level, 10) || 1);
+      var def = getDisplayStat(attacker, 'def') || 0;
+      var agi = getDisplayStat(attacker, 'agi') || 0;
+      var defM = 0.8;
+      var agiM = 0.6;
+      if (lv === 1) {
+        defM = 0.6;
+        agiM = 0.4;
+      } else if (lv === 2) {
+        defM = 0.7;
+        agiM = 0.4;
+      } else if (lv === 3) {
+        defM = 0.7;
+        agiM = 0.6;
+      } else {
+        defM = 0.8;
+        agiM = 0.6;
+      }
+      var shieldValue = Math.max(0, Math.floor(def * defM + agi * agiM));
+      var skillLabel = '护卫';
+      if (lv >= 5 && skill.advancement === 'A') skillLabel = '护卫·叠浪';
+      else if (lv >= 5 && skill.advancement === 'B') skillLabel = '护卫·剑心';
+      attacker.currentShield =
+        (attacker.currentShield != null ? parseInt(attacker.currentShield, 10) || 0 : 0) + shieldValue;
+      if (shieldValue > 0) addBuffLayers(attacker, '护盾', '护盾', shieldValue);
+      var logExtra = '';
+      if (lv >= 5 && skill.advancement === 'B') {
+        addBuffLayers(attacker, '剑势', '剑势', 1, attacker);
+        addBuffLayers(attacker, '精准', '精准', 1, attacker);
+        capUnitBuffs(attacker);
+        logExtra = '，获得1层【剑势】与1层【精准】';
+      } else if (lv >= 5 && skill.advancement === 'A') {
+        var bestRatio = 2;
+        var targetUnit = null;
+        var targetSlot = -1;
+        for (var si = 0; si < party.length; si++) {
+          if (si + 1 === allySlot) continue;
+          var u = party[si];
+          if (!u || isAllyDefeated(u)) continue;
+          var maxHpU = u.maxHp != null ? parseInt(u.maxHp, 10) : getHpFromSta(getDisplayStat(u, 'sta') || 1);
+          var hpU = u.hp != null ? parseInt(u.hp, 10) : maxHpU;
+          if (maxHpU <= 0) continue;
+          var ratio = hpU / maxHpU;
+          if (ratio < bestRatio) {
+            bestRatio = ratio;
+            targetUnit = u;
+            targetSlot = si + 1;
+          }
+        }
+        if (targetUnit && targetSlot > 0) {
+          var allyShield = Math.max(0, Math.floor(shieldValue * 0.5));
+          if (allyShield > 0) {
+            targetUnit.currentShield =
+              (targetUnit.currentShield != null ? parseInt(targetUnit.currentShield, 10) || 0 : 0) + allyShield;
+            addBuffLayers(targetUnit, '护盾', '护盾', allyShield);
+            logExtra =
+              '，为 ' +
+              (targetUnit.name || '友方') +
+              '（槽位' +
+              targetSlot +
+              '）提供 ' +
+              allyShield +
+              ' 点护盾（50%）';
+          }
+        }
+      }
+      attacker.currentAp = Math.max(0, curAp - skillAp);
+      saveBattleData(party, enemies);
+      renderAllySlots(party);
+      renderEnemySlots(enemies);
+      appendCombatLog(
+        (attacker.name || '清漓') + ' 使用' + skillLabel + '，获得 ' + shieldValue + ' 点护盾' + logExtra,
+      );
+      if (typeof window.toastr !== 'undefined')
+        window.toastr.success(
+          skillLabel +
+            '：' +
+            shieldValue +
+            ' 护盾' +
+            (logExtra.indexOf('提供') !== -1 ? '（已援护友方）' : ''),
+        );
+      on清漓指令完成(attacker, skill, { apCost: skillAp, commandUniqueKey: '护卫' });
+      var slotNum = allySlot;
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          var allySlotEl = document.querySelector('.slot[data-slot="ally-' + slotNum + '"]');
+          if (allySlotEl) playAnimationOnSlot(allySlotEl, 'Recovery2', function () {});
+        });
+      });
+    }
+    function 清漓HasSpecial(ch, specialId) {
+      return (
+        ch &&
+        ch.name === '清漓' &&
+        ch.specialSkillsUnlocked &&
+        Array.isArray(ch.specialSkillsUnlocked) &&
+        ch.specialSkillsUnlocked.indexOf(specialId) !== -1
+      );
+    }
+    function tryRemove剑势Layers(unit, n) {
+      if (!unit || !unit.buffs || n <= 0) return;
+      for (var ri = 0; ri < unit.buffs.length; ri++) {
+        var b = unit.buffs[ri];
+        if ((b.id || b.name || '').trim() !== '剑势') continue;
+        var L = Math.max(0, parseInt(b.layers, 10) || 0);
+        var next = Math.max(0, L - n);
+        if (next <= 0) unit.buffs.splice(ri, 1);
+        else b.layers = next;
+        return;
+      }
+    }
+    /** 行云流水：用 attribute1|2|3 作为「指令类型」 */
+    function get清漓行云流水类型(skill) {
+      if (!skill) return 'unknown';
+      var a1 = skill.attribute1 || '';
+      var a2 = skill.attribute2 || '';
+      var a3 = skill.attribute3 || '';
+      return String(a1) + '|' + String(a2) + '|' + String(a3);
+    }
+    /** 清漓特殊技能联动：行云流水、踏浪行歌（本回合不同指令计数、踏浪额外剑势） */
+    function on清漓指令完成(attacker, skill, options) {
+      options = options || {};
+      if (!attacker || attacker.name !== '清漓' || isAllyDefeated(attacker)) return;
+      var apCost = options.apCost != null ? options.apCost : skill && skill.ap != null ? skill.ap : 0;
+      var typeKey = get清漓行云流水类型(skill);
+      if (清漓HasSpecial(attacker, '行云流水')) {
+        var prev = attacker.清漓行云流水_上次类型;
+        if (prev != null && prev !== '') {
+          if (prev === typeKey) tryRemove剑势Layers(attacker, 1);
+          else {
+            addBuffLayers(attacker, '剑势', '剑势', 1, attacker);
+            capUnitBuffs(attacker);
+          }
+        }
+        attacker.清漓行云流水_上次类型 = typeKey;
+      }
+      var cmdKey = options.commandUniqueKey;
+      if (!cmdKey && skill) cmdKey = skill.id || skill.name;
+      if (清漓HasSpecial(attacker, '踏浪行歌') && cmdKey && cmdKey !== '踏浪行歌') {
+        attacker.清漓本回合不同指令 = attacker.清漓本回合不同指令 || {};
+        attacker.清漓本回合不同指令[cmdKey] = true;
+      }
+      if (getUnitBuffLayers(attacker, '踏浪') > 0 && apCost > 0) {
+        addBuffLayers(attacker, '剑势', '剑势', 1, attacker);
+        capUnitBuffs(attacker);
+      }
+    }
+    /** 沧澜·潮汐+千里剑光：同列优先攻击后排存活目标，再回退原正前方逻辑 */
+    function findAliveEnemySlotFor潮汐(allySlot, enemies, preferBackRow) {
+      if (!enemies || !enemies.length) return null;
+      function alive(slotNum) {
+        var u = enemies[slotNum - 1];
+        return u && (parseInt(u.hp, 10) || 0) > 0;
+      }
+      if (preferBackRow) {
+        var prefFront = getEnemySlotInFrontOfAlly(allySlot);
+        var backPair = prefFront === 1 ? 2 : prefFront === 3 ? 4 : prefFront === 5 ? 6 : null;
+        if (backPair != null && alive(backPair)) return backPair;
+        for (var bi = 0; bi < ENEMY_BACK_ROW_SLOTS.length; bi++) {
+          var bs = ENEMY_BACK_ROW_SLOTS[bi];
+          if (alive(bs)) return bs;
+        }
+      }
+      return findAliveEnemySlotInFront(allySlot, enemies);
+    }
+    /** 玩家行动回合开始：清除【踏浪】、重置本回合指令统计、潮汐 Int 叠剑势、剑心通明激励 */
+    function run清漓玩家回合开始处理() {
+      var party = getParty();
+      if (party && party.length) {
+        for (var ui = 0; ui < party.length; ui++) {
+          var uc = party[ui];
+          if (!uc || uc.name !== '清漓') continue;
+          removeUnitBuffById(uc, '踏浪');
+          uc.清漓本回合不同指令 = {};
+        }
+      }
+      run清漓沧澜潮汐TurnStart();
+      party = getParty();
+      if (party && party.length) {
+        for (var uj = 0; uj < party.length; uj++) {
+          var uq = party[uj];
+          if (!uq || uq.name !== '清漓' || isAllyDefeated(uq)) continue;
+          if (清漓HasSpecial(uq, '剑心通明') && getUnitBuffLayers(uq, '剑势') >= 10) {
+            addBuffLayers(uq, '激励', '激励', 1, uq);
+            capUnitBuffs(uq);
+          }
+        }
+      }
+      saveBattleData(getParty(), getEnemyParty());
+    }
+    /** 清漓是否已解锁技能「沧澜」 */
+    function get清漓沧澜Skill(attacker) {
+      if (!attacker || attacker.name !== '清漓' || !attacker.skills) return null;
+      for (var ci = 0; ci < attacker.skills.length; ci++) {
+        if ((attacker.skills[ci].name || '') === '沧澜') return attacker.skills[ci];
+      }
+      return null;
+    }
+    function is沧澜潮汐B(skill) {
+      if (!skill || (skill.name || '') !== '沧澜') return false;
+      var lv = Math.max(1, parseInt(skill.level, 10) || 1);
+      return lv >= 5 && skill.advancement === 'B';
+    }
+    function getUnitBuffLayers(unit, buffId) {
+      if (!unit || !unit.buffs) return 0;
+      for (var bi = 0; bi < unit.buffs.length; bi++) {
+        var bb = unit.buffs[bi];
+        if ((bb.id || bb.name || '').trim() === buffId) return Math.max(0, parseInt(bb.layers, 10) || 0);
+      }
+      return 0;
+    }
+    function removeUnitBuffById(unit, buffId) {
+      if (!unit || !unit.buffs) return;
+      unit.buffs = unit.buffs.filter(function (x) {
+        return (x.id || x.name || '').trim() !== buffId;
+      });
+    }
+    /** 技能弹窗某一选项对应的 AP 消耗（与弹窗禁用规则一致：潮汐沧澜视为 0；猎手本能单独排除）。 */
+    function getApCostForSkillPopupChoice(ch, idx, specialId) {
+      if (specialId === '猎手本能') return 0;
+      if (idx != null && ch && ch.skills) {
+        var sk = ch.skills[parseInt(idx, 10)];
+        if (!sk) return 0;
+        var canglanTideB =
+          ch.name === '清漓' &&
+          (sk.name || '') === '沧澜' &&
+          Math.max(1, parseInt(sk.level, 10) || 1) >= 5 &&
+          sk.advancement === 'B';
+        if (canglanTideB) return 0;
+        return sk.ap != null ? parseInt(sk.ap, 10) : 1;
+      }
+      if (specialId && ch && typeof getSpecialSkillsForChar === 'function') {
+        var list = getSpecialSkillsForChar(ch);
+        for (var si = 0; si < list.length; si++) {
+          if (list[si].id === specialId) return list[si].ap != null ? parseInt(list[si].ap, 10) : 1;
+        }
+      }
+      return 0;
+    }
+    /**
+     * 【眩晕】统一判定：若单位带有眩晕层数，则消去 1 层，本次不产生技能/行动效果；若 apCost > 0 仍扣除对应 AP。
+     * 在技能弹窗、换位、敌方行动入口各调用一次即可，勿在单个技能内重复判断。
+     * @param {number} [apCost] 本次被浪费行动应扣的 AP，默认 0（换位、敌方无效行动不传）
+     * @returns {boolean} true 表示已因眩晕浪费行动，调用方须立即 return
+     */
+    function tryConsume眩晕浪费行动(unit, apCost) {
+      if (!unit || !unit.buffs || !unit.buffs.length) return false;
+      var payAp = apCost != null ? Math.max(0, parseInt(apCost, 10) || 0) : 0;
+      var stunBuff = null;
+      for (var si = 0; si < unit.buffs.length; si++) {
+        var sb = unit.buffs[si];
+        if ((sb.id || sb.name || '').trim() !== '眩晕') continue;
+        var sl = Math.max(0, parseInt(sb.layers, 10) || 0);
+        if (sl > 0) {
+          stunBuff = sb;
+          break;
+        }
+      }
+      if (!stunBuff) return false;
+      var beforeL = Math.max(0, parseInt(stunBuff.layers, 10) || 0);
+      stunBuff.layers = Math.max(0, beforeL - 1);
+      unit.buffs = unit.buffs.filter(function (x) {
+        return (parseInt(x.layers, 10) || 0) > 0;
+      });
+      capUnitBuffs(unit);
+      if (payAp > 0) {
+        var maxAp = unit.name === '白牙' ? 2 : getApByLevel(unit.level);
+        var curAp = unit.currentAp !== undefined && unit.currentAp != null ? parseInt(unit.currentAp, 10) : maxAp;
+        unit.currentAp = Math.max(0, curAp - payAp);
+      }
+      var label = unit.name || '单位';
+      var remain = Math.max(0, beforeL - 1);
+      var logLine = label + ' 【眩晕】使本次行动无效（剩余 ' + remain + ' 层）';
+      if (payAp > 0) logLine += '，仍消耗 ' + payAp + ' AP';
+      appendCombatLog(logLine);
+      saveBattleData(getParty(), getEnemyParty());
+      renderAllySlots(getParty());
+      renderEnemySlots(getEnemyParty());
+      if (typeof window.toastr !== 'undefined')
+        window.toastr.warning(payAp > 0 ? '眩晕：本次行动无效（已扣除 ' + payAp + ' AP）' : '眩晕：本次行动无效');
+      return true;
+    }
+    /** 己方槽位 1～6 → 前排三列对应的敌方前排槽位 1/3/5（列对齐） */
+    function getEnemySlotInFrontOfAlly(allySlot) {
+      var col = Math.ceil(allySlot / 2);
+      return [1, 3, 5][col - 1];
+    }
+    /** 正前方优先：同列前排敌；否则任意 ENEMY_FRONT_ROW 存活；再否则任意存活敌 */
+    function findAliveEnemySlotInFront(allySlot, enemies) {
+      if (!enemies || !enemies.length) return null;
+      function alive(slotNum) {
+        var u = enemies[slotNum - 1];
+        return u && (parseInt(u.hp, 10) || 0) > 0;
+      }
+      var pref = getEnemySlotInFrontOfAlly(allySlot);
+      if (alive(pref)) return pref;
+      for (var fi = 0; fi < ENEMY_FRONT_ROW_SLOTS.length; fi++) {
+        var s = ENEMY_FRONT_ROW_SLOTS[fi];
+        if (alive(s)) return s;
+      }
+      for (var j = 1; j <= 6; j++) {
+        if (alive(j)) return j;
+      }
+      return null;
+    }
+    /** 清漓·沧澜被动：基础【攻击】命中时 +1【剑势】 */
+    function try清漓沧澜被动剑势(attacker) {
+      if (!attacker || attacker.name !== '清漓') return;
+      if (!get清漓沧澜Skill(attacker)) return;
+      addBuffLayers(attacker, '剑势', '剑势', 1, attacker);
+      capUnitBuffs(attacker);
+    }
+    /** 沧澜·潮汐：玩家回合开始时按 Int/5 叠剑势 */
+    function run清漓沧澜潮汐TurnStart() {
+      var party = getParty();
+      if (!party || !party.length) return;
+      for (var ti = 0; ti < party.length; ti++) {
+        var ch = party[ti];
+        if (!ch || ch.name !== '清漓' || isAllyDefeated(ch)) continue;
+        var sk = get清漓沧澜Skill(ch);
+        if (!is沧澜潮汐B(sk)) continue;
+        var intv = getDisplayStat(ch, 'int') || 0;
+        var addL = Math.floor(intv / 5);
+        if (addL > 0) {
+          addBuffLayers(ch, '剑势', '剑势', addL, ch);
+          capUnitBuffs(ch);
+        }
+      }
+    }
+    /** 沧澜·潮汐：玩家回合结束结算前，自动泄剑势对正前方单体伤害 */
+    function run清漓沧澜潮汐End(party, enemies) {
+      if (!party || !enemies) return;
+      for (var slot = 1; slot <= 6; slot++) {
+        var ch = party[slot - 1];
+        if (!ch || ch.name !== '清漓' || isAllyDefeated(ch)) continue;
+        var sk = get清漓沧澜Skill(ch);
+        if (!is沧澜潮汐B(sk)) continue;
+        var layers = getUnitBuffLayers(ch, '剑势');
+        if (layers <= 0) continue;
+        var str = getDisplayStat(ch, 'str') || 0;
+        var agi = getDisplayStat(ch, 'agi') || 0;
+        var raw = Math.max(0, Math.floor((str + agi) * layers * 0.25));
+        removeUnitBuffById(ch, '剑势');
+        var preferBack = 清漓HasSpecial(ch, '千里剑光');
+        var es = findAliveEnemySlotFor潮汐(slot, enemies, preferBack);
+        if (!es || raw <= 0) {
+          appendCombatLog((ch.name || '清漓') + ' 沧澜·潮汐：剑势已消散（无有效目标或伤害为0）');
+          continue;
+        }
+        var defender = enemies[es - 1];
+        var tideResOpts = 清漓HasSpecial(ch, '千里剑光') ? { isRanged: true } : { isMelee: true };
+        if (清漓HasSpecial(ch, '剑心通明')) tideResOpts.critMult = 3;
+        var result = resolveAttack(ch, defender, raw, true, tideResOpts);
+        if (result.crit && ch.纳刀共鸣暴击加成 != null) {
+          result.finalDamage = Math.max(1, Math.floor(result.finalDamage * (1 + ch.纳刀共鸣暴击加成)));
+          ch.纳刀共鸣暴击加成 = null;
+        }
+        applyDamageToTarget(
+          defender,
+          result.finalDamage,
+          result.shadowDamage ? { shadowDamage: result.shadowDamage } : undefined,
+        );
+        if (result.hit && 清漓HasSpecial(ch, '千里剑光')) {
+          addBuffLayers(defender, '破甲', '破甲', 2, ch);
+          addBuffLayers(defender, '迟钝', '迟钝', 2, ch);
+          if (layers >= 12) addBuffLayers(defender, '虚弱', '虚弱', 1, ch);
+        }
+        var calcStr = '(Str+Agi)×' + layers + '×0.25=' + raw;
+        appendCombatLog(
+          formatAttackLogLine(
+            ch.name || '清漓',
+            '沧澜·潮汐',
+            defender.name || '敌方',
+            result,
+            raw,
+            null,
+            null,
+            defender.hp,
+            calcStr,
+          ),
+        );
+      }
+    }
+    /** 清漓·沧澜：消耗全部剑势，单体物理；Lv5-A 流溯返还 40% 剑势（向下取整）；Lv5-B 潮汐无主动 */
+    function executePlayer沧澜(allySlot, enemySlotNum, skillIndex) {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      var attacker = party[allySlot - 1];
+      var defender = enemies[enemySlotNum - 1];
+      if (!attacker || !defender || attacker.name !== '清漓' || isAllyDefeated(attacker)) return;
+      var skill =
+        skillIndex >= 0 && attacker.skills && attacker.skills[skillIndex] ? attacker.skills[skillIndex] : null;
+      if (!skill || (skill.name || '') !== '沧澜') return;
+      var lv = Math.max(1, parseInt(skill.level, 10) || 1);
+      if (lv >= 5 && skill.advancement === 'B') {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('潮汐形态下沧澜为被动，无法主动释放');
+        return;
+      }
+      var skillAp = skill.ap != null ? skill.ap : 2;
+      var maxAp = getApByLevel(attacker.level);
+      var curAp =
+        attacker.currentAp !== undefined && attacker.currentAp !== null ? parseInt(attacker.currentAp, 10) : maxAp;
+      if (curAp < skillAp) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('AP 不足，无法使用该技能');
+        return;
+      }
+      var layers = getUnitBuffLayers(attacker, '剑势');
+      if (layers <= 0) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('无【剑势】，无法释放沧澜');
+        return;
+      }
+      var coef = lv === 1 ? 0.175 : lv === 2 ? 0.2 : lv === 3 ? 0.225 : 0.25;
+      var str = getDisplayStat(attacker, 'str') || 0;
+      var agi = getDisplayStat(attacker, 'agi') || 0;
+      var baseDamage = Math.max(0, Math.floor((str + agi) * layers * coef));
+      var consumed = layers;
+      var distinctCmd = Object.keys(attacker.清漓本回合不同指令 || {}).length;
+      if (清漓HasSpecial(attacker, '踏浪行歌') && distinctCmd >= 3)
+        baseDamage = Math.max(0, Math.floor(baseDamage * 1.3));
+      removeUnitBuffById(attacker, '剑势');
+      attacker.currentAp = Math.max(0, curAp - skillAp);
+      var qianliKm = 清漓HasSpecial(attacker, '千里剑光');
+      var jianxinTm = 清漓HasSpecial(attacker, '剑心通明');
+      var canglanResOpts = qianliKm ? { isRanged: true } : { isMelee: true };
+      if (jianxinTm) canglanResOpts.critMult = 3;
+      var result = resolveAttack(attacker, defender, baseDamage, true, canglanResOpts);
+      if (result.crit && attacker.纳刀共鸣暴击加成 != null) {
+        result.finalDamage = Math.max(1, Math.floor(result.finalDamage * (1 + attacker.纳刀共鸣暴击加成)));
+        attacker.纳刀共鸣暴击加成 = null;
+      }
+      var skillLabel = '沧澜';
+      if (lv >= 5 && skill.advancement === 'A') skillLabel = '沧澜·流溯';
+      var damageCalcStr = '(Str+Agi)×' + consumed + '×' + coef + '=' + baseDamage;
+      if (清漓HasSpecial(attacker, '踏浪行歌') && distinctCmd >= 3) damageCalcStr += '×1.3(踏浪行歌)';
+      var attackerSlotEl = document.querySelector('.slot[data-slot="ally-' + allySlot + '"]');
+      var defenderSlotEl = document.querySelector('.slot[data-slot="enemy-' + enemySlotNum + '"]');
+      function apply沧澜Damage() {
+        applyDamageToTarget(
+          defender,
+          result.finalDamage,
+          result.shadowDamage ? { shadowDamage: result.shadowDamage } : undefined,
+        );
+        if (result.hit && qianliKm) {
+          addBuffLayers(defender, '破甲', '破甲', 2, attacker);
+          addBuffLayers(defender, '迟钝', '迟钝', 2, attacker);
+          if (consumed >= 12) addBuffLayers(defender, '虚弱', '虚弱', 1, attacker);
+        }
+        if (lv >= 5 && skill.advancement === 'A') {
+          var refund = Math.floor(consumed * 0.4);
+          if (refund > 0) {
+            addBuffLayers(attacker, '剑势', '剑势', refund, attacker);
+            capUnitBuffs(attacker);
+            appendCombatLog((attacker.name || '清漓') + ' 沧澜·流溯：返还 ' + refund + ' 层【剑势】');
+          }
+        }
+        on清漓指令完成(attacker, skill, { apCost: skillAp, commandUniqueKey: '沧澜' });
+        saveBattleData(party, enemies);
+        renderAllySlots(party);
+        renderEnemySlots(enemies);
+        appendCombatLog(
+          formatAttackLogLine(
+            attacker.name || '清漓',
+            skillLabel,
+            defender.name || '敌方',
+            result,
+            baseDamage,
+            null,
+            null,
+            defender.hp,
+            damageCalcStr,
+          ),
+        );
+        if (typeof window.toastr !== 'undefined') window.toastr.success(result.message);
+      }
+      if (attackerSlotEl && defenderSlotEl) {
+        playStrikeShake(attackerSlotEl, defenderSlotEl, function () {
+          if (result.hit) {
+            playAnimationOnSlot(defenderSlotEl, 'Slash5', function () {
+              apply沧澜Damage();
+            });
+          } else {
+            playMissEffect(defenderSlotEl);
+            apply沧澜Damage();
+          }
+        });
+      } else {
+        apply沧澜Damage();
+      }
+    }
+    /** 清漓·碧落：物理远程群体，对敌方全体分别判定；Lv1～4 与 Lv5-B 暴击时 +1【剑势】；Lv5-A 万剑归宗每次命中 +1【剑势】；Lv5-B 一剑霜寒对命中目标施加【迟缓】 */
+    function executePlayer碧落(allySlot, skillIndex) {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      var attacker = party[allySlot - 1];
+      if (!attacker || attacker.name !== '清漓' || isAllyDefeated(attacker)) return;
+      var skill =
+        skillIndex >= 0 && attacker.skills && attacker.skills[skillIndex] ? attacker.skills[skillIndex] : null;
+      if (!skill || (skill.name || '') !== '碧落') return;
+      var skillAp = skill.ap != null ? skill.ap : 2;
+      var maxAp = getApByLevel(attacker.level);
+      var curAp =
+        attacker.currentAp !== undefined && attacker.currentAp !== null ? parseInt(attacker.currentAp, 10) : maxAp;
+      if (curAp < skillAp) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('AP 不足，无法使用该技能');
+        return;
+      }
+      var lv = Math.max(1, parseInt(skill.level, 10) || 1);
+      var str = getDisplayStat(attacker, 'str') || 0;
+      var agi = getDisplayStat(attacker, 'agi') || 0;
+      var strM = 0.6;
+      var agiM = 0.5;
+      if (lv === 1) {
+        strM = 0.5;
+        agiM = 0.3;
+      } else if (lv === 2) {
+        strM = 0.5;
+        agiM = 0.4;
+      } else if (lv === 3) {
+        strM = 0.6;
+        agiM = 0.4;
+      }
+      var baseDamage = Math.max(0, Math.floor(str * strM + agi * agiM));
+      var damageCalcStr = 'Str×' + strM + '+Agi×' + agiM + '=' + baseDamage;
+      var skillLabel = '碧落';
+      if (lv >= 5 && skill.advancement === 'A') skillLabel = '碧落·万剑归宗';
+      else if (lv >= 5 && skill.advancement === 'B') skillLabel = '碧落·一剑霜寒';
+      var targets = [];
+      for (var bi = 1; bi <= 6; bi++) {
+        var def = enemies[bi - 1];
+        if (def) {
+          var res = resolveAttack(attacker, def, baseDamage, true, { isRanged: true });
+          if (res.crit && attacker.纳刀共鸣暴击加成 != null) {
+            res.finalDamage = Math.max(1, Math.floor(res.finalDamage * (1 + attacker.纳刀共鸣暴击加成)));
+            attacker.纳刀共鸣暴击加成 = null;
+          }
+          targets.push({ slotNum: bi, defender: def, result: res });
+        }
+      }
+      if (targets.length === 0) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('没有可攻击的敌方单位');
+        return;
+      }
+      var attackerSlotEl = document.querySelector('.slot[data-slot="ally-' + allySlot + '"]');
+      var enemySideEl = document.querySelector('.side-enemy');
+      playStrikeShake(attackerSlotEl, null, function () {
+        playAnimationOnContainer(enemySideEl, 'SlashSpecial1', function () {
+          for (var t = 0; t < targets.length; t++) {
+            var defender = targets[t].defender;
+            var result = targets[t].result;
+            applyDamageToTarget(
+              defender,
+              result.finalDamage,
+              result.shadowDamage ? { shadowDamage: result.shadowDamage } : undefined,
+            );
+            appendCombatLog(
+              formatAttackLogLine(
+                attacker.name || '清漓',
+                skillLabel,
+                defender.name || '敌方',
+                result,
+                baseDamage,
+                null,
+                null,
+                defender.hp,
+                damageCalcStr,
+              ),
+            );
+            var advA = lv >= 5 && skill.advancement === 'A';
+            var advB = lv >= 5 && skill.advancement === 'B';
+            if (advA && result.hit) {
+              addBuffLayers(attacker, '剑势', '剑势', 1, attacker);
+              capUnitBuffs(attacker);
+            } else if (!advA && result.crit) {
+              addBuffLayers(attacker, '剑势', '剑势', 1, attacker);
+              capUnitBuffs(attacker);
+            }
+            if (advB && result.hit) addBuffLayers(defender, '迟缓', '迟缓', 1, attacker);
+          }
+          attacker.currentAp = Math.max(0, curAp - skillAp);
+          on清漓指令完成(attacker, skill, { apCost: skillAp, commandUniqueKey: '碧落' });
+          saveBattleData(party, enemies);
+          renderAllySlots(party);
+          renderEnemySlots(enemies);
+          for (var u = 0; u < targets.length; u++) {
+            var slotEl = document.querySelector('.slot[data-slot="enemy-' + targets[u].slotNum + '"]');
+            if (slotEl && !targets[u].result.hit) playMissEffect(slotEl);
+          }
+          if (typeof window.toastr !== 'undefined') window.toastr.success(skillLabel + ' 释放完毕');
+        });
+      });
+    }
+    /** 清漓特殊·踏浪行歌 */
+    function executePlayer踏浪行歌(allySlot) {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      var attacker = party[allySlot - 1];
+      if (!attacker || attacker.name !== '清漓' || isAllyDefeated(attacker)) return;
+      var list = getSpecialSkillsForChar(attacker);
+      var skSp = null;
+      for (var ti = 0; ti < list.length; ti++) {
+        if (list[ti].id === '踏浪行歌') {
+          skSp = list[ti];
+          break;
+        }
+      }
+      if (!skSp) return;
+      var skillAp = skSp.ap != null ? skSp.ap : 1;
+      var maxAp = getApByLevel(attacker.level);
+      var curAp =
+        attacker.currentAp !== undefined && attacker.currentAp !== null ? parseInt(attacker.currentAp, 10) : maxAp;
+      if (curAp < skillAp) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('AP 不足，无法使用该技能');
+        return;
+      }
+      attacker.currentAp = Math.max(0, curAp - skillAp);
+      addBuffLayers(attacker, '踏浪', '踏浪', 1, attacker);
+      capUnitBuffs(attacker);
+      on清漓指令完成(attacker, skSp, { isSpecial: true, apCost: skillAp, commandUniqueKey: '踏浪行歌' });
+      saveBattleData(party, enemies);
+      renderAllySlots(party);
+      renderEnemySlots(enemies);
+      appendCombatLog((attacker.name || '清漓') + ' 使用踏浪行歌，进入【踏浪】状态');
+      if (typeof window.toastr !== 'undefined') window.toastr.success('踏浪行歌：已进入【踏浪】');
+      var slotNum = allySlot;
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          var allySlotEl = document.querySelector('.slot[data-slot="ally-' + slotNum + '"]');
+          if (allySlotEl) playAnimationOnSlot(allySlotEl, 'Recovery2', function () {});
+        });
+      });
+    }
+    /** 清漓特殊·祥瑞庇佑 */
+    function executePlayer祥瑞庇佑(allySlot) {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      var attacker = party[allySlot - 1];
+      if (!attacker || attacker.name !== '清漓' || isAllyDefeated(attacker)) return;
+      var list = getSpecialSkillsForChar(attacker);
+      var skSp = null;
+      for (var xi = 0; xi < list.length; xi++) {
+        if (list[xi].id === '祥瑞庇佑') {
+          skSp = list[xi];
+          break;
+        }
+      }
+      if (!skSp) return;
+      var skillAp = skSp.ap != null ? skSp.ap : 1;
+      var maxAp = getApByLevel(attacker.level);
+      var curAp =
+        attacker.currentAp !== undefined && attacker.currentAp !== null ? parseInt(attacker.currentAp, 10) : maxAp;
+      if (curAp < skillAp) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('AP 不足，无法使用该技能');
+        return;
+      }
+      attacker.currentAp = Math.max(0, curAp - skillAp);
+      for (var pi = 0; pi < party.length; pi++) {
+        var ally = party[pi];
+        if (!ally || isAllyDefeated(ally)) continue;
+        addBuffLayers(ally, '精准', '精准', 2, attacker);
+        addBuffLayers(ally, '激励', '激励', 1, attacker);
+        capUnitBuffs(ally);
+      }
+      addBuffLayers(attacker, '剑势', '剑势', 2, attacker);
+      capUnitBuffs(attacker);
+      on清漓指令完成(attacker, skSp, { isSpecial: true, apCost: skillAp, commandUniqueKey: '祥瑞庇佑' });
+      saveBattleData(party, enemies);
+      renderAllySlots(party);
+      renderEnemySlots(enemies);
+      appendCombatLog((attacker.name || '清漓') + ' 使用祥瑞庇佑：友方全体获得2层【精准】与1层【激励】，自身获得2层【剑势】');
+      if (typeof window.toastr !== 'undefined') window.toastr.success('祥瑞庇佑 释放完毕');
+      var enemySideEl = document.querySelector('.side-enemy');
+      var allySideEl = document.querySelector('.side-ally');
+      if (enemySideEl && allySideEl) {
+        playAnimationOnContainer(allySideEl, 'Holy5', function () {});
+      }
+    }
     function executePlayerAttack(allySlot, enemySlotNum, skillIndex, specialId) {
       var party = getParty();
       var enemies = getEnemyParty();
@@ -3852,6 +4743,10 @@
       }
       if ((skill.name || '') === '清算之手') {
         executePlayer清算之手(allySlot, enemySlotNum, skillIndex);
+        return;
+      }
+      if ((skill.name || '') === '灵犀') {
+        executePlayer灵犀(allySlot, enemySlotNum, skillIndex);
         return;
       }
       if (
@@ -4179,6 +5074,9 @@
               }
               try岚猎手本能Heal(attacker, defender);
             }
+            if (attacker.name === '清漓' && result.hit) try清漓沧澜被动剑势(attacker);
+            if (attacker.name === '清漓')
+              on清漓指令完成(attacker, skill, { apCost: skillAp, commandUniqueKey: '攻击' });
           });
         });
       } else {
@@ -6720,6 +7618,8 @@
           (skill.advancement === 'A' ? '（弹返）' : '');
       appendCombatLog(logMsg);
       if (typeof window.toastr !== 'undefined') window.toastr.success('获得 ' + shieldValue + ' 点护盾');
+      if (attacker.name === '清漓')
+        on清漓指令完成(attacker, skill, { apCost: skillAp, commandUniqueKey: skill.name || '防御' });
       var slotNum = allySlot;
       requestAnimationFrame(function () {
         requestAnimationFrame(function () {
@@ -7948,6 +8848,7 @@
           }
         }
       }
+      run清漓玩家回合开始处理();
       saveBattleData(partyR1, enemiesR1);
       renderAllySlots(partyR1);
       renderEnemySlots(enemiesR1);
@@ -7976,6 +8877,7 @@
             if (typeof window.toastr !== 'undefined') window.toastr.warning('虚无状态无法换位');
             return;
           }
+          if (tryConsume眩晕浪费行动(chSwap)) return;
           enterSwapMode(slotNum);
         }
         return;
@@ -8075,9 +8977,11 @@
                   battleState.erika奉献TriggeredThisRound = true;
                 }
                 var opts = [];
+                var regularSkillPopupRows = [];
                 if (ch && ch.skills) {
                   ch.skills.forEach(function (s, idx) {
                     if (s.locked) return;
+                    if (is沧澜潮汐B(s)) return;
                     var needAp = s.ap != null ? s.ap : 1;
                     var insufficientAp = curAp < needAp;
                     var advanceOpt =
@@ -8110,7 +9014,15 @@
                           ? SKILL_SHIELD_SWORD_SVG || SKILL_DEFENSE_SVG
                           : s.name === '见切'
                             ? SKILL_JIANQIE_SVG || SKILL_SHIELD_SWORD_SVG || SKILL_DEFENSE_SVG
-                            : s.name === '居合'
+                            : s.name === '灵犀'
+                              ? SKILL_JUHE_SVG || SKILL_ATTACK_SVG
+                            : s.name === '护卫'
+                              ? SKILL_SHIELD_SWORD_SVG || SKILL_DEFENSE_SVG
+                              : s.name === '沧澜'
+                                ? SKILL_ZANYUE_SVG || SKILL_JUHE_SVG || SKILL_ATTACK_SVG
+                              : s.name === '碧落'
+                                ? SKILL_WHIRLWIND_SVG || SKILL_ZANYUE_SVG || SKILL_ATTACK_SVG
+                              : s.name === '居合'
                               ? SKILL_JUHE_SVG || SKILL_ATTACK_SVG
                               : s.name === '纳刀'
                                 ? SKILL_NADAO_SVG || SKILL_ATTACK_SVG
@@ -8159,8 +9071,11 @@
                                                                           : s.name === '罪罚宣告'
                                                                             ? SKILL_ZUIFAXUANGAO_SVG || SKILL_ATTACK_SVG
                                                                             : SKILL_ATTACK_SVG;
-                    opts.push(
-                      '<div class="skill-popup-opt' +
+                    regularSkillPopupRows.push({
+                      idx: idx,
+                      baseName: s.name || '',
+                      html:
+                        '<div class="skill-popup-opt' +
                         (insufficientAp ? ' skill-popup-opt-disabled' : '') +
                         '" data-skill-index="' +
                         idx +
@@ -8175,7 +9090,21 @@
                         '</span></span></div><div class="skill-popup-opt-desc">' +
                         effectHtml +
                         '</div></div></div>',
-                    );
+                    });
+                  });
+                  regularSkillPopupRows.sort(function (a, b) {
+                    function skPri(n) {
+                      if (n === '攻击') return 0;
+                      if (n === '防御') return 1;
+                      return 2;
+                    }
+                    var pa = skPri(a.baseName);
+                    var pb = skPri(b.baseName);
+                    if (pa !== pb) return pa - pb;
+                    return a.idx - b.idx;
+                  });
+                  regularSkillPopupRows.forEach(function (row) {
+                    opts.push(row.html);
                   });
                 }
                 if (ch) {
@@ -8247,7 +9176,11 @@
                                                               ? SKILL_JISHU_SVG || SKILL_ATTACK_SVG
                                                               : sk.id === '圣火净世'
                                                                 ? SKILL_SHENGHUOJINGSHI_SVG || SKILL_ATTACK_SVG
-                                                                : SKILL_ATTACK_SVG;
+                                                                : sk.id === '踏浪行歌'
+                                                                  ? SKILL_MAOBU_SVG || SKILL_DEFENSE_SVG
+                                                                  : sk.id === '祥瑞庇佑'
+                                                                    ? SKILL_SHENENJISHU_SVG || SKILL_SHENGUANGZHAN_SVG || SKILL_ATTACK_SVG
+                                                                    : SKILL_ATTACK_SVG;
                     opts.push(
                       '<div class="skill-popup-opt' +
                         (insufficientAp ? ' skill-popup-opt-disabled' : '') +
@@ -8297,6 +9230,12 @@
                       if (opt.classList.contains('skill-popup-opt-disabled')) return;
                       var idx = opt.getAttribute('data-skill-index');
                       var specialId = opt.getAttribute('data-special-id');
+                      if (specialId !== '猎手本能') {
+                        var partyStun = getParty();
+                        var unitStun = partyStun && partyStun[allySlot - 1];
+                        var apStun = getApCostForSkillPopupChoice(ch, idx, specialId);
+                        if (tryConsume眩晕浪费行动(unitStun, apStun)) return;
+                      }
                       var skillName = null;
                       if (idx != null && ch && ch.skills) {
                         var skill = ch.skills[parseInt(idx, 10)];
@@ -8313,6 +9252,29 @@
                       }
                       if (skillName === '见切') {
                         executePlayerDefense(allySlot, parseInt(idx, 10));
+                        return;
+                      }
+                      if (skillName === '护卫') {
+                        executePlayer护卫(allySlot, parseInt(idx, 10));
+                        return;
+                      }
+                      if (skillName === '沧澜') {
+                        var skIdx沧 = parseInt(idx, 10);
+                        var skRef沧 = ch && ch.skills && ch.skills[skIdx沧];
+                        if (skRef沧 && is沧澜潮汐B(skRef沧)) {
+                          if (typeof window.toastr !== 'undefined')
+                            window.toastr.warning('潮汐形态下沧澜为被动，无法主动释放');
+                          return;
+                        }
+                        if (window.BattleGrid && window.BattleGrid.enterSkillTargetMode) {
+                          window.BattleGrid.enterSkillTargetMode(getEnemyParty(), function (enemySlotNum) {
+                            executePlayer沧澜(allySlot, enemySlotNum, skIdx沧);
+                          });
+                        }
+                        return;
+                      }
+                      if (skillName === '碧落') {
+                        executePlayer碧落(allySlot, parseInt(idx, 10));
                         return;
                       }
                       if (skillName === '纳刀') {
@@ -8520,6 +9482,16 @@
                         skillPopupEl.classList.remove('show');
                         return;
                       }
+                      if (specialId === '踏浪行歌') {
+                        skillPopupEl.classList.remove('show');
+                        executePlayer踏浪行歌(allySlot);
+                        return;
+                      }
+                      if (specialId === '祥瑞庇佑') {
+                        skillPopupEl.classList.remove('show');
+                        executePlayer祥瑞庇佑(allySlot);
+                        return;
+                      }
                       if (window.BattleGrid && window.BattleGrid.enterSkillTargetMode) {
                         var skillIndex = idx != null ? parseInt(idx, 10) : -1;
                         window.BattleGrid.enterSkillTargetMode(getEnemyParty(), function (enemySlotNum) {
@@ -8585,6 +9557,7 @@
             if (ch.见切弹返) ch.见切弹返 = false;
             if (ch.影舞反击) ch.影舞反击 = false;
           }
+          run清漓玩家回合开始处理();
           saveBattleData(party, getEnemyParty());
           renderAllySlots(party);
           injectEnemyIntentStyle();

@@ -1885,12 +1885,14 @@
             {
               id: 'A',
               name: '炽天之剑',
-              effect: '挥舞圣剑进行神圣斩击。对单体造成 [Str × 0.7] 的物理伤害和 [Int × 0.5] 的神圣伤害。施加2次【燃烧】。',
+              effect:
+                '挥舞圣剑进行神圣斩击。对单体造成 [Str × 0.7] 的物理伤害和 [Int × 0.5] 的神圣伤害。施加2次【燃烧】。',
             },
             {
               id: 'B',
               name: '净化斩击',
-              effect: '挥舞圣剑进行神圣斩击。对单体造成 [Str × 0.7] 的物理伤害和 [Int × 0.5] 的神圣伤害。命中时驱散目标1个增益Buff。若成功驱散，艾丽卡回复 [Int × 0.4] 的生命值。',
+              effect:
+                '挥舞圣剑进行神圣斩击。对单体造成 [Str × 0.7] 的物理伤害和 [Int × 0.5] 的神圣伤害。命中时驱散目标1个增益Buff。若成功驱散，艾丽卡回复 [Int × 0.4] 的生命值。',
             },
           ],
         },
@@ -1917,7 +1919,8 @@
             {
               id: 'B',
               name: '罪印',
-              effect: '以神圣之力标记罪人。对单体造成 [Int × 0.6] 的神圣伤害，施加1层【碎魔】和1层【破甲】，艾丽卡获得2层【嘲讽】。',
+              effect:
+                '以神圣之力标记罪人。对单体造成 [Int × 0.6] 的神圣伤害，施加1层【碎魔】和1层【破甲】，艾丽卡获得2层【嘲讽】。',
             },
           ],
         },
@@ -1966,7 +1969,8 @@
             {
               id: 'A',
               name: '血祭宣判',
-              effect: '以神圣权柄宣告罪罚。消耗自身20%当前HP，对敌方全体造成 [Int × 1.1 + Sta × 0.6] 的神圣伤害。对所有命中目标施加1层【虚弱】。',
+              effect:
+                '以神圣权柄宣告罪罚。消耗自身20%当前HP，对敌方全体造成 [Int × 1.1 + Sta × 0.6] 的神圣伤害。对所有命中目标施加1层【虚弱】。',
             },
             {
               id: 'B',
@@ -2002,7 +2006,8 @@
           attribute1: '被动',
           attribute2: '',
           attribute3: '',
-          effect: '艾丽卡每在自己的回合受到一次伤害，获得1层【智力强化】，每在敌人的回合受到一次伤害，获得1层【防御强化】',
+          effect:
+            '艾丽卡每在自己的回合受到一次伤害，获得1层【智力强化】，每在敌人的回合受到一次伤害，获得1层【防御强化】',
         },
         {
           id: '救赎',
@@ -2011,7 +2016,8 @@
           attribute1: '治疗',
           attribute2: '远程',
           attribute3: '单体',
-          effect: '消耗自身30%当前HP，回复150%消耗量的生命值，清除所有负面状态。若目标HP未回复至满，额外获得 [Sta × 1.5] 的护盾。',
+          effect:
+            '消耗自身30%当前HP，回复150%消耗量的生命值，清除所有负面状态。若目标HP未回复至满，额外获得 [Sta × 1.5] 的护盾。',
         },
         {
           id: '圣火净世',
@@ -2020,7 +2026,8 @@
           attribute1: '神圣',
           attribute2: '远程',
           attribute3: '群体',
-          effect: '引爆自身神圣之力席卷战场。对敌方全体造成 [Int × 0.8] 的神圣伤害，对自身和所有命中目标施加2次【燃烧】。艾丽卡承受 [Sta × 0.5] 的自伤。每命中1个敌人，艾丽卡获得 [Def × 0.4] 的护盾。',
+          effect:
+            '引爆自身神圣之力席卷战场。对敌方全体造成 [Int × 0.8] 的神圣伤害，对自身和所有命中目标施加2次【燃烧】。艾丽卡承受 [Sta × 0.5] 的自伤。每命中1个敌人，艾丽卡获得 [Def × 0.4] 的护盾。',
         },
       ],
       specialSkillsUnlocked: ['盲目之光', '奉献', '殉道圣躯', '救赎', '圣火净世'],
@@ -2875,6 +2882,36 @@
         },
       ],
       skills: [
+        {
+          name: '灵犀',
+          ap: 1,
+          level: 1,
+          advancement: 'B',
+          attribute1: '物理',
+          attribute2: '近战',
+          attribute3: '单体',
+          effectByLevel: [
+            '以流水般的剑招攻击目标。对单体造成 [Str × 1.0] 的物理伤害。若暴击，额外追加1次 [Agi × 0.3] 的物理伤害。',
+            '以流水般的剑招攻击目标。对单体造成 [Str × 1.1] 的物理伤害。若暴击，额外追加1次 [Agi × 0.3] 的物理伤害。',
+            '以流水般的剑招攻击目标。对单体造成 [Str × 1.1] 的物理伤害。若暴击，额外追加1次 [Agi × 0.4] 的物理伤害。',
+            '以流水般的剑招攻击目标。对单体造成 [Str × 1.2] 的物理伤害。若暴击，额外追加1次 [Agi × 0.4] 的物理伤害。',
+          ],
+          advancementReplacesEffect: true,
+          advancementOptions: [
+            {
+              id: 'A',
+              name: '破浪',
+              effect:
+                '以流水般的剑招攻击目标。对单体造成 [Str × 1.2] 的物理伤害，若暴击，额外追加1次 [Agi × 0.4] 的物理伤害。并施加1层【破甲】和1层【迟钝】。',
+            },
+            {
+              id: 'B',
+              name: '涟漪',
+              effect:
+                '以流水般的剑招攻击目标。对单体造成 [Str × 1.2] 的物理伤害，若暴击，额外追加1次 [Agi × 0.4] 的物理伤害。每次暴击获得1层【剑势】。',
+            },
+          ],
+        },
         {
           name: '攻击',
           ap: 1,
@@ -4263,7 +4300,8 @@ yahei: 'font-yahei',
       id: '眩晕',
       name: '眩晕',
       desc: '无效化该角色任意一次行动',
-      tooltip: '无效化该角色任意一次行动',
+      tooltip:
+        '每次尝试行动会消去 1 层，该次不产生技能效果，但仍消耗该行动对应的 AP（潮汐沧澜、猎手本能等 0 AP 项除外）。不随回合结束衰减。',
       maxLayers: 3,
     },
     {
@@ -4401,6 +4439,12 @@ yahei: 'font-yahei',
       maxLayers: 5,
     },
     {
+      id: '剑势',
+      name: '剑势',
+      desc: '灵犀·涟漪：每次暴击累积的剑意',
+      tooltip: '不会在回合结束时被清除；进入新一场战斗（切换楼层遭遇）时清空。',
+    },
+    {
       id: '恍惚',
       name: '恍惚',
       desc: '命中-10%',
@@ -4471,6 +4515,7 @@ yahei: 'font-yahei',
     '心满意足',
     '锁定',
     '扑杀',
+    '剑势',
   ];
   /** 救赎等清除负面状态时移除的 debuff id 列表 */
   var NEGATIVE_DEBUFF_IDS = [
@@ -4560,6 +4605,7 @@ yahei: 'font-yahei',
     暗蚀: { fill: 'rgba(63,81,181,0.5)', border: '#3949ab', color: '#1a237e' },
     迟缓: { fill: 'rgba(158,158,158,0.5)', border: '#616161', color: '#424242' },
     迟钝: { fill: 'rgba(96,125,139,0.5)', border: '#546e7a', color: '#37474f' },
+    剑势: { fill: 'rgba(32,153,145,0.35)', border: '#209991', color: '#209991' },
     恍惚: { fill: 'rgba(158,158,158,0.5)', border: '#757575', color: '#424242' },
     灵巧: { fill: 'rgba(76,175,80,0.5)', border: '#43a047', color: '#2e7d32' },
     专注: { fill: 'rgba(255,193,7,0.5)', border: '#ffc107', color: '#f57f17' },
@@ -7438,6 +7484,10 @@ yahei: 'font-yahei',
           goNextSlot();
           return;
         }
+        if (tryConsume眩晕浪费行动(enemy)) {
+          goNextSlot();
+          return;
+        }
         {
           var actionType =
             battleState.plannedEnemyActions[slot - 1] != null && battleState.plannedEnemyActions[slot - 1] !== ''
@@ -7753,6 +7803,146 @@ yahei: 'font-yahei',
       }
       doOneHit();
     }
+    /** 清漓·灵犀：主段 Str×系数；暴击时追加敏捷段；Lv5-A 破浪命中施加破甲+迟钝；Lv5-B 涟漪每次暴击叠【剑势】（剑势不随回合清除，新战斗由 preparePartyForNewBattle 清空） */
+    function executePlayer灵犀(allySlot, enemySlotNum, skillIndex) {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      var attacker = party[allySlot - 1];
+      var defender = enemies[enemySlotNum - 1];
+      if (!attacker || !defender || isAllyDefeated(attacker)) return;
+      var skill =
+        skillIndex >= 0 && attacker.skills && attacker.skills[skillIndex] ? attacker.skills[skillIndex] : null;
+      if (!skill || (skill.name || '') !== '灵犀') return;
+      var skillAp = skill.ap != null ? skill.ap : 1;
+      var maxAp = getApByLevel(attacker.level);
+      var curAp =
+        attacker.currentAp !== undefined && attacker.currentAp !== null ? parseInt(attacker.currentAp, 10) : maxAp;
+      if (curAp < skillAp) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('AP 不足，无法使用该技能');
+        return;
+      }
+      var lv = Math.max(1, parseInt(skill.level, 10) || 1);
+      var strM = lv === 1 ? 1.0 : lv === 2 ? 1.1 : lv === 3 ? 1.1 : 1.2;
+      var agiM = lv === 1 ? 0.3 : lv === 2 ? 0.3 : lv === 3 ? 0.4 : 0.4;
+      var str = getDisplayStat(attacker, 'str') || 0;
+      var agi = getDisplayStat(attacker, 'agi') || 0;
+      var baseDamage = Math.max(0, Math.floor(str * strM));
+      var bonusDamage = Math.max(0, Math.floor(agi * agiM));
+      var skillDisplayName = '灵犀';
+      if (lv >= 5 && skill.advancement === 'A') skillDisplayName = '灵犀·破浪';
+      else if (lv >= 5 && skill.advancement === 'B') skillDisplayName = '灵犀·涟漪';
+      var result1 = resolveAttack(attacker, defender, baseDamage, true, { isMelee: true });
+      if (result1.crit && attacker.纳刀共鸣暴击加成 != null) {
+        result1.finalDamage = Math.max(1, Math.floor(result1.finalDamage * (1 + attacker.纳刀共鸣暴击加成)));
+        attacker.纳刀共鸣暴击加成 = null;
+      }
+      var attName = attacker.name || '己方';
+      var defName = defender.name || '敌方';
+      var damageCalcStr1 = '力量×' + strM + '=' + baseDamage;
+      var attackerSlotEl = document.querySelector('.slot[data-slot="ally-' + allySlot + '"]');
+      var defenderSlotEl = document.querySelector('.slot[data-slot="enemy-' + enemySlotNum + '"]');
+      function applyAfterFirstHit() {
+        applyDamageToTarget(
+          defender,
+          result1.finalDamage,
+          result1.shadowDamage ? { shadowDamage: result1.shadowDamage } : undefined,
+        );
+        var curAp2 =
+          attacker.currentAp !== undefined && attacker.currentAp !== null ? parseInt(attacker.currentAp, 10) : maxAp;
+        attacker.currentAp = Math.max(0, curAp2 - skillAp);
+        if (result1.hit && lv >= 5 && skill.advancement === 'A') {
+          addBuffLayers(defender, '破甲', '破甲', 1, attacker);
+          addBuffLayers(defender, '迟钝', '迟钝', 1, attacker);
+        }
+        if (lv >= 5 && skill.advancement === 'B' && result1.hit && result1.crit) {
+          addBuffLayers(attacker, '剑势', '剑势', 1, attacker);
+          capUnitBuffs(attacker);
+        }
+        saveBattleData(party, enemies);
+        renderAllySlots(party);
+        renderEnemySlots(enemies);
+        appendCombatLog(
+          formatAttackLogLine(
+            attName,
+            skillDisplayName,
+            defName,
+            result1,
+            baseDamage,
+            null,
+            null,
+            defender.hp,
+            damageCalcStr1,
+          ),
+        );
+        function doSecondHit() {
+          if (!result1.crit || !result1.hit || bonusDamage <= 0) {
+            if (typeof window.toastr !== 'undefined') window.toastr.success(result1.message);
+            return;
+          }
+          var result2 = resolveAttack(attacker, defender, bonusDamage, true, { isMelee: true });
+          if (result2.crit && attacker.纳刀共鸣暴击加成 != null) {
+            result2.finalDamage = Math.max(1, Math.floor(result2.finalDamage * (1 + attacker.纳刀共鸣暴击加成)));
+            attacker.纳刀共鸣暴击加成 = null;
+          }
+          applyDamageToTarget(
+            defender,
+            result2.finalDamage,
+            result2.shadowDamage ? { shadowDamage: result2.shadowDamage } : undefined,
+          );
+          if (lv >= 5 && skill.advancement === 'B' && result2.hit && result2.crit) {
+            addBuffLayers(attacker, '剑势', '剑势', 1, attacker);
+            capUnitBuffs(attacker);
+          }
+          saveBattleData(party, enemies);
+          renderAllySlots(party);
+          renderEnemySlots(enemies);
+          var calc2 = '敏捷×' + agiM + '=' + bonusDamage;
+          appendCombatLog(
+            formatAttackLogLine(
+              attName,
+              skillDisplayName + '（追击）',
+              defName,
+              result2,
+              bonusDamage,
+              null,
+              null,
+              defender.hp,
+              calc2,
+            ),
+          );
+          if (typeof window.toastr !== 'undefined') window.toastr.success(result1.message + '（追击）');
+        }
+        if (result1.crit && result1.hit && bonusDamage > 0) {
+          setTimeout(function () {
+            if (defenderSlotEl && attackerSlotEl) {
+              playStrikeShake(attackerSlotEl, defenderSlotEl, function () {
+                playAnimationOnSlot(defenderSlotEl, 'Slash5', function () {
+                  doSecondHit();
+                });
+              });
+            } else {
+              doSecondHit();
+            }
+          }, 380);
+        } else {
+          if (typeof window.toastr !== 'undefined') window.toastr.success(result1.message);
+        }
+      }
+      if (attackerSlotEl && defenderSlotEl) {
+        playStrikeShake(attackerSlotEl, defenderSlotEl, function () {
+          if (result1.hit) {
+            playAnimationOnSlot(defenderSlotEl, 'Slash5', function () {
+              applyAfterFirstHit();
+            });
+          } else {
+            playMissEffect(defenderSlotEl);
+            applyAfterFirstHit();
+          }
+        });
+      } else {
+        applyAfterFirstHit();
+      }
+    }
     function executePlayerAttack(allySlot, enemySlotNum, skillIndex, specialId) {
       var party = getParty();
       var enemies = getEnemyParty();
@@ -7805,6 +7995,10 @@ yahei: 'font-yahei',
       }
       if ((skill.name || '') === '清算之手') {
         executePlayer清算之手(allySlot, enemySlotNum, skillIndex);
+        return;
+      }
+      if ((skill.name || '') === '灵犀') {
+        executePlayer灵犀(allySlot, enemySlotNum, skillIndex);
         return;
       }
       if (
@@ -11231,6 +11425,71 @@ yahei: 'font-yahei',
       appendCombatLog((attacker.name || '岚') + ' 死亡之眼：对目标施加 1 层【迟缓】与 1 次【流血】');
       attacker.死亡之眼目标 = null;
     }
+    /** 技能弹窗某一选项对应的 AP 消耗（与弹窗禁用规则一致：潮汐沧澜视为 0；猎手本能单独排除）。 */
+    function getApCostForSkillPopupChoice(ch, idx, specialId) {
+      if (specialId === '猎手本能') return 0;
+      if (idx != null && ch && ch.skills) {
+        var sk = ch.skills[parseInt(idx, 10)];
+        if (!sk) return 0;
+        var canglanTideB =
+          ch.name === '清漓' &&
+          (sk.name || '') === '沧澜' &&
+          Math.max(1, parseInt(sk.level, 10) || 1) >= 5 &&
+          sk.advancement === 'B';
+        if (canglanTideB) return 0;
+        return sk.ap != null ? parseInt(sk.ap, 10) : 1;
+      }
+      if (specialId && ch && typeof getSpecialSkillsForChar === 'function') {
+        var list = getSpecialSkillsForChar(ch);
+        for (var si = 0; si < list.length; si++) {
+          if (list[si].id === specialId) return list[si].ap != null ? parseInt(list[si].ap, 10) : 1;
+        }
+      }
+      return 0;
+    }
+    /**
+     * 【眩晕】统一判定：若单位带有眩晕层数，则消去 1 层，本次不产生技能/行动效果；若 apCost > 0 仍扣除对应 AP。
+     * 在技能弹窗、换位、敌方行动入口各调用一次即可，勿在单个技能内重复判断。
+     * @param {number} [apCost] 本次被浪费行动应扣的 AP，默认 0（换位、敌方无效行动不传）
+     * @returns {boolean} true 表示已因眩晕浪费行动，调用方须立即 return
+     */
+    function tryConsume眩晕浪费行动(unit, apCost) {
+      if (!unit || !unit.buffs || !unit.buffs.length) return false;
+      var payAp = apCost != null ? Math.max(0, parseInt(apCost, 10) || 0) : 0;
+      var stunBuff = null;
+      for (var si = 0; si < unit.buffs.length; si++) {
+        var sb = unit.buffs[si];
+        if ((sb.id || sb.name || '').trim() !== '眩晕') continue;
+        var sl = Math.max(0, parseInt(sb.layers, 10) || 0);
+        if (sl > 0) {
+          stunBuff = sb;
+          break;
+        }
+      }
+      if (!stunBuff) return false;
+      var beforeL = Math.max(0, parseInt(stunBuff.layers, 10) || 0);
+      stunBuff.layers = Math.max(0, beforeL - 1);
+      unit.buffs = unit.buffs.filter(function (x) {
+        return (parseInt(x.layers, 10) || 0) > 0;
+      });
+      capUnitBuffs(unit);
+      if (payAp > 0) {
+        var maxAp = unit.name === '白牙' ? 2 : getApByLevel(unit.level);
+        var curAp = unit.currentAp !== undefined && unit.currentAp != null ? parseInt(unit.currentAp, 10) : maxAp;
+        unit.currentAp = Math.max(0, curAp - payAp);
+      }
+      var label = unit.name || '单位';
+      var remain = Math.max(0, beforeL - 1);
+      var logLine = label + ' 【眩晕】使本次行动无效（剩余 ' + remain + ' 层）';
+      if (payAp > 0) logLine += '，仍消耗 ' + payAp + ' AP';
+      appendCombatLog(logLine);
+      saveBattleData(getParty(), getEnemyParty());
+      renderAllySlots(getParty());
+      renderEnemySlots(getEnemyParty());
+      if (typeof window.toastr !== 'undefined')
+        window.toastr.warning(payAp > 0 ? '眩晕：本次行动无效（已扣除 ' + payAp + ' AP）' : '眩晕：本次行动无效');
+      return true;
+    }
     /** 给单位增加 buff 层数（若无该 buff 则新增）。会按 BUFF_DEFINITIONS 的 maxLayers 封顶；有上限的 buff 施加后也会统一校正。麻痹累计3层时消耗3层并施加1层眩晕。黯被动「暗影渗透」：对有【暗蚀】目标施加【流血】时层数+50%；对有【流血】目标施加【暗蚀】时额外+1层。 */
     function addBuffLayers(unit, buffId, buffName, layers, fromChar) {
       if (!unit || layers <= 0) return;
@@ -11929,6 +12188,7 @@ yahei: 'font-yahei',
             if (typeof window.toastr !== 'undefined') window.toastr.warning('虚无状态无法换位');
             return;
           }
+          if (tryConsume眩晕浪费行动(chSwap)) return;
           enterSwapMode(slotNum);
         }
         return;
@@ -12028,9 +12288,16 @@ yahei: 'font-yahei',
                   battleState.erika奉献TriggeredThisRound = true;
                 }
                 var opts = [];
+                var regularSkillPopupRows = [];
                 if (ch && ch.skills) {
                   ch.skills.forEach(function (s, idx) {
                     if (s.locked) return;
+                    if (
+                      (s.name || '') === '沧澜' &&
+                      Math.max(1, parseInt(s.level, 10) || 1) >= 5 &&
+                      s.advancement === 'B'
+                    )
+                      return;
                     var needAp = s.ap != null ? s.ap : 1;
                     var insufficientAp = curAp < needAp;
                     var advanceOpt =
@@ -12063,6 +12330,8 @@ yahei: 'font-yahei',
                           ? SKILL_SHIELD_SWORD_SVG || SKILL_DEFENSE_SVG
                           : s.name === '见切'
                             ? SKILL_JIANQIE_SVG || SKILL_SHIELD_SWORD_SVG || SKILL_DEFENSE_SVG
+                            : s.name === '灵犀'
+                              ? SKILL_JUHE_SVG || SKILL_ATTACK_SVG
                             : s.name === '居合'
                               ? SKILL_JUHE_SVG || SKILL_ATTACK_SVG
                               : s.name === '纳刀'
@@ -12112,8 +12381,11 @@ yahei: 'font-yahei',
                                                                           : s.name === '罪罚宣告'
                                                                             ? SKILL_ZUIFAXUANGAO_SVG || SKILL_ATTACK_SVG
                                                                             : SKILL_ATTACK_SVG;
-                    opts.push(
-                      '<div class="skill-popup-opt' +
+                    regularSkillPopupRows.push({
+                      idx: idx,
+                      baseName: s.name || '',
+                      html:
+                        '<div class="skill-popup-opt' +
                         (insufficientAp ? ' skill-popup-opt-disabled' : '') +
                         '" data-skill-index="' +
                         idx +
@@ -12128,7 +12400,21 @@ yahei: 'font-yahei',
                         '</span></span></div><div class="skill-popup-opt-desc">' +
                         effectHtml +
                         '</div></div></div>',
-                    );
+                    });
+                  });
+                  regularSkillPopupRows.sort(function (a, b) {
+                    function skPri(n) {
+                      if (n === '攻击') return 0;
+                      if (n === '防御') return 1;
+                      return 2;
+                    }
+                    var pa = skPri(a.baseName);
+                    var pb = skPri(b.baseName);
+                    if (pa !== pb) return pa - pb;
+                    return a.idx - b.idx;
+                  });
+                  regularSkillPopupRows.forEach(function (row) {
+                    opts.push(row.html);
                   });
                 }
                 if (ch) {
@@ -12250,6 +12536,12 @@ yahei: 'font-yahei',
                       if (opt.classList.contains('skill-popup-opt-disabled')) return;
                       var idx = opt.getAttribute('data-skill-index');
                       var specialId = opt.getAttribute('data-special-id');
+                      if (specialId !== '猎手本能') {
+                        var partyStun = getParty();
+                        var unitStun = partyStun && partyStun[allySlot - 1];
+                        var apStun = getApCostForSkillPopupChoice(ch, idx, specialId);
+                        if (tryConsume眩晕浪费行动(unitStun, apStun)) return;
+                      }
                       var skillName = null;
                       if (idx != null && ch && ch.skills) {
                         var skill = ch.skills[parseInt(idx, 10)];
@@ -13970,6 +14262,13 @@ yahei: 'font-yahei',
       }
       return Math.max(0, Math.floor(str * multStr + agi * multAgi));
     }
+    /** 清漓·灵犀：主段 Str 系数随等级；追击段在战斗内单独结算，此处只返回主段伤害 */
+    if (name === '灵犀') {
+      str = getDisplayStat(attacker, 'str') || 0;
+      lv = Math.max(1, parseInt(skill.level, 10) || 1);
+      multStr = lv === 1 ? 1.0 : lv === 2 ? 1.1 : lv === 3 ? 1.1 : 1.2;
+      return Math.max(0, Math.floor(str * multStr));
+    }
     if (name === '错金' || skill.id === '错金')
       return Math.max(0, Math.floor((getDisplayStat(attacker, 'str') || 0) * 1.6));
     if (name === '一闪' || skill.id === '一闪')
@@ -14185,16 +14484,19 @@ yahei: 'font-yahei',
     else displayStats.atk = str;
     var 守势L = 0;
     var 攻势L = 0;
+    var 剑势L = 0;
     if (ch.buffs && ch.buffs.length) {
       for (var i = 0; i < ch.buffs.length; i++) {
         var b = ch.buffs[i];
         if ((b.id || b.name) === '守势') 守势L = Math.max(0, parseInt(b.layers, 10) || 0);
         if ((b.id || b.name) === '攻势') 攻势L = Math.max(0, parseInt(b.layers, 10) || 0);
+        if ((b.id || b.name) === '剑势') 剑势L = Math.max(0, parseInt(b.layers, 10) || 0);
       }
     }
     displayStats.转化层数 = 守势L;
     displayStats.守势层数 = 守势L;
     displayStats.攻势层数 = 攻势L;
+    displayStats.剑势层数 = 剑势L;
     return displayStats;
   }
 
@@ -14212,6 +14514,19 @@ yahei: 'font-yahei',
       return CALC_MARK + key + '\x02' + formula + '\x02' + value + CALC_END;
     }
     return effect.replace(/\[([^\]]+)\]/g, function (_, inner) {
+      var canglanJianShiMatch = inner.match(
+        /^\(\s*Str\s*\+\s*Agi\s*\)\s*[×x]\s*剑势层数\s*[×x]\s*([\d.]+)\s*$/,
+      );
+      if (canglanJianShiMatch) {
+        var coefC = parseFloat(canglanJianShiMatch[1], 10);
+        var strC = Number(displayStats.str) || 0;
+        var agiC = Number(displayStats.agi) || 0;
+        var layersC = displayStats.剑势层数 != null ? displayStats.剑势层数 : 0;
+        var sumC = strC + agiC;
+        var valueC = Math.max(0, Math.floor(sumC * layersC * coefC));
+        var formulaC = '__CANG_FORMULA__' + canglanJianShiMatch[1] + '__';
+        return makePlaceholder('沧澜伤害', formulaC, String(valueC));
+      }
       var convertMatch = inner.match(/^转化层数×([\d.]+)%$/);
       if (convertMatch) {
         var pct = parseFloat(convertMatch[1], 10);
@@ -14712,7 +15027,7 @@ yahei: 'font-yahei',
       '.char-detail-grid .skill-card{background:rgba(255,255,255,.5);border:1px solid var(--gold-border);padding:8px 10px;border-radius:6px}.char-detail-grid .skill-card-locked-wrap{position:relative}.char-detail-grid .skill-card-locked-overlay{position:absolute;inset:0;background:rgba(255,255,255,.7);border-radius:6px;display:flex;align-items:center;justify-content:center;padding:8px}.char-detail-grid .skill-unlock-btn{padding:8px 14px;border:2px solid var(--gold-border);border-radius:8px;background:#1a150e;color:#e4d5b7;font-size:12px;font-weight:bold;cursor:pointer;transition:transform .2s,box-shadow .2s}.char-detail-grid .skill-unlock-btn:hover:not(:disabled){transform:scale(1.05);box-shadow:0 0 10px rgba(201,162,39,.4)}.char-detail-grid .skill-unlock-btn:disabled{opacity:.6;cursor:not-allowed}',
       '.char-detail-grid .skill-name{font-weight:bold;font-size:12px;color:#5c3a21;border-bottom:1px solid rgba(139,115,32,.25);display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;padding-bottom:4px}.char-detail-grid .skill-name-left{display:inline-flex;align-items:center;gap:6px}.char-detail-grid .skill-name-right{display:inline-flex;align-items:center;gap:6px;flex-shrink:0}.char-detail-grid .skill-lv{font-size:11px;color:#5c4d10;font-weight:bold}.char-detail-grid .skill-level-actions{display:inline-flex;align-items:center;gap:2px}.char-detail-grid .skill-btn-minus,.char-detail-grid .skill-btn-plus{width:20px;height:20px;padding:0;border:1px solid #5c4a3a;border-radius:4px;background:rgba(255,255,255,.9);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;color:#3d3529;transition:background .2s}.char-detail-grid .skill-btn-minus:hover,.char-detail-grid .skill-btn-plus:hover{background:#e4d5b7}.char-detail-grid .skill-btn-minus:disabled,.char-detail-grid .skill-btn-plus:disabled{opacity:.5;cursor:not-allowed}.char-detail-grid .skill-btn-minus svg,.char-detail-grid .skill-btn-plus svg{width:12px;height:12px;stroke:currentColor}.char-detail-grid .skill-advance-btn{width:22px;height:22px;padding:0;border:none;border-radius:6px;background:#c83c3c;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;color:#d4af37;transition:background .2s,transform .15s}.char-detail-grid .skill-advance-btn:hover{background:#a82d2d;transform:scale(1.05)}.char-detail-grid .skill-advance-btn svg{width:14px;height:14px;stroke:currentColor}',
       '.advancement-popup{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;pointer-events:none}.advancement-popup.show{display:flex;pointer-events:auto}.advancement-popup-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.4)}.advancement-popup-panel{position:relative;z-index:1;background:#1a150e;color:#e4d5b7;border:2px solid var(--gold-border);border-radius:12px;padding:0;min-width:280px;max-width:90vw;box-shadow:0 8px 32px rgba(0,0,0,.5);display:flex;flex-direction:column}.advancement-popup-title{font-size:16px;font-weight:bold;color:var(--ornate-gold);padding:14px 44px 12px 16px;border-bottom:1px solid rgba(139,115,32,.4)}.advancement-popup-close{position:absolute;top:10px;right:10px;width:28px;height:28px;padding:0;border:none;border-radius:6px;background:transparent;color:#8b7355;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s,color .2s}.advancement-popup-close:hover{background:rgba(139,115,32,.25);color:#e4d5b7}.advancement-popup-close svg{width:18px;height:18px;stroke:currentColor}.advancement-popup-body{padding:16px;display:flex;flex-direction:column;gap:12px}.advancement-opt{background:rgba(255,255,255,.06);border:1px solid rgba(139,115,32,.35);border-radius:8px;padding:12px 14px;cursor:pointer;transition:background .15s,border-color .15s}.advancement-opt:hover{background:rgba(201,162,39,.12);border-color:var(--gold-border)}.advancement-opt.selected{background:rgba(201,162,39,.2);border-color:var(--ornate-gold)}.advancement-opt-name{font-weight:bold;color:var(--ornate-gold);margin-bottom:6px}.advancement-opt-effect{font-size:12px;color:#c4b8a8;line-height:1.4}.advancement-popup-footer{padding:12px 16px 16px;border-top:1px solid rgba(139,115,32,.3)}.advancement-confirm-btn{width:100%;padding:10px 20px;border:2px solid var(--gold-border);border-radius:8px;background:rgba(201,162,39,.15);color:var(--ornate-gold);font-weight:bold;cursor:pointer;transition:background .2s}.advancement-confirm-btn:hover{background:rgba(201,162,39,.3)}.advancement-confirm-btn:disabled{opacity:.5;cursor:not-allowed}',
-      '.char-detail-grid .skill-desc{font-size:11px;color:#555;line-height:1.35;white-space:pre-line}.char-detail-grid .skill-desc-advancement{font-size:11px;color:#555;line-height:1.35;margin-top:4px;white-space:pre-line}.buff-ref{color:#1e88e5;cursor:pointer;text-decoration:none}.skill-calc{font-weight:bold;cursor:help;border-bottom:1px dotted currentColor}.skill-calc-str{color:var(--hp-red)}.skill-calc-agi{color:#2e7d32}.skill-calc-int{color:#1565c0}.skill-calc-sta{color:#e65100}.skill-calc-def{color:#5d4037}.skill-calc-level{color:#6a1b9a}.skill-calc-atk{color:#c62828}.skill-calc-cha{color:#c2185b}.skill-calc-纳刀伤害{color:#5d4037}.skill-calc-白夜即死{color:#9c27b0}.skill-calc-心眼闪避{color:#2e7d32}.skill-calc-心眼暴击{color:#c62828}#buff-tooltip-popup{position:fixed;z-index:2147483647;display:none;max-width:280px;padding:8px 12px;font-size:12px;line-height:1.4;color:#1a150e;background:#f5f0e1;border:1px solid var(--gold-border);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.2);pointer-events:none}#buff-tooltip-popup.show{display:block}#buff-tooltip-popup .report-attr-name{display:inline}#buff-tooltip-popup .report-attr-icon{display:inline-flex;align-items:center;vertical-align:middle;margin-left:2px}#buff-tooltip-popup .report-attr-icon .attr-icon-svg{width:14px;height:14px}.char-detail-grid .passive-skills-section,.char-detail-grid .basic-skills-section,.char-detail-grid .active-skills-section{display:flex;flex-direction:column;gap:10px}.char-detail-grid .passive-skills-section{margin-bottom:12px}.char-detail-grid .basic-skills-section{margin-bottom:12px}.char-detail-grid .active-skills-section{margin-bottom:8px}.char-detail-grid .skill-subtitle{font-size:11px;font-weight:bold;color:#5c4d10;margin-bottom:6px;padding-bottom:2px;border-bottom:1px solid rgba(139,115,32,.2)}.char-detail-grid .special-skill-open-btn{padding:4px 10px;border:2px solid var(--gold-border);border-radius:6px;background:#1a150e;color:var(--ornate-gold);font-size:12px;font-weight:bold;cursor:pointer;margin-right:8px}.char-detail-grid .special-skill-open-btn:hover{background:rgba(201,162,39,.2)}.char-detail-grid .special-skills-section{margin-top:14px;padding-top:10px;border-top:1px solid rgba(139,115,32,.25)}.special-skill-popup{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;pointer-events:none}.special-skill-popup.show{display:flex;pointer-events:auto}.special-skill-popup-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.4)}.special-skill-popup-panel{position:relative;z-index:1;background:#1a150e;color:#e4d5b7;border:2px solid var(--gold-border);border-radius:12px;padding:0;min-width:300px;max-width:90vw;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,.5)}.special-skill-popup-title{padding:14px 44px 12px 16px;font-size:16px;font-weight:bold;color:var(--ornate-gold);border-bottom:1px solid rgba(139,115,32,.4)}.special-skill-popup-close{position:absolute;top:10px;right:10px;width:28px;height:28px;padding:0;border:none;border-radius:6px;background:transparent;color:#8b7355;cursor:pointer;display:flex;align-items:center;justify-content:center}.special-skill-popup-close:hover{background:rgba(139,115,32,.25);color:#e4d5b7}.special-skill-popup-body{padding:16px;overflow-y:auto;flex:1;min-height:0}.special-skill-opt{background:rgba(255,255,255,.06);border:1px solid rgba(139,115,32,.35);border-radius:8px;padding:12px 14px;margin-bottom:10px;display:flex;flex-direction:column;gap:6px}.special-skill-opt-name{font-weight:bold;color:var(--ornate-gold)}.special-skill-opt-effect{font-size:12px;color:#c4b8a8;line-height:1.4}.special-skill-opt-unlock{align-self:flex-start;padding:6px 12px;border:2px solid var(--gold-border);border-radius:6px;background:rgba(201,162,39,.15);color:var(--ornate-gold);font-size:12px;cursor:pointer}.special-skill-opt-unlock:hover{background:rgba(201,162,39,.3)}.special-skill-opt-unlock:disabled{opacity:.5;cursor:not-allowed}.char-detail-grid .skill-card-passive .skill-name .skill-passive-tag{font-size:10px;color:#7a6b5c;font-weight:normal;margin-left:0}.char-detail-grid .skill-tags{font-size:10px;color:#7a6b5c;margin-bottom:4px;padding-bottom:2px}',
+      '.char-detail-grid .skill-desc{font-size:11px;color:#555;line-height:1.35;white-space:pre-line}.char-detail-grid .skill-desc-advancement{font-size:11px;color:#555;line-height:1.35;margin-top:4px;white-space:pre-line}.buff-ref{color:#1e88e5;cursor:pointer;text-decoration:none}.skill-calc{font-weight:bold;cursor:help;border-bottom:1px dotted currentColor}.skill-calc-str{color:var(--hp-red)}.skill-calc-agi{color:#2e7d32}.skill-calc-int{color:#1565c0}.skill-calc-sta{color:#e65100}.skill-calc-def{color:#5d4037}.skill-calc-level{color:#6a1b9a}.skill-calc-atk{color:#c62828}.skill-calc-cha{color:#c2185b}.skill-calc-纳刀伤害{color:#5d4037}.skill-calc-白夜即死{color:#9c27b0}.skill-calc-心眼闪避{color:#2e7d32}.skill-calc-心眼暴击{color:#c62828}.skill-calc-沧澜伤害{color:#209991}#buff-tooltip-popup{position:fixed;z-index:2147483647;display:none;max-width:280px;padding:8px 12px;font-size:12px;line-height:1.4;color:#1a150e;background:#f5f0e1;border:1px solid var(--gold-border);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.2);pointer-events:none}#buff-tooltip-popup.show{display:block}#buff-tooltip-popup .report-attr-name{display:inline}#buff-tooltip-popup .report-attr-icon{display:inline-flex;align-items:center;vertical-align:middle;margin-left:2px}#buff-tooltip-popup .report-attr-icon .attr-icon-svg{width:14px;height:14px}#buff-tooltip-popup .attr-icon{display:inline-flex;align-items:center;vertical-align:middle;margin:0 1px}#buff-tooltip-popup .attr-icon .attr-icon-svg{width:16px;height:16px}.char-detail-grid .passive-skills-section,.char-detail-grid .basic-skills-section,.char-detail-grid .active-skills-section{display:flex;flex-direction:column;gap:10px}.char-detail-grid .passive-skills-section{margin-bottom:12px}.char-detail-grid .basic-skills-section{margin-bottom:12px}.char-detail-grid .active-skills-section{margin-bottom:8px}.char-detail-grid .skill-subtitle{font-size:11px;font-weight:bold;color:#5c4d10;margin-bottom:6px;padding-bottom:2px;border-bottom:1px solid rgba(139,115,32,.2)}.char-detail-grid .special-skill-open-btn{padding:4px 10px;border:2px solid var(--gold-border);border-radius:6px;background:#1a150e;color:var(--ornate-gold);font-size:12px;font-weight:bold;cursor:pointer;margin-right:8px}.char-detail-grid .special-skill-open-btn:hover{background:rgba(201,162,39,.2)}.char-detail-grid .special-skills-section{margin-top:14px;padding-top:10px;border-top:1px solid rgba(139,115,32,.25)}.special-skill-popup{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;pointer-events:none}.special-skill-popup.show{display:flex;pointer-events:auto}.special-skill-popup-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.4)}.special-skill-popup-panel{position:relative;z-index:1;background:#1a150e;color:#e4d5b7;border:2px solid var(--gold-border);border-radius:12px;padding:0;min-width:300px;max-width:90vw;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,.5)}.special-skill-popup-title{padding:14px 44px 12px 16px;font-size:16px;font-weight:bold;color:var(--ornate-gold);border-bottom:1px solid rgba(139,115,32,.4)}.special-skill-popup-close{position:absolute;top:10px;right:10px;width:28px;height:28px;padding:0;border:none;border-radius:6px;background:transparent;color:#8b7355;cursor:pointer;display:flex;align-items:center;justify-content:center}.special-skill-popup-close:hover{background:rgba(139,115,32,.25);color:#e4d5b7}.special-skill-popup-body{padding:16px;overflow-y:auto;flex:1;min-height:0}.special-skill-opt{background:rgba(255,255,255,.06);border:1px solid rgba(139,115,32,.35);border-radius:8px;padding:12px 14px;margin-bottom:10px;display:flex;flex-direction:column;gap:6px}.special-skill-opt-name{font-weight:bold;color:var(--ornate-gold)}.special-skill-opt-effect{font-size:12px;color:#c4b8a8;line-height:1.4}.special-skill-opt-unlock{align-self:flex-start;padding:6px 12px;border:2px solid var(--gold-border);border-radius:6px;background:rgba(201,162,39,.15);color:var(--ornate-gold);font-size:12px;cursor:pointer}.special-skill-opt-unlock:hover{background:rgba(201,162,39,.3)}.special-skill-opt-unlock:disabled{opacity:.5;cursor:not-allowed}.char-detail-grid .skill-card-passive .skill-name .skill-passive-tag{font-size:10px;color:#7a6b5c;font-weight:normal;margin-left:0}.char-detail-grid .skill-tags{font-size:10px;color:#7a6b5c;margin-bottom:4px;padding-bottom:2px}',
       '.char-detail-grid .relic-slots{display:flex;flex-direction:column;gap:8px}',
       '.char-detail-grid .relic-card{background:linear-gradient(135deg,#fff,#fdf5e6);border:2px solid var(--gold-border);padding:10px;border-radius:6px}',
       '.char-detail-grid .relic-name{font-weight:bold;font-size:13px;color:#8b4513;margin-bottom:4px}.char-detail-grid .relic-effect{font-size:11px;color:#555}',
@@ -15142,16 +15457,40 @@ yahei: 'font-yahei',
     function escapeHtml(s) {
       return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
+    var SKILL_FORMULA_CANG_COEF_RE = /^__CANG_FORMULA__([\d.]+)__$/;
+    var SKILL_FORMULA_ATTR_STR_ICON =
+      '<span class="attr-icon" style="color:#d32f2f;vertical-align:-2px">' +
+      '<svg class="attr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.596 12.768a2 2 0 1 0 2.829-2.829l-1.768-1.767a2 2 0 0 0 2.828-2.829l-2.828-2.828a2 2 0 0 0-2.829 2.828l-1.767-1.768a2 2 0 1 0-2.829 2.829z"/><path d="m2.5 21.5 1.4-1.4"/><path d="m20.1 3.9 1.4-1.4"/><path d="M5.343 21.485a2 2 0 1 0 2.829-2.828l1.767 1.768a2 2 0 1 0 2.829-2.829l-6.364-6.364a2 2 0 1 0-2.829 2.829l1.768 1.767a2 2 0 0 0-2.828 2.829z"/><path d="m9.6 14.4 4.8-4.8"/></svg></span>';
+    var SKILL_FORMULA_ATTR_AGI_ICON =
+      '<span class="attr-icon" style="color:#2e7d32;vertical-align:-2px">' +
+      '<svg class="attr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>';
     /** 将描述中的【buff名】转为蓝色可悬停/点击的 span；将计算占位符转为加粗、按属性着色的 span（悬停/点击显示公式），并做 HTML 转义 */
     function wrapBuffRefs(text) {
       if (!text) return '';
       var escaped = String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       var withCalcs = escaped.replace(SKILL_CALC_PLACEHOLDER_RE, function (_, key, formula, value) {
-        var formulaEsc = escapeHtml(formula);
+        var cangCoef = SKILL_FORMULA_CANG_COEF_RE.exec(formula);
+        var formulaIsHtml = false;
+        var formulaForAttr = formula;
+        if (cangCoef) {
+          formulaIsHtml = true;
+          formulaForAttr =
+            '（力量' +
+            SKILL_FORMULA_ATTR_STR_ICON +
+            '+敏捷' +
+            SKILL_FORMULA_ATTR_AGI_ICON +
+            '）x剑势x' +
+            cangCoef[1];
+        }
+        var formulaEsc = formulaIsHtml
+          ? formulaForAttr.replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+          : escapeHtml(formula);
         return (
           '<span class="skill-calc skill-calc-' +
           escapeHtml(key) +
-          '" data-formula="' +
+          '"' +
+          (formulaIsHtml ? ' data-formula-html="1"' : '') +
+          ' data-formula="' +
           formulaEsc +
           '" data-value="' +
           escapeHtml(value) +
@@ -17565,6 +17904,28 @@ yahei: 'font-yahei',
       }
       return party;
     }
+    /** 仅测试模式：右侧 6 槽史莱姆（100 HP，10 攻 10 防），字段与 spawn plan 写入的 enemyParty 一致 */
+    function buildTestModeSlimeEnemyParty() {
+      var arr = [];
+      for (var si = 0; si < 6; si++) {
+        arr.push({
+          name: '史莱姆',
+          species: '史莱姆',
+          gender: '',
+          bodySize: 'medium',
+          rank: 'normal',
+          level: 'Normal',
+          hp: 100,
+          maxHp: 100,
+          atk: 10,
+          def: 10,
+          buffs: [],
+          intents: [],
+          currentShield: 0,
+        });
+      }
+      return arr;
+    }
     var defaultParty = buildDefaultParty();
     /** 敌方默认阵容（6 槽全空）；可从聊天变量 v.enemyParty 覆盖 */
     var defaultEnemyParty = [null, null, null, null, null, null];
@@ -18104,15 +18465,15 @@ yahei: 'font-yahei',
       } catch (e) {}
       if (!v) v = {};
       if (Array.isArray(payload.party)) {
-        // 读档时清理历史残留：清漓仅保留基础攻击/防御（避免旧版本/旧存档多技能）
+        // 读档时清理历史残留：清漓保留 灵犀+攻击+防御（避免旧版本/旧存档多技能）
         v.party = payload.party.map(function (ch) {
           if (!ch || ch.name !== '清漓') return ch;
           try {
             var c2 = JSON.parse(JSON.stringify(ch));
-            if (Array.isArray(c2.skills)) c2.skills = c2.skills.slice(0, 2);
+            if (Array.isArray(c2.skills)) c2.skills = c2.skills.slice(0, 3);
             return c2;
           } catch (e2) {
-            if (ch && Array.isArray(ch.skills)) ch.skills = ch.skills.slice(0, 2);
+            if (ch && Array.isArray(ch.skills)) ch.skills = ch.skills.slice(0, 3);
             return ch;
           }
         });
@@ -18570,9 +18931,10 @@ yahei: 'font-yahei',
           popup.style.top = top + 'px';
         });
       }
-      function showCalcAt(x, y, formula) {
+      function showCalcAt(x, y, formula, isHtml) {
         if (!formula) return;
-        popup.textContent = formula;
+        if (isHtml) popup.innerHTML = formula;
+        else popup.textContent = formula;
         popup.classList.add('show');
         var pad = 12;
         requestAnimationFrame(function () {
@@ -18696,9 +19058,12 @@ yahei: 'font-yahei',
         });
         $(document).on('mouseenter', '.skill-calc', function (e) {
           if (!buffTooltipOpenByClick) {
-            var formula = e.target.getAttribute('data-formula');
-            var value = e.target.getAttribute('data-value');
-            if (formula != null) showCalcAt(e.clientX, e.clientY, formula);
+            var el = e.target && e.target.closest ? e.target.closest('.skill-calc') : null;
+            if (!el && e.target && e.target.classList && e.target.classList.contains('skill-calc')) el = e.target;
+            if (!el) return;
+            var formula = el.getAttribute('data-formula');
+            var isHtml = el.getAttribute('data-formula-html') === '1';
+            if (formula != null) showCalcAt(e.clientX, e.clientY, formula, isHtml);
           }
         });
         $(document).on('mouseleave', '.skill-calc', function () {
@@ -18706,11 +19071,14 @@ yahei: 'font-yahei',
         });
         $(document).on('click', '.skill-calc', function (e) {
           e.preventDefault();
-          var formula = e.target.getAttribute('data-formula');
-          var value = e.target.getAttribute('data-value');
+          var el = e.target && e.target.closest ? e.target.closest('.skill-calc') : null;
+          if (!el && e.target && e.target.classList && e.target.classList.contains('skill-calc')) el = e.target;
+          if (!el) return;
+          var formula = el.getAttribute('data-formula');
+          var isHtml = el.getAttribute('data-formula-html') === '1';
           if (formula != null) {
             buffTooltipOpenByClick = true;
-            showCalcAt(e.clientX, e.clientY, formula || '');
+            showCalcAt(e.clientX, e.clientY, formula || '', isHtml);
           }
         });
         $(document).on('mouseenter', '.attr-val-breakdown', function (e) {
@@ -18794,7 +19162,16 @@ yahei: 'font-yahei',
               if (party[pi] && !party[pi].avatar) party[pi].avatar = portraits[party[pi].name] || '';
             }
           } catch (eAv) {}
-          var emptyEnemyParty = [null, null, null, null, null, null];
+          var testEnemyParty = buildTestModeSlimeEnemyParty();
+          if (
+            typeof window !== 'undefined' &&
+            window.BattleGrid &&
+            typeof window.BattleGrid.capUnitBuffs === 'function'
+          ) {
+            testEnemyParty.forEach(function (en) {
+              if (en) window.BattleGrid.capUnitBuffs(en);
+            });
+          }
           var initialMap = {
             area: '地牢',
             pos: '0-0',
@@ -18812,7 +19189,7 @@ yahei: 'font-yahei',
           } catch (eV) {}
           if (!v) v = {};
           v.party = party;
-          v.enemyParty = emptyEnemyParty;
+          v.enemyParty = testEnemyParty;
           v.battleFloorTitle = '';
           v.map = initialMap;
           if (!v.buffDefinitions || !Array.isArray(v.buffDefinitions) || v.buffDefinitions.length === 0)
@@ -18824,7 +19201,7 @@ yahei: 'font-yahei',
           mergePreserveChatGold(v);
           if (typeof replaceVariables === 'function') replaceVariables(v, { type: 'chat' });
           _lastKnownParty = party;
-          _lastKnownEnemies = emptyEnemyParty;
+          _lastKnownEnemies = testEnemyParty;
           if (typeof window.BattleGrid !== 'undefined' && typeof window.BattleGrid.setBattleLog === 'function')
             window.BattleGrid.setBattleLog([]);
           if (window.色色地牢_save && typeof window.色色地牢_save.writeAutoSnapshot === 'function') {

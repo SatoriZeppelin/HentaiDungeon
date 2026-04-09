@@ -98,6 +98,13 @@
       }
       return Math.max(0, Math.floor(str * multStr + agi * multAgi));
     }
+    /** 清漓·灵犀：主段 Str 系数随等级；追击段在战斗内单独结算，此处只返回主段伤害 */
+    if (name === '灵犀') {
+      str = getDisplayStat(attacker, 'str') || 0;
+      lv = Math.max(1, parseInt(skill.level, 10) || 1);
+      multStr = lv === 1 ? 1.0 : lv === 2 ? 1.1 : lv === 3 ? 1.1 : 1.2;
+      return Math.max(0, Math.floor(str * multStr));
+    }
     if (name === '错金' || skill.id === '错金')
       return Math.max(0, Math.floor((getDisplayStat(attacker, 'str') || 0) * 1.6));
     if (name === '一闪' || skill.id === '一闪')
@@ -313,16 +320,19 @@
     else displayStats.atk = str;
     var 守势L = 0;
     var 攻势L = 0;
+    var 剑势L = 0;
     if (ch.buffs && ch.buffs.length) {
       for (var i = 0; i < ch.buffs.length; i++) {
         var b = ch.buffs[i];
         if ((b.id || b.name) === '守势') 守势L = Math.max(0, parseInt(b.layers, 10) || 0);
         if ((b.id || b.name) === '攻势') 攻势L = Math.max(0, parseInt(b.layers, 10) || 0);
+        if ((b.id || b.name) === '剑势') 剑势L = Math.max(0, parseInt(b.layers, 10) || 0);
       }
     }
     displayStats.转化层数 = 守势L;
     displayStats.守势层数 = 守势L;
     displayStats.攻势层数 = 攻势L;
+    displayStats.剑势层数 = 剑势L;
     return displayStats;
   }
 
@@ -340,6 +350,20 @@
       return CALC_MARK + key + '\x02' + formula + '\x02' + value + CALC_END;
     }
     return effect.replace(/\[([^\]]+)\]/g, function (_, inner) {
+      var canglanJianShiMatch = inner.match(
+        /^\(\s*Str\s*\+\s*Agi\s*\)\s*[×x]\s*剑势层数\s*[×x]\s*([\d.]+)\s*$/,
+      );
+      if (canglanJianShiMatch) {
+        var coefC = parseFloat(canglanJianShiMatch[1], 10);
+        var strC = Number(displayStats.str) || 0;
+        var agiC = Number(displayStats.agi) || 0;
+        var layersC = displayStats.剑势层数 != null ? displayStats.剑势层数 : 0;
+        var sumC = strC + agiC;
+        var valueC = Math.max(0, Math.floor(sumC * layersC * coefC));
+        /** 公式展示由 app.wrapBuffRefs 将 __CANG_FORMULA__系数__ 展开为「力量图标+敏捷图标」与 x剑势x系数 */
+        var formulaC = '__CANG_FORMULA__' + canglanJianShiMatch[1] + '__';
+        return makePlaceholder('沧澜伤害', formulaC, String(valueC));
+      }
       var convertMatch = inner.match(/^转化层数×([\d.]+)%$/);
       if (convertMatch) {
         var pct = parseFloat(convertMatch[1], 10);
