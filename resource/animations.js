@@ -80,97 +80,94 @@
     Hit3: 'https://files.catbox.moe/3484nt.png', //红色打击
 
     // ---------- Fire 组（火焰）----------
-    Fire2: 'https://files.catbox.moe/tyt73c.png',
-    Fire3: 'https://files.catbox.moe/aep8yw.png',
-    Fire1: 'https://files.catbox.moe/w2w61s.png',
-    efecto_fuego: 'https://files.catbox.moe/8omii5.png',
-    'E-fire1': 'https://files.catbox.moe/93g0q2.png',
-    'E-fire2': 'https://files.catbox.moe/3oxg6r.png',
-    'E-fire3': 'https://files.catbox.moe/6qn84h.png',
-    'E-fire4': 'https://files.catbox.moe/4r6nae.png',
-    'E-fire5': 'https://files.catbox.moe/yul2j1.png',
-    'E-fire6': 'https://files.catbox.moe/k1bqm4.png',
-    'E-fire7': 'https://files.catbox.moe/fn4i56.png',
-    'E-fire8': 'https://files.catbox.moe/hpwc0p.png',
-    'E-fire9': 'https://files.catbox.moe/tzbq46.png',
-    'E-fire10': 'https://files.catbox.moe/9ffwog.png',
-    'E-fire11': 'https://files.catbox.moe/ve5q63.png',
-    Fire4: 'https://files.catbox.moe/auavtg.png',
-    Fire5: 'https://files.catbox.moe/9v9rse.png',
+    Fire2: 'https://files.catbox.moe/tyt73c.png', //橙色火焰从下到上
+    Fire3: 'https://files.catbox.moe/aep8yw.png', //大号橙色火焰从下到上
+    Fire1: 'https://files.catbox.moe/w2w61s.png', //小号橙色火焰从下到上
+    efecto_fuego: 'https://files.catbox.moe/8omii5.png', //橙色火焰从左到右
+    'E-fire1': 'https://files.catbox.moe/93g0q2.png', //旋转多色火焰
+    'E-fire2': 'https://files.catbox.moe/3oxg6r.png', //快速橙色火焰爆炸
+    'E-fire3': 'https://files.catbox.moe/6qn84h.png', //圆形火焰（宽）
+    'E-fire4': 'https://files.catbox.moe/4r6nae.png', //圆形火焰（窄）
+    'E-fire5': 'https://files.catbox.moe/yul2j1.png', //圆形火焰（转圈）
+    'E-fire6': 'https://files.catbox.moe/k1bqm4.png', //五个多色火焰
+    'E-fire7': 'https://files.catbox.moe/fn4i56.png', //多重火焰下坠
+    'E-fire8': 'https://files.catbox.moe/hpwc0p.png', //大字爆
+    'E-fire9': 'https://files.catbox.moe/tzbq46.png', //火焰倾倒
+    'E-fire10': 'https://files.catbox.moe/9ffwog.png', //火星打击后爆炸
+    'E-fire11': 'https://files.catbox.moe/ve5q63.png', //火焰子母弹
+    Fire4: 'https://files.catbox.moe/auavtg.png', //火焰召唤并爆炸
+    Fire5: 'https://files.catbox.moe/9v9rse.png', //火焰召唤并爆炸（快速）
 
     // ---------- Ice 组（冰）----------
-    Ice1: 'https://files.catbox.moe/p12vk0.png',
-    Ice2: 'https://files.catbox.moe/pra0i9.png',
-    Ice3: 'https://files.catbox.moe/jiv6tv.png',
-    Ice4: 'https://files.catbox.moe/zkaopc.png',
-    Ice5: 'https://files.catbox.moe/im9lwr.png',
-    Ice6: 'https://files.catbox.moe/umwvgf.png',
+    Ice1: 'https://files.catbox.moe/p12vk0.png', //多重冰打击
+    Ice2: 'https://files.catbox.moe/pra0i9.png', //冰冻
+    Ice3: 'https://files.catbox.moe/jiv6tv.png', //大冰冻
+    Ice4: 'https://files.catbox.moe/zkaopc.png', //冰雨打击
+    Ice5: 'https://files.catbox.moe/im9lwr.png', //冰砾下落
+    Ice6: 'https://files.catbox.moe/umwvgf.png', //冰冻爆炸
 
     // ---------- Thunder 组（雷）----------
-    Thunder2: 'https://files.catbox.moe/whgzo8.png',
-    Thunder1: 'https://files.catbox.moe/crdufc.png',
-    Thunder3: 'https://files.catbox.moe/fwqka3.png',
-    Thunder4: 'https://files.catbox.moe/6vkh3w.png',
-    Thunder5: 'https://files.catbox.moe/wfvzep.png',
-    'E-thunder1': 'https://files.catbox.moe/jgsmlm.png',
-    'E-thunder2': 'https://files.catbox.moe/jp02il.png',
-    'E-thunder3': 'https://files.catbox.moe/w58b8t.png',
+    Thunder2: 'https://files.catbox.moe/whgzo8.png', //黄色/蓝色电击
+    Thunder1: 'https://files.catbox.moe/crdufc.png', //黄色雷击
+    Thunder3: 'https://files.catbox.moe/fwqka3.png', //大号黄色雷击
+    Thunder4: 'https://files.catbox.moe/6vkh3w.png', //强力黄色雷击
+    Thunder5: 'https://files.catbox.moe/wfvzep.png', //紫色雷击
+    'E-thunder1': 'https://files.catbox.moe/jgsmlm.png', //小紫色雷击
+    'E-thunder2': 'https://files.catbox.moe/jp02il.png', //大量蓝色雷电打击
+    'E-thunder3': 'https://files.catbox.moe/w58b8t.png', //快速大紫色雷击
 
     // ---------- Holy 组（神圣/圣光）----------
-    Holy1: 'https://files.catbox.moe/nfro2e.png',
-    Holy2: 'https://files.catbox.moe/5bi13a.png',
-    Holy3: 'https://files.catbox.moe/6mvk2n.png',
-    Holy4: 'https://files.catbox.moe/vctca0.png',
-    Holy5: 'https://files.catbox.moe/35660p.png',
-    'E-holy1': 'https://files.catbox.moe/nfro2e.png',
-    'E-holy2': 'https://files.catbox.moe/5bi13a.png',
-    'E-holy3': 'https://files.catbox.moe/6mvk2n.png',
+    Holy1: 'https://files.catbox.moe/nfro2e.png', //圣光剑雨打击
+    Holy2: 'https://files.catbox.moe/5bi13a.png', //双蛇圣杖
+    Holy3: 'https://files.catbox.moe/6mvk2n.png', //圆形圣光
+    Holy4: 'https://files.catbox.moe/vctca0.png', //圣十字
+    Holy5: 'https://files.catbox.moe/35660p.png', //天降圣光
 
     // ---------- Water 组（水）----------
-    Water5: 'https://files.catbox.moe/pj4w8s.png',
-    Water1: 'https://files.catbox.moe/lvyxrk.png',
-    Water2: 'https://files.catbox.moe/rjxn17.png',
-    Water3: 'https://files.catbox.moe/e3xexx.png',
+    Water5: 'https://files.catbox.moe/pj4w8s.png', //水龙
+    Water1: 'https://files.catbox.moe/lvyxrk.png', //水泡
+    Water2: 'https://files.catbox.moe/rjxn17.png', //水流
+    Water3: 'https://files.catbox.moe/e3xexx.png', //大水泡
 
     // ---------- Wind 组（风）----------
-    Wind3: 'https://files.catbox.moe/kc4b9p.png',
-    Wind2: 'https://files.catbox.moe/65012u.png',
-    Wind4: 'https://files.catbox.moe/mukxvo.png',
-    Wind5: 'https://files.catbox.moe/03km6c.png',
-    'E-wind1': 'https://files.catbox.moe/wtt6c6.png',
-    'E-wind2': 'https://files.catbox.moe/g77yjb.png',
-    'E-wind3': 'https://files.catbox.moe/50tj4y.png',
+    Wind3: 'https://files.catbox.moe/kc4b9p.png', //三重绿色打击
+    Wind2: 'https://files.catbox.moe/65012u.png', //墨绿回旋
+    Wind4: 'https://files.catbox.moe/mukxvo.png', //龙卷风
+    Wind5: 'https://files.catbox.moe/03km6c.png', //多重风刃
+    'E-wind1': 'https://files.catbox.moe/wtt6c6.png', //中心风波
+    'E-wind2': 'https://files.catbox.moe/g77yjb.png', //左右大风
+    'E-wind3': 'https://files.catbox.moe/50tj4y.png', //右风波
 
     // ---------- Earth 组（地/土）----------
-    Earth3: 'https://files.catbox.moe/o8j88h.png',
-    Earth4: 'https://files.catbox.moe/i9y9uh.png',
-    Earth5: 'https://files.catbox.moe/rj5mwh.png',
-    Earth1: 'https://files.catbox.moe/wz2r1w.png',
-    Earth2: 'https://files.catbox.moe/2z40y2.png',
+    Earth3: 'https://files.catbox.moe/o8j88h.png', //大石块
+    Earth4: 'https://files.catbox.moe/i9y9uh.png', //石头从下长出
+    Earth5: 'https://files.catbox.moe/rj5mwh.png', //石头脚踩
+    Earth1: 'https://files.catbox.moe/wz2r1w.png', //石头聚集
+    Earth2: 'https://files.catbox.moe/2z40y2.png', //石头下砸爆炸
 
     // ---------- Darkness 组（暗/黑暗）----------
-    Darkness1: 'https://files.catbox.moe/hvai7o.png',
-    Darkness2: 'https://files.catbox.moe/rm6aen.png',
-    Darkness3: 'https://files.catbox.moe/7jklah.png',
-    Darkness4: 'https://files.catbox.moe/domuoc.png',
-    Darkness5: 'https://files.catbox.moe/rg383u.png',
-    Dark1: 'https://files.catbox.moe/ogcmfe.png',
-    'E-dark1': 'https://files.catbox.moe/5p18py.png',
+    Darkness1: 'https://files.catbox.moe/hvai7o.png', //黑暗螺旋爆炸
+    Darkness2: 'https://files.catbox.moe/rm6aen.png', //黑暗火焰
+    Darkness3: 'https://files.catbox.moe/7jklah.png', //黑暗涡流
+    Darkness4: 'https://files.catbox.moe/domuoc.png', //黑暗圆盘爆炸
+    Darkness5: 'https://files.catbox.moe/rg383u.png', //黑洞
+    Dark1: 'https://files.catbox.moe/ogcmfe.png', //黑暗爆炸
+    'E-dark1': 'https://files.catbox.moe/5p18py.png', //黑暗打击+爆炸
 
     // ---------- Light 组（光）----------
-    Light2: 'https://files.catbox.moe/7g1tfv.png',
-    Light3: 'https://files.catbox.moe/4fq1y1.png',
-    Light4: 'https://files.catbox.moe/kzscjt.png',
-    Light1: 'https://files.catbox.moe/2n8dmi.png',
-    'E-light1': 'https://files.catbox.moe/3x9120.png',
-    'E-light2': 'https://files.catbox.moe/zz6rol.png',
-    'r-light1': 'https://files.catbox.moe/58z2jk.png',
-    'r-light2': 'https://files.catbox.moe/q5ii6y.png',
-    'r-light3': 'https://files.catbox.moe/wln3nt.png',
+    Light2: 'https://files.catbox.moe/7g1tfv.png', //下坠光柱
+    Light3: 'https://files.catbox.moe/4fq1y1.png', //光火
+    Light4: 'https://files.catbox.moe/kzscjt.png', //中心大发光
+    Light1: 'https://files.catbox.moe/2n8dmi.png', //上升光柱
+    'E-light1': 'https://files.catbox.moe/3x9120.png', //光子汇集
+    'E-light2': 'https://files.catbox.moe/zz6rol.png', //光火上升
+    'r-light1': 'https://files.catbox.moe/58z2jk.png', //光切割
+    'r-light2': 'https://files.catbox.moe/q5ii6y.png', //蓝色光切割
+    'r-light3': 'https://files.catbox.moe/wln3nt.png', //蓝色光切割2
 
     // ---------- Mist 组（雾）----------
-    Mist: 'https://files.catbox.moe/3ht08z.png',
-    'Mist-Pink': 'https://files.catbox.moe/epz1tu.png',
+    Mist: 'https://files.catbox.moe/3ht08z.png', //白色雾气
+    'Mist-Pink': 'https://files.catbox.moe/epz1tu.png', //紫色雾气
 
     // ---------- 其他单条（嚎叫/诅咒/激光/魔法/爆炸/闪光/枪/箭/变身/流星/花粉/歌/音速/特技等）----------
     Howl: 'https://files.catbox.moe/n125et.png',

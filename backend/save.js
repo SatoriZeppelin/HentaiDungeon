@@ -14,6 +14,14 @@
   var RECENT_LOG_CAP = 100;
   var NODE_STATES_CAP = 50;
 
+  /** 与 app.js 一致：存档「队伍头像摘要」不展示白牙与女儿等场上召唤物 */
+  function isFieldSummonPartySummarySkip(ch) {
+    if (!ch) return true;
+    if ((ch.name || '') === '白牙') return true;
+    if (ch.daughterUnit === true) return true;
+    return false;
+  }
+
   function loadRaw() {
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
@@ -53,7 +61,7 @@
         var party = Array.isArray(slot.party) ? slot.party : [];
         for (var pi = 0; pi < party.length; pi++) {
           var ch = party[pi];
-          if (!ch) continue;
+          if (!ch || isFieldSummonPartySummarySkip(ch)) continue;
           partySummary.push({
             name: ch.name || '',
             level: ch.level != null ? ch.level : 1,

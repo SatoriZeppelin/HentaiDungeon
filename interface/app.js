@@ -817,6 +817,17 @@
       }
     }
 
+    /**
+     * 场上召唤物：不参与「角色」侧栏四格、养成详情与未分配点数角标（与【白牙】一致；女儿为 daughterUnit）。
+     * 仍保留在 party 中参与战斗与存档完整数据。
+     */
+    function isFieldSummonNoCharacterRoster(ch) {
+      if (!ch) return false;
+      if ((ch.name || '') === '白牙') return true;
+      if (ch.daughterUnit === true) return true;
+      return false;
+    }
+
     function initSidebar() {
       var gameFrame = document.querySelector('.game-frame.ornate-frame');
       if (
@@ -840,7 +851,8 @@
         var party = getParty();
         var filledSlots = [];
         for (var s = 1; s <= 6; s++) {
-          if (party[s - 1]) filledSlots.push(s);
+          var occ = party[s - 1];
+          if (occ && !isFieldSummonNoCharacterRoster(occ)) filledSlots.push(s);
         }
         var panelSlots = characterPanel.querySelectorAll('.character-avatar-slot');
         for (var p = 0; p < 4; p++) {
@@ -887,7 +899,7 @@
         }
         var party = getParty();
         var anyUnspent = party.some(function (ch) {
-          return ch && getUnspentPoints(ch) > 0;
+          return ch && !isFieldSummonNoCharacterRoster(ch) && getUnspentPoints(ch) > 0;
         });
         dot.classList.toggle('show', anyUnspent);
       }
@@ -1444,7 +1456,7 @@
           try {
             var psAuto = autoWrap.payload.party
               .map(function (ch) {
-                if (!ch) return null;
+                if (!ch || isFieldSummonNoCharacterRoster(ch)) return null;
                 return {
                   name: ch.name || '',
                   level: ch.level != null ? ch.level : 1,
@@ -2508,12 +2520,14 @@
             var pendingSpecial = detailEditState.pendingSpecialUnlocks || [];
             if (attrTotal === 0 && !hasSkillDeltas && pendingSpecial.length === 0) return;
             try {
+              // 养成写回须用 getParty()，避免 chat 里 party 未同步时覆盖掉场上召唤物
+              var party = getParty();
               var v = null;
               if (typeof getVariables === 'function')
                 try {
                   v = getVariables({ type: 'chat' });
                 } catch (e) {}
-              var party = v && v.party && Array.isArray(v.party) ? v.party : defaultParty;
+              if (!v) v = {};
               var c = party[avatarIndex - 1];
               if (c) {
                 if (attrTotal !== 0) {
@@ -2544,7 +2558,7 @@
                     if (c.specialSkillsUnlocked.indexOf(id) === -1) c.specialSkillsUnlocked.push(id);
                   });
                 }
-                if (v && typeof replaceVariables === 'function') {
+                if (typeof replaceVariables === 'function') {
                   v.party = party;
                   mergePreserveChatGold(v);
                   replaceVariables(v, { type: 'chat' });
@@ -2619,22 +2633,24 @@
             if (!s || !s.locked) return;
             if (getUnspentSkillPoints(ch) < 1) return;
             try {
+              var party = getParty();
               var v = null;
               if (typeof getVariables === 'function')
                 try {
                   v = getVariables({ type: 'chat' });
                 } catch (e) {}
-              var party = v && v.party && Array.isArray(v.party) ? v.party : defaultParty;
+              if (!v) v = {};
               var c = party[avatarIndex - 1];
               if (c && c.skills && c.skills[skillIndex]) {
                 c.skills[skillIndex].locked = false;
                 c.skills[skillIndex].level = 1;
                 c.skillPointsSpent = (parseInt(c.skillPointsSpent, 10) || 0) + 1;
-                if (v && typeof replaceVariables === 'function') {
+                if (typeof replaceVariables === 'function') {
                   v.party = party;
                   mergePreserveChatGold(v);
                   replaceVariables(v, { type: 'chat' });
                 }
+                _lastKnownParty = party;
               }
             } catch (e) {
               console.warn('[色色地牢] 解锁技能失败', e);
@@ -2702,21 +2718,23 @@
           var av = parseInt(panel.dataset.avatarIndex, 10);
           var sidx = parseInt(panel.dataset.skillIndex, 10);
           try {
+            var party = getParty();
             var v = null;
             if (typeof getVariables === 'function')
               try {
                 v = getVariables({ type: 'chat' });
               } catch (e) {}
-            var party = v && v.party && Array.isArray(v.party) ? v.party : defaultParty;
+            if (!v) v = {};
             var c = party[av - 1];
             if (c && c.skills && c.skills[sidx]) {
               c.skills[sidx].advancement = aid;
               c.skillPointsSpent = (parseInt(c.skillPointsSpent, 10) || 0) + 1;
-              if (v && typeof replaceVariables === 'function') {
+              if (typeof replaceVariables === 'function') {
                 v.party = party;
                 mergePreserveChatGold(v);
                 replaceVariables(v, { type: 'chat' });
               }
+              _lastKnownParty = party;
             }
           } catch (e) {
             console.warn('[色色地牢] 分支进阶保存失败', e);
@@ -2832,6 +2850,9 @@
       function showCharacterDetail(avatarIndex) {
         var data = getSlotData(avatarIndex);
         if (!data) return;
+        var partyGuard = getParty();
+        var chGuard = partyGuard && partyGuard[avatarIndex - 1];
+        if (chGuard && isFieldSummonNoCharacterRoster(chGuard)) return;
         if (detailEditState.avatarIndex !== avatarIndex) {
           detailEditState.skillLevelDeltas = {};
           detailEditState.pendingSpecialUnlocks = [];
@@ -3110,6 +3131,12 @@
     var SKILL_BLADE_BITE_SVG = svg.SKILL_BLADE_BITE_SVG || '';
     var SKILL_SHIELD_SWORD_SVG = svg.SKILL_SHIELD_SWORD_SVG || '';
     var SKILL_ZANYUE_SVG = svg.SKILL_ZANYUE_SVG || '';
+    var SKILL_FEISELUNWU_SVG = svg.SKILL_FEISELUNWU_SVG || '';
+    var SKILL_MOWUYUNYU_SVG = svg.SKILL_MOWUYUNYU_SVG || '';
+    var SKILL_JIQIJIEJIN_SVG = svg.SKILL_JIQIJIEJIN_SVG || '';
+    var SKILL_FUSHIYU_SVG = svg.SKILL_FUSHIYU_SVG || '';
+    var SKILL_YIZHONGWAIKE_SVG = svg.SKILL_YIZHONGWAIKE_SVG || '';
+    var SKILL_POZHENCHONGFENG_SVG = svg.SKILL_POZHENCHONGFENG_SVG || '';
     var SKILL_JIANQIE_SVG = svg.SKILL_JIANQIE_SVG || '';
     var SKILL_JUHE_SVG = svg.SKILL_JUHE_SVG || '';
     var SKILL_LINGXI_SVG = svg.SKILL_LINGXI_SVG || '';
@@ -3298,7 +3325,7 @@
         ch.buffs = [];
         ch.currentShield = 0;
         var lv = ch.level != null ? ch.level : 1;
-        if (ch.name === '白牙') {
+        if (ch.name === '白牙' || ch.daughterUnit === true) {
           ch.currentAp = 2;
         } else {
           ch.currentAp = getApByLevel(lv);
@@ -3857,6 +3884,22 @@
         : function (s) {
             return s && s.tags != null ? String(s.tags) : '';
           };
+    /** 丝伊德·白被动：场上每存活 1 个女儿单位（daughterUnit: true）耐力 +3 */
+    function countDaughterUnitsAliveOnField() {
+      var n = 0;
+      try {
+        var party = typeof getParty === 'function' ? getParty() : null;
+        var enemies = typeof getEnemyParty === 'function' ? getEnemyParty() : null;
+        function countOne(u) {
+          if (!u || u.daughterUnit !== true) return;
+          var hp = u.hp != null ? parseInt(u.hp, 10) : 1;
+          if (hp > 0) n++;
+        }
+        if (party && party.length) for (var i = 0; i < party.length; i++) countOne(party[i]);
+        if (enemies && enemies.length) for (var j = 0; j < enemies.length; j++) countOne(enemies[j]);
+      } catch (e) {}
+      return n;
+    }
     function hasAliveQingliInParty() {
       try {
         var p = getParty ? getParty() : null;
@@ -3895,6 +3938,22 @@
       if (ch.name === '艾丽卡' && (key === 'sta' || key === 'def')) {
         base += Math.floor((getDisplayStat(ch, 'int') || 0) * 0.25);
       }
+      if (ch.name === '丝伊德·白' && key === 'def') {
+        var yLayers = 0;
+        if (ch.buffs && ch.buffs.length) {
+          for (var yk = 0; yk < ch.buffs.length; yk++) {
+            var yb = ch.buffs[yk];
+            if ((yb.id || yb.name) === '孕育') {
+              yLayers = Math.max(0, parseInt(yb.layers, 10) || 0);
+              break;
+            }
+          }
+        }
+        if (yLayers > 0) base = Math.floor(base * (1 + 0.05 * yLayers));
+      }
+      if (ch.name === '丝伊德·白' && key === 'sta') {
+        base += countDaughterUnitsAliveOnField() * 3;
+      }
       if ((key === 'str' || key === 'agi' || key === 'int' || key === 'def') && ch.buffs && ch.buffs.length) {
         for (var i = 0; i < ch.buffs.length; i++) {
           var b = ch.buffs[i];
@@ -3909,6 +3968,40 @@
           if (id === '智力强化' && key === 'int') base += layers * 3;
           if (id === '防御强化' && key === 'def') base += layers * 3;
         }
+      }
+      if (ch.name === '丝伊德·白') {
+        var yuLayersCard = 0;
+        var jqLayersCard = 0;
+        if (ch.buffs && ch.buffs.length) {
+          for (var ysc = 0; ysc < ch.buffs.length; ysc++) {
+            var bbsc = ch.buffs[ysc];
+            var idsc = (bbsc.id || bbsc.name || '').trim();
+            if (idsc === '孕育') yuLayersCard = Math.max(0, parseInt(bbsc.layers, 10) || 0);
+            if (idsc === '姬骑') jqLayersCard = Math.max(0, parseInt(bbsc.layers, 10) || 0);
+          }
+        }
+        var unlockedCard =
+          ch.specialSkillsUnlocked && Array.isArray(ch.specialSkillsUnlocked) ? ch.specialSkillsUnlocked : [];
+        if (unlockedCard.indexOf('枝叶硕茂') !== -1 && yuLayersCard > 0 && (key === 'str' || key === 'int')) {
+          var monteOkCard = false;
+          try {
+            var pMonteC = typeof getParty === 'function' ? getParty() : null;
+            if (pMonteC) {
+              for (var msc = 0; msc < pMonteC.length; msc++) {
+                var uMonteC = pMonteC[msc];
+                if (!uMonteC || (uMonteC.name || '') !== '蒙特卡洛') continue;
+                var hpMc = uMonteC.hp != null ? parseInt(uMonteC.hp, 10) : 1;
+                if (hpMc > 0) {
+                  monteOkCard = true;
+                  break;
+                }
+              }
+            }
+          } catch (eMc) {}
+          base += yuLayersCard * (monteOkCard ? 2 : 1);
+        }
+        if (jqLayersCard > 0 && (key === 'str' || key === 'agi' || key === 'int' || key === 'sta' || key === 'def'))
+          base = Math.floor(base * 1.5);
       }
       return base;
     }
@@ -4108,6 +4201,12 @@
           SKILL_BLADE_BITE_SVG: SKILL_BLADE_BITE_SVG,
           SKILL_SHIELD_SWORD_SVG: SKILL_SHIELD_SWORD_SVG,
           SKILL_ZANYUE_SVG: SKILL_ZANYUE_SVG,
+          SKILL_FEISELUNWU_SVG: SKILL_FEISELUNWU_SVG,
+          SKILL_MOWUYUNYU_SVG: SKILL_MOWUYUNYU_SVG,
+          SKILL_JIQIJIEJIN_SVG: SKILL_JIQIJIEJIN_SVG,
+          SKILL_FUSHIYU_SVG: SKILL_FUSHIYU_SVG,
+          SKILL_YIZHONGWAIKE_SVG: SKILL_YIZHONGWAIKE_SVG,
+          SKILL_POZHENCHONGFENG_SVG: SKILL_POZHENCHONGFENG_SVG,
           SKILL_JIANQIE_SVG: SKILL_JIANQIE_SVG,
           SKILL_JUHE_SVG: SKILL_JUHE_SVG,
           SKILL_LINGXI_SVG: SKILL_LINGXI_SVG,

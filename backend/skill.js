@@ -12,7 +12,7 @@
     var str = resolvedEffect.replace(SKILL_CALC_PLACEHOLDER_RE, function (_, _key, _formula, val) {
       return val;
     });
-    var m = str.match(/造成\s*([\d\s.+]+)\s*(?:点伤害|的(?:物理|心灵|火焰|奥术)?伤害)/);
+    var m = str.match(/造成\s*([\d\s.+]+)\s*(?:点伤害|的(?:物理|自然|心灵|火焰|奥术)?伤害)/);
     if (!m) return NaN;
     var part = m[1].split(/\s*\+\s*/);
     var sum = 0;
@@ -212,6 +212,30 @@
       }
       return Math.max(0, Math.floor(str * multStr) + Math.floor(int * multInt));
     }
+    if (name === '碧血魔剑' || name === '侵蚀共鸣' || name === '粘液浸透') {
+      str = getDisplayStat(attacker, 'str') || 0;
+      int = getDisplayStat(attacker, 'int') || 0;
+      lv = Math.max(1, parseInt(skill.level, 10) || 1);
+      var multStrBx = lv === 1 ? 0.4 : lv === 2 ? 0.5 : lv === 3 ? 0.5 : 0.6;
+      var multIntBx = lv === 1 ? 0.4 : lv === 2 ? 0.4 : lv === 3 ? 0.5 : 0.6;
+      if (skill.advancement === 'A' || skill.advancement === 'B') {
+        multStrBx = 0.6;
+        multIntBx = 0.6;
+      }
+      return Math.max(0, Math.floor(str * multStrBx) + Math.floor(int * multIntBx));
+    }
+    if (name === '绯色轮舞' || name === '孢子旋风' || name === '血触风暴') {
+      str = getDisplayStat(attacker, 'str') || 0;
+      int = getDisplayStat(attacker, 'int') || 0;
+      lv = Math.max(1, parseInt(skill.level, 10) || 1);
+      var multStrFe = lv === 1 ? 0.4 : lv === 2 ? 0.5 : lv === 3 ? 0.5 : 0.6;
+      var multIntFe = lv === 1 ? 0.4 : lv === 2 ? 0.4 : lv === 3 ? 0.5 : 0.6;
+      if (skill.advancement === 'A' || skill.advancement === 'B') {
+        multStrFe = 0.6;
+        multIntFe = 0.6;
+      }
+      return Math.max(0, Math.floor(str * multStrFe) + Math.floor(int * multIntFe));
+    }
     if (name === '清算之手' || name === '制裁' || name === '罪印') {
       int = getDisplayStat(attacker, 'int') || 0;
       lv = Math.max(1, parseInt(skill.level, 10) || 1);
@@ -227,6 +251,25 @@
       if (skill.advancement === 'A') return Math.max(0, Math.floor(int * 1.1) + Math.floor(sta * 0.6));
       if (skill.advancement === 'B') return Math.max(0, Math.floor(int * 1.1));
       return Math.max(0, Math.floor(int * multIntDecl));
+    }
+    /** 女儿·孢子云：面板 ATK×0.4（与 INT 衍生 ATK 一致） */
+    if (name === '孢子云') {
+      var atkSp = attacker.atk != null ? parseInt(attacker.atk, 10) : NaN;
+      var atkSpUse = !isNaN(atkSp) ? atkSp : getDisplayStat(attacker, 'int') || 0;
+      return Math.max(0, Math.floor(atkSpUse * 0.4));
+    }
+    /** 女儿·可瑞：面板 ATK，描述解析失败时的兜底 */
+    if (name === '缠绕撕咬' || name === '血触侵蚀') {
+      var atkK = attacker.atk != null ? parseInt(attacker.atk, 10) : NaN;
+      var atkUse = !isNaN(atkK) ? atkK : getDisplayStat(attacker, 'str') || 0;
+      var multK = name === '缠绕撕咬' ? 1.0 : 0.7;
+      return Math.max(0, Math.floor(atkUse * multK));
+    }
+    /** 女儿·莉莉姆：黏液包裹 自然伤害，面板 ATK×0.6 */
+    if (name === '黏液包裹') {
+      var atkLm = attacker.atk != null ? parseInt(attacker.atk, 10) : NaN;
+      var atkLmUse = !isNaN(atkLm) ? atkLm : getDisplayStat(attacker, 'int') || 0;
+      return Math.max(0, Math.floor(atkLmUse * 0.6));
     }
     return 0;
   }
@@ -282,6 +325,10 @@
       var maoLv = Math.max(1, parseInt(skill.level, 10) || 1);
       var maoMult = maoLv === 1 ? 0.8 : maoLv === 2 ? 1.0 : maoLv === 3 ? 1.2 : 1.4;
       return Math.max(0, Math.floor(defVal * maoMult));
+    }
+    /** 女儿·莉莉姆：弹性护盾 DEF×1.2 */
+    if (name === '弹性护盾') {
+      return Math.max(0, Math.floor((getDisplayStat(attacker, 'def') || 0) * 1.2));
     }
     return NaN;
   }
@@ -344,7 +391,8 @@
   function resolveSkillEffectWithStats(effect, displayStats) {
     if (!effect || !displayStats) return effect || '';
     var statMap = { Str: 'str', Agi: 'agi', Int: 'int', Sta: 'sta', Def: 'def', Atk: 'atk', Cha: 'cha' };
-    var termRe = /(Str|Agi|Int|Sta|Def|Atk|Cha)\s*×\s*([\d.]+)/g;
+    /** 与 × 或字母 x 相乘；i 使 ATK/atk 等均能匹配，捕获子串需规范成 Atk 再查 statMap（女儿技能文案多为 [ATK × …]，白牙为 [Atk × …]） */
+    var termRe = /(Str|Agi|Int|Sta|Def|Atk|Cha)\s*[×x]\s*([\d.]+)/gi;
     var levelRe = /等级\s*×\s*([\d.]+)/g;
     function makePlaceholder(key, formula, value) {
       return CALC_MARK + key + '\x02' + formula + '\x02' + value + CALC_END;
@@ -414,11 +462,12 @@
       var m;
       termRe.lastIndex = 0;
       while ((m = termRe.exec(innerForStat)) !== null) {
-        var key = statMap[m[1]];
+        var labelCanon = m[1] ? m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase() : '';
+        var key = statMap[labelCanon];
         if (key) {
           var mult = parseFloat(m[2], 10);
           var val = Math.floor((Number(displayStats[key]) || 0) * mult);
-          terms.push({ key: key, formula: m[1] + ' × ' + m[2], value: val });
+          terms.push({ key: key, formula: labelCanon + ' × ' + m[2], value: val });
         }
       }
       if (terms.length === 0) return '[' + inner + ']';

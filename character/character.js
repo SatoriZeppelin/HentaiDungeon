@@ -243,6 +243,227 @@
       specialSkills: [],
       specialSkillsUnlocked: [],
     },
+    '丝伊德·白': {
+      name: '丝伊德·白',
+      from: '幻界',
+      introduce: '待填写',
+      level: 5,
+      sta: 14,
+      exp: 0,
+      str: 8,
+      agi: 6,
+      int: 10,
+      def: 6,
+      luk: 6,
+      cha: 8,
+      bonusStr: 0,
+      bonusAgi: 0,
+      bonusInt: 0,
+      bonusSta: 0,
+      bonusDef: 0,
+      bonusLuk: 0,
+      bonusCha: 0,
+      passiveSkills: [
+        {
+          name: '共生母胎',
+          effect:
+            '每次受到伤害时获得1层【孕育】。场上每存活1个女儿单位，耐力+3。',
+        },
+      ],
+      skills: [
+        {
+          name: '攻击',
+          ap: 1,
+          effect: '对所选单位造成 [Str × 1] 点伤害',
+          basic: true,
+          attribute1: '物理',
+          attribute2: '近战',
+          attribute3: '单体',
+        },
+        {
+          name: '防御',
+          ap: 1,
+          effect: '对自身给予 [Def × 1] 点护盾，持续到自己的下个回合开始',
+          basic: true,
+          attribute1: '增益',
+          attribute2: '自身',
+          attribute3: '单体',
+        },
+        {
+          name: '碧血魔剑',
+          ap: 1,
+          level: 5,
+          advancement: 'A',
+          attribute1: '混合',
+          attribute2: '近战',
+          attribute3: '单体',
+          effectByLevel: [
+            '以共生之血凝成魔剑斩向敌人。对单体造成 [Str × 0.4] 的物理伤害和 [Int × 0.4] 的自然伤害。',
+            '以共生之血凝成魔剑斩向敌人。对单体造成 [Str × 0.5] 的物理伤害和 [Int × 0.4] 的自然伤害。',
+            '以共生之血凝成魔剑斩向敌人。对单体造成 [Str × 0.5] 的物理伤害和 [Int × 0.5] 的自然伤害。',
+            '以共生之血凝成魔剑斩向敌人。对单体造成 [Str × 0.6] 的物理伤害和 [Int × 0.6] 的自然伤害。',
+          ],
+          advancementReplacesEffect: true,
+          advancementOptions: [
+            {
+              id: 'A',
+              name: '侵蚀共鸣',
+              effect:
+                '以共生之血凝成魔剑斩向敌人。对单体造成 [Str × 0.6] 的物理伤害和 [Int × 0.6] 的自然伤害。若【可瑞】存活，可瑞立即对同一目标施加2层【破甲】。',
+            },
+            {
+              id: 'B',
+              name: '粘液浸透',
+              effect:
+                '以共生之血凝成魔剑斩向敌人。对单体造成 [Str × 0.6] 的物理伤害和 [Int × 0.6] 的自然伤害。若【莉莉姆】存活，莉莉姆对目标施加1层【迟缓】，莉莉姆和丝伊德回复 [莉莉姆DEF × 0.3] 的生命值。',
+            },
+          ],
+        },
+        {
+          name: '威吓',
+          ap: 1,
+          level: 5,
+          advancement: 'A',
+          attribute1: '增益',
+          attribute2: '自身',
+          attribute3: '群体',
+          effectByLevel: [
+            '施加2层【嘲讽】。丝伊德·白获得 [Def × 0.5] 的护盾。',
+            '施加2层【嘲讽】。丝伊德·白获得 [Def × 0.6] 的护盾。',
+            '施加2层【嘲讽】。丝伊德·白获得 [Def × 0.7] 的护盾。',
+            '施加2层【嘲讽】。丝伊德·白获得 [Def × 0.8] 的护盾。',
+          ],
+          advancementReplacesEffect: true,
+          advancementOptions: [
+            {
+              id: 'A',
+              name: '菌丝摇篮',
+              effect:
+                '施加2层【嘲讽】。丝伊德·白获得 [Def × 0.8] 的护盾。若【堇】存活，堇立即对丝伊德·白发动一次免费的【再生菌丝】。',
+            },
+            {
+              id: 'B',
+              name: '金粉帷幕',
+              effect:
+                '施加2层【嘲讽】。丝伊德·白获得 [Def × 0.8] 的护盾。若【蒙特卡洛】存活，蒙特卡洛立即发动一次免费的【金粉弥漫】。',
+            },
+          ],
+        },
+        {
+          name: '绯色轮舞',
+          ap: 2,
+          level: 5,
+          advancement: 'A',
+          attribute1: '混合',
+          attribute2: '近战',
+          attribute3: '群体',
+          effectByLevel: [
+            '对敌方全体造成 [Str × 0.4] 的物理伤害和 [Int × 0.4] 的自然伤害。',
+            '对敌方全体造成 [Str × 0.5] 的物理伤害和 [Int × 0.4] 的自然伤害。',
+            '对敌方全体造成 [Str × 0.5] 的物理伤害和 [Int × 0.5] 的自然伤害。',
+            '对敌方全体造成 [Str × 0.6] 的物理伤害和 [Int × 0.6] 的自然伤害。',
+          ],
+          advancementReplacesEffect: true,
+          advancementOptions: [
+            {
+              id: 'A',
+              name: '孢子旋风',
+              effect:
+                '对敌方全体造成 [Str × 0.6] 的物理伤害和 [Int × 0.6] 的自然伤害。若【蒙特卡洛】存活，额外对所有命中目标施加1层【恍惚】和1层【虚弱】。',
+            },
+            {
+              id: 'B',
+              name: '血触风暴',
+              effect:
+                '对敌方全体造成 [Str × 0.6] 的物理伤害和 [Int × 0.6] 的自然伤害。若【可瑞】存活，对所有命中目标额外施加1层【破甲】，可瑞立即对随机敌方单体发动一次免费的【血触侵蚀】。',
+            },
+          ],
+        },
+        {
+          name: '魔物孕育',
+          ap: 2,
+          level: 5,
+          advancement: 'A',
+          attribute1: '召唤',
+          attribute2: '自身',
+          attribute3: '单体',
+          effectByLevel: [
+            '消耗8层【孕育】，选择1个己方空位，随机召唤1个女儿（莉莉姆、可瑞、蒙特卡洛、堇之一）。',
+            '消耗7层【孕育】，选择1个己方空位，随机召唤1个女儿（莉莉姆、可瑞、蒙特卡洛、堇之一）。',
+            '消耗6层【孕育】，选择1个己方空位，随机召唤1个女儿（莉莉姆、可瑞、蒙特卡洛、堇之一）。',
+            '消耗5层【孕育】，选择1个己方空位，随机召唤1个女儿（莉莉姆、可瑞、蒙特卡洛、堇之一）。',
+          ],
+          advancementReplacesEffect: true,
+          advancementOptions: [
+            {
+              id: 'A',
+              name: '孕育加速',
+              effect:
+                '回合开始时，丝伊德·白获得1层【孕育】。消耗5层【孕育】，选择1个己方空位，随机召唤1个女儿。',
+            },
+            {
+              id: 'B',
+              name: '双生孕育',
+              effect: '消耗8层【孕育】，依次选择2个不同的己方空位，随机召唤2个不同的女儿。两个女儿的 MaxHP 各 -20%。',
+            },
+          ],
+        },
+      ],
+      specialSkills: [
+        {
+          id: '姬骑解禁',
+          name: '全武装形态·姬骑解禁',
+          ap: 3,
+          attribute1: '增益',
+          attribute2: '自身',
+          attribute3: '单体',
+          effect:
+            '进入【姬骑】形态至战斗结束：全属性+50%，免疫控制，AP上限-2；每回合开始自动对随机敌方发动一次无消耗【碧血魔剑】。',
+        },
+        {
+          id: '枝叶硕茂',
+          name: '枝叶硕茂',
+          ap: 0,
+          attribute1: '被动',
+          attribute2: '',
+          attribute3: '',
+          effect:
+            '每层【孕育】额外+1力量与+1智力；若【蒙特卡洛】存活则改为每层+2力量与+2智力。',
+        },
+        {
+          id: '腐蚀领域',
+          name: '腐蚀领域',
+          ap: 2,
+          attribute1: '自然',
+          attribute2: '远程',
+          attribute3: '群体',
+          effect:
+            '对敌方全体造成 [Int × 1.2] 的自然伤害，施加1次【中毒】。场上每有1个处于中毒状态的敌人，丝伊德·白获得1层【孕育】。若【堇】存活，本次【腐蚀领域】施加的中毒层数+50%（向下取整）。',
+        },
+        {
+          id: '异种外壳',
+          name: '异种外壳',
+          ap: 2,
+          attribute1: '增益',
+          attribute2: '自身',
+          attribute3: '单体',
+          effect:
+            '获得 [Sta × 1.2 + Def × 1.6] 护盾；至多消耗2层【孕育】，每层清除1个负面。若【莉莉姆】存活则护盾改为莉莉姆当前生命×1.2。每20点护盾获得1层【孕育】，至多3层。',
+        },
+        {
+          id: '破阵冲锋',
+          name: '破阵冲锋',
+          ap: 2,
+          attribute1: '物理',
+          attribute2: '近战',
+          attribute3: '单体',
+          effect:
+            '造成 [Str × 1.5 + Def × 0.75] 物理伤害并1层【破甲】。若【可瑞】存活，可瑞对全体敌人各发动50%伤害的【缠绕撕咬】并1层【破甲】。',
+        },
+      ],
+      specialSkillsUnlocked: [],
+      buffs: [{ id: '孕育', name: '孕育', layers: 10 }],
+    },
     艾丽卡: {
       name: '艾丽卡',
       from: '幻界',
@@ -1488,7 +1709,7 @@
   };
 
   /** 默认队伍顺序：按槽位 1～6 填角色名，空位用 null */
-  window.DEFAULT_PARTY_ORDER = ['清漓', '黯', '夜露', null, null, '艾丽卡'];
+  window.DEFAULT_PARTY_ORDER = [null, null, null, null, '达芙妮', '丝伊德·白'];
 
   function getSpecialSkillsForChar(ch) {
     if (!ch) return [];
@@ -1537,6 +1758,216 @@
       def: summon.defFromOwner(owner),
     };
   }
+  /**
+   * 莉莉姆（史莱姆娘）召唤物数据工厂：属性随主人丝伊德·白。
+   * MaxHP=[Sta×6]，ATK=[Int×0.5]，DEF=[Def×0.8+Sta×0.3]，AP=2。
+   * 主动技「黏液包裹」「弹性护盾」在 battle.js executePlayer 中结算；被动 trait柔软躯体 在 resolveAttack 中已生效。
+   */
+  function createSummonLilim(getDisplayStat) {
+    return {
+      name: '莉莉姆',
+      introduce: '史莱姆娘',
+      ap: 2,
+      daughterUnit: true,
+      trait柔软躯体: true,
+      passiveSkills: [
+        {
+          name: '柔软躯体',
+          effect: '莉莉姆受到的物理伤害-30%，受到的魔法伤害+20%。',
+        },
+      ],
+      maxHpFromOwner: function (owner) {
+        return Math.floor((getDisplayStat(owner, 'sta') || 0) * 6);
+      },
+      atkFromOwner: function (owner) {
+        return Math.floor((getDisplayStat(owner, 'int') || 0) * 0.5);
+      },
+      defFromOwner: function (owner) {
+        return Math.floor(
+          (getDisplayStat(owner, 'def') || 0) * 0.8 + (getDisplayStat(owner, 'sta') || 0) * 0.3,
+        );
+      },
+      skills: [
+        {
+          name: '黏液包裹',
+          ap: 1,
+          attribute1: '减益',
+          attribute2: '近战',
+          attribute3: '单体',
+          effect: '对单体造成 [ATK × 0.6] 的自然伤害，施加1层【迟缓】。',
+        },
+        {
+          name: '弹性护盾',
+          ap: 1,
+          attribute1: '增益',
+          attribute2: '远程',
+          attribute3: '单体',
+          effect: '为自身提供 [DEF × 1.2] 的护盾。',
+        },
+      ],
+    };
+  }
+  function getLilimStatsFromOwner(owner, getDisplayStat) {
+    if (!owner || !getDisplayStat) return { maxHp: 0, atk: 0, def: 0 };
+    const summon = createSummonLilim(getDisplayStat);
+    return {
+      maxHp: summon.maxHpFromOwner(owner),
+      atk: summon.atkFromOwner(owner),
+      def: summon.defFromOwner(owner),
+    };
+  }
+  /**
+   * 可瑞（血触虫）召唤物数据：输出/破甲/持续伤害，属性随主人丝伊德·白。
+   * MaxHP=[Sta×4]，ATK=[Str×0.6+Int×0.4]，DEF=[Def×0.3]，AP=2。
+   * 主动技在 battle.js 通用攻击链 + 缠绕撕咬/血触侵蚀 debuff 分支中结算。
+   */
+  function createSummonKerui(getDisplayStat) {
+    return {
+      name: '可瑞',
+      introduce: '血触虫',
+      ap: 2,
+      daughterUnit: true,
+      maxHpFromOwner: function (owner) {
+        return Math.floor((getDisplayStat(owner, 'sta') || 0) * 4);
+      },
+      atkFromOwner: function (owner) {
+        const strV = getDisplayStat(owner, 'str') || 0;
+        const intV = getDisplayStat(owner, 'int') || 0;
+        return Math.floor(strV * 0.6 + intV * 0.4);
+      },
+      defFromOwner: function (owner) {
+        return Math.floor((getDisplayStat(owner, 'def') || 0) * 0.3);
+      },
+      skills: [
+        {
+          name: '缠绕撕咬',
+          ap: 1,
+          attribute1: '物理',
+          attribute2: '近战',
+          attribute3: '单体',
+          effect: '对单体造成 [ATK × 1.0] 的物理伤害，施加1层【破甲】。',
+        },
+        {
+          name: '血触侵蚀',
+          ap: 1,
+          attribute1: '自然',
+          attribute2: '近战',
+          attribute3: '单体',
+          effect: '对单体造成 [ATK × 0.7] 的自然伤害，施加2次【中毒】。',
+        },
+      ],
+    };
+  }
+  function getKeruiStatsFromOwner(owner, getDisplayStat) {
+    if (!owner || !getDisplayStat) return { maxHp: 0, atk: 0, def: 0 };
+    const summon = createSummonKerui(getDisplayStat);
+    return {
+      maxHp: summon.maxHpFromOwner(owner),
+      atk: summon.atkFromOwner(owner),
+      def: summon.defFromOwner(owner),
+    };
+  }
+  /**
+   * 蒙特卡洛（阿娜温）召唤物数据：辅助/控制/范围削弱，属性随主人丝伊德·白。
+   * MaxHP=[Sta×5]，ATK=[Int×0.7]，DEF=[Def×0.5]，AP=2。
+   * 金粉弥漫/芬芳治愈在 battle.js 专用 executePlayer 中结算。
+   */
+  function createSummonMonteCarlo(getDisplayStat) {
+    return {
+      name: '蒙特卡洛',
+      introduce: '阿娜温',
+      ap: 2,
+      daughterUnit: true,
+      maxHpFromOwner: function (owner) {
+        return Math.floor((getDisplayStat(owner, 'sta') || 0) * 5);
+      },
+      atkFromOwner: function (owner) {
+        return Math.floor((getDisplayStat(owner, 'int') || 0) * 0.7);
+      },
+      defFromOwner: function (owner) {
+        return Math.floor((getDisplayStat(owner, 'def') || 0) * 0.5);
+      },
+      skills: [
+        {
+          name: '金粉弥漫',
+          ap: 1,
+          attribute1: '减益',
+          attribute2: '远程',
+          attribute3: '群体',
+          effect: '对敌方全体施加1层【恍惚】和1层【迟钝】。',
+        },
+        {
+          name: '芬芳治愈',
+          ap: 1,
+          attribute1: '治疗',
+          attribute2: '远程',
+          attribute3: '单体',
+          effect:
+            '为目标回复 [ATK × 0.8] 的生命值，如果目标是丝伊德·白，并使其获得1层【孕育】。',
+        },
+      ],
+    };
+  }
+  function getMonteCarloStatsFromOwner(owner, getDisplayStat) {
+    if (!owner || !getDisplayStat) return { maxHp: 0, atk: 0, def: 0 };
+    const summon = createSummonMonteCarlo(getDisplayStat);
+    return {
+      maxHp: summon.maxHpFromOwner(owner),
+      atk: summon.atkFromOwner(owner),
+      def: summon.defFromOwner(owner),
+    };
+  }
+  /**
+   * 堇（菌菇娘）召唤物数据：辅助/DOT/群体削弱，属性随主人丝伊德·白。
+   * MaxHP=[Sta×5]，ATK=[Int×0.6]，DEF=[Def×0.4]，AP=2。
+   * 战斗内释放逻辑待接入召唤技能时实现。
+   */
+  function createSummonJin(getDisplayStat) {
+    return {
+      name: '堇',
+      introduce: '菌菇娘',
+      ap: 2,
+      daughterUnit: true,
+      maxHpFromOwner: function (owner) {
+        return Math.floor((getDisplayStat(owner, 'sta') || 0) * 5);
+      },
+      atkFromOwner: function (owner) {
+        return Math.floor((getDisplayStat(owner, 'int') || 0) * 0.6);
+      },
+      defFromOwner: function (owner) {
+        return Math.floor((getDisplayStat(owner, 'def') || 0) * 0.4);
+      },
+      skills: [
+        {
+          name: '孢子云',
+          ap: 1,
+          attribute1: '自然',
+          attribute2: '远程',
+          attribute3: '群体',
+          effect:
+            '对敌方全体造成 [ATK × 0.4] 的自然伤害，对所有命中目标施加1次【中毒】。',
+        },
+        {
+          name: '再生菌丝',
+          ap: 1,
+          attribute1: '治疗',
+          attribute2: '远程',
+          attribute3: '单体',
+          effect:
+            '为目标施加2次【再生】，如果目标是丝伊德·白，并使其获得1层【孕育】。',
+        },
+      ],
+    };
+  }
+  function getJinStatsFromOwner(owner, getDisplayStat) {
+    if (!owner || !getDisplayStat) return { maxHp: 0, atk: 0, def: 0 };
+    const summon = createSummonJin(getDisplayStat);
+    return {
+      maxHp: summon.maxHpFromOwner(owner),
+      atk: summon.atkFromOwner(owner),
+      def: summon.defFromOwner(owner),
+    };
+  }
   /** 从技能的三个属性字段（attribute1/2/3）拼出显示用字符串，如「物理/近战/群体」；若无则退回 tags */
   function getSkillTagsString(skill) {
     if (!skill) return '';
@@ -1551,6 +1982,14 @@
     getSpecialSkillsForChar: getSpecialSkillsForChar,
     createSummonBaiya: createSummonBaiya,
     getBaiyaStatsFromOwner: getBaiyaStatsFromOwner,
+    createSummonLilim: createSummonLilim,
+    getLilimStatsFromOwner: getLilimStatsFromOwner,
+    createSummonKerui: createSummonKerui,
+    getKeruiStatsFromOwner: getKeruiStatsFromOwner,
+    createSummonMonteCarlo: createSummonMonteCarlo,
+    getMonteCarloStatsFromOwner: getMonteCarloStatsFromOwner,
+    createSummonJin: createSummonJin,
+    getJinStatsFromOwner: getJinStatsFromOwner,
     getSkillTagsString: getSkillTagsString,
   };
 })();

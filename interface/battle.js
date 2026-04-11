@@ -526,6 +526,24 @@
       maxLayers: 2,
       characterExclusive: '达芙妮 / 艾丽卡；敌方意图可自施',
     },
+    {
+      id: '孕育',
+      name: '孕育',
+      desc: '每层治疗+3%、防御+5%',
+      tooltip:
+        '丝伊德·白被动「共生母胎」：受到伤害时叠加，上限10层。每层受到的治疗效果+3%、防御属性+5%。',
+      maxLayers: 10,
+      characterExclusive: '丝伊德·白',
+    },
+    {
+      id: '姬骑',
+      name: '姬骑',
+      desc: '全武装形态：全属性+50%，免疫控制，AP上限-2',
+      tooltip:
+        '特殊技能「姬骑解禁」：全属性+50%，免疫眩晕等控制，AP上限-2；每回合开始自动对随机敌方发动无消耗碧血魔剑。持续至战斗结束。',
+      maxLayers: 1,
+      characterExclusive: '丝伊德·白',
+    },
   ];
   /** 净化斩击等驱散技能视为「增益」的 buff id 列表（驱散时只移除此类）。顺序：通用增益 → 角色专属。 */
   var POSITIVE_BUFF_IDS = [
@@ -553,6 +571,8 @@
     '格挡',
     '扰魔',
     '嘲讽',
+    '孕育',
+    '姬骑',
   ];
   /** 救赎等清除负面状态时移除的 debuff id 列表。顺序：通用减益 → 色情类减益。 */
   var NEGATIVE_DEBUFF_IDS = [
@@ -657,6 +677,8 @@
     格挡: { fill: 'rgba(96,125,139,0.5)', border: '#607d8b', color: '#455a64' },
     扰魔: { fill: 'rgba(103,58,183,0.5)', border: '#673ab7', color: '#4527a0' },
     嘲讽: { fill: 'rgba(244,67,54,0.45)', border: '#f44336', color: '#f44336' },
+    姬骑: { fill: 'rgba(106,27,154,0.4)', border: '#6a1b9a', color: '#4a148c' },
+    孕育: { fill: 'rgba(233,30,99,0.35)', border: '#c2185b', color: '#880e4f' },
   };
   function getBuffTheme(buffId) {
     return BUFF_THEME[buffId] || { fill: 'rgba(97,97,97,0.4)', border: '#757575', color: '#616161' };
@@ -772,12 +794,13 @@
    * @param {Array<object|null>} party 己方 6 个槽位单位列表
    * @param {function(number): void} onSlotSelected 用户选中空位时调用，参数为槽位编号 1～6
    */
-  function enterAllyEmptySlotTargetMode(party, onSlotSelected) {
+  function enterAllyEmptySlotTargetMode(party, onSlotSelected, opts) {
     if (!party || !Array.isArray(party) || typeof onSlotSelected !== 'function') return;
     exitSkillTargetMode();
     injectTargetableStyle();
+    var exclude = opts && opts.excludeSlotNums ? opts.excludeSlotNums : [];
     for (var i = 1; i <= SLOT_COUNT; i++) {
-      if (party[i - 1] == null) {
+      if (party[i - 1] == null && exclude.indexOf(i) === -1) {
         var el = document.querySelector('.slot[data-slot="ally-' + i + '"]');
         if (el) el.classList.add('skill-targetable');
       }
@@ -1092,6 +1115,43 @@
           if (id === '防御强化' && key === 'def') v += layers * 3;
         }
       }
+      if (unit && (unit.name || '') === '丝伊德·白') {
+        var yuLayersS = 0;
+        var jqLayersS = 0;
+        if (unit.buffs && unit.buffs.length) {
+          for (var ys = 0; ys < unit.buffs.length; ys++) {
+            var bbs = unit.buffs[ys];
+            var ids = (bbs.id || bbs.name || '').trim();
+            if (ids === '孕育') yuLayersS = Math.max(0, parseInt(bbs.layers, 10) || 0);
+            if (ids === '姬骑') jqLayersS = Math.max(0, parseInt(bbs.layers, 10) || 0);
+          }
+        }
+        if (
+          unit.specialSkillsUnlocked &&
+          unit.specialSkillsUnlocked.indexOf('枝叶硕茂') !== -1 &&
+          yuLayersS > 0 &&
+          (key === 'str' || key === 'int')
+        ) {
+          var monteOk = false;
+          try {
+            var pMonte = getParty ? getParty() : null;
+            if (pMonte) {
+              for (var ms = 0; ms < pMonte.length; ms++) {
+                var uMonte = pMonte[ms];
+                if (!uMonte || (uMonte.name || '') !== '蒙特卡洛') continue;
+                var hpM = uMonte.hp != null ? parseInt(uMonte.hp, 10) : 1;
+                if (hpM > 0) {
+                  monteOk = true;
+                  break;
+                }
+              }
+            }
+          } catch (eMonte) {}
+          v += yuLayersS * (monteOk ? 2 : 1);
+        }
+        if (jqLayersS > 0 && (key === 'str' || key === 'agi' || key === 'int' || key === 'sta' || key === 'def'))
+          v = Math.floor(v * 1.5);
+      }
       return v;
     };
     /** 岚的远程多段技能结束时调用：消耗 1 层【锁定】并增加 1 层【心满意足】（若当前有锁定） */
@@ -1210,7 +1270,13 @@
           shadowAdded = Math.max(0, Math.floor(anShadow));
           finalDamage += shadowAdded;
         }
+        if (defender && defender.trait柔软躯体 === true) {
+          var lilimRm = 1.2;
+          finalDamage = Math.max(1, Math.floor(finalDamage * lilimRm));
+          if (shadowAdded > 0) shadowAdded = Math.min(finalDamage, Math.max(0, Math.floor(shadowAdded * lilimRm)));
+        }
         var increaseReasons = [];
+        if (defender && defender.trait柔软躯体 === true) increaseReasons.push('柔软躯体+20%魔法承伤');
         if (crit) increaseReasons.push('暴击+' + Math.round((critMult - 1) * 100) + '%');
         if (激励L > 0) increaseReasons.push('激励+' + 激励L * 10 + '%');
         if (破甲L > 0) increaseReasons.push('破甲+' + 破甲L * 20 + '%');
@@ -1290,7 +1356,13 @@
           shadowAdded = Math.max(0, Math.floor(anShadow));
           finalDamage += shadowAdded;
         }
+        if (defender && defender.trait柔软躯体 === true) {
+          var lilimRp = 0.7;
+          finalDamage = Math.max(1, Math.floor(finalDamage * lilimRp));
+          if (shadowAdded > 0) shadowAdded = Math.min(finalDamage, Math.max(0, Math.floor(shadowAdded * lilimRp)));
+        }
         var increaseReasons = [];
+        if (defender && defender.trait柔软躯体 === true) increaseReasons.push('柔软躯体-30%物理承伤');
         if (crit) increaseReasons.push('暴击+' + Math.round((critMult - 1) * 100) + '%');
         if (激励L > 0) increaseReasons.push('激励+' + 激励L * 10 + '%');
         if (破甲L > 0) increaseReasons.push('破甲+' + 破甲L * 20 + '%');
@@ -1363,6 +1435,54 @@
       window.色色地牢_character && window.色色地牢_character.getBaiyaStatsFromOwner
         ? function (owner) {
             return window.色色地牢_character.getBaiyaStatsFromOwner(owner, getDisplayStat);
+          }
+        : function () {
+            return { maxHp: 0, atk: 0, def: 0 };
+          };
+    var createSummonLilim =
+      window.色色地牢_character && window.色色地牢_character.createSummonLilim
+        ? window.色色地牢_character.createSummonLilim(getDisplayStat)
+        : null;
+    var getLilimStatsFromOwner =
+      window.色色地牢_character && window.色色地牢_character.getLilimStatsFromOwner
+        ? function (owner) {
+            return window.色色地牢_character.getLilimStatsFromOwner(owner, getDisplayStat);
+          }
+        : function () {
+            return { maxHp: 0, atk: 0, def: 0 };
+          };
+    var createSummonKerui =
+      window.色色地牢_character && window.色色地牢_character.createSummonKerui
+        ? window.色色地牢_character.createSummonKerui(getDisplayStat)
+        : null;
+    var getKeruiStatsFromOwner =
+      window.色色地牢_character && window.色色地牢_character.getKeruiStatsFromOwner
+        ? function (owner) {
+            return window.色色地牢_character.getKeruiStatsFromOwner(owner, getDisplayStat);
+          }
+        : function () {
+            return { maxHp: 0, atk: 0, def: 0 };
+          };
+    var createSummonMonteCarlo =
+      window.色色地牢_character && window.色色地牢_character.createSummonMonteCarlo
+        ? window.色色地牢_character.createSummonMonteCarlo(getDisplayStat)
+        : null;
+    var getMonteCarloStatsFromOwner =
+      window.色色地牢_character && window.色色地牢_character.getMonteCarloStatsFromOwner
+        ? function (owner) {
+            return window.色色地牢_character.getMonteCarloStatsFromOwner(owner, getDisplayStat);
+          }
+        : function () {
+            return { maxHp: 0, atk: 0, def: 0 };
+          };
+    var createSummonJin =
+      window.色色地牢_character && window.色色地牢_character.createSummonJin
+        ? window.色色地牢_character.createSummonJin(getDisplayStat)
+        : null;
+    var getJinStatsFromOwner =
+      window.色色地牢_character && window.色色地牢_character.getJinStatsFromOwner
+        ? function (owner) {
+            return window.色色地牢_character.getJinStatsFromOwner(owner, getDisplayStat);
           }
         : function () {
             return { maxHp: 0, atk: 0, def: 0 };
@@ -1451,6 +1571,12 @@
     var SKILL_BLADE_BITE_SVG = options.SKILL_BLADE_BITE_SVG || '';
     var SKILL_SHIELD_SWORD_SVG = options.SKILL_SHIELD_SWORD_SVG || '';
     var SKILL_ZANYUE_SVG = options.SKILL_ZANYUE_SVG || '';
+    var SKILL_FEISELUNWU_SVG = options.SKILL_FEISELUNWU_SVG || '';
+    var SKILL_MOWUYUNYU_SVG = options.SKILL_MOWUYUNYU_SVG || '';
+    var SKILL_JIQIJIEJIN_SVG = options.SKILL_JIQIJIEJIN_SVG || '';
+    var SKILL_FUSHIYU_SVG = options.SKILL_FUSHIYU_SVG || '';
+    var SKILL_YIZHONGWAIKE_SVG = options.SKILL_YIZHONGWAIKE_SVG || '';
+    var SKILL_POZHENCHONGFENG_SVG = options.SKILL_POZHENCHONGFENG_SVG || '';
     var SKILL_JIANQIE_SVG = options.SKILL_JIANQIE_SVG || '';
     var SKILL_JUHE_SVG = options.SKILL_JUHE_SVG || '';
     var SKILL_LINGXI_SVG = options.SKILL_LINGXI_SVG || '';
@@ -1508,32 +1634,38 @@
           slotEl.title = '空位';
           continue;
         }
-        if (ch.name === '白牙') {
+        /** 白牙与女儿等召唤物：仅 HP条 + 攻防数值 + AP，无等级/经验条；立绘用占位（与白牙一致） */
+        if (ch.name === '白牙' || ch.daughterUnit === true) {
           slotEl.removeAttribute('data-ally-render-key');
-          var baiyaMaxHp = Math.max(1, parseInt(ch.maxHp, 10) || 1);
-          var baiyaHp = ch.hp != null ? Math.min(parseInt(ch.hp, 10) || 0, baiyaMaxHp) : baiyaMaxHp;
-          var baiyaAtk = ch.atk != null ? parseInt(ch.atk, 10) : 0;
-          var baiyaDef = ch.def != null ? parseInt(ch.def, 10) : 0;
-          var baiyaShield = ch.currentShield != null ? Math.max(0, parseInt(ch.currentShield, 10) || 0) : 0;
-          var baiyaAp =
-            ch.currentAp !== undefined && ch.currentAp !== null ? Math.max(0, parseInt(ch.currentAp, 10) || 0) : 2;
-          var baiyaHpPct = baiyaMaxHp ? Math.min(100, (baiyaHp / baiyaMaxHp) * 100) : 0;
-          var baiyaShieldPct = baiyaMaxHp > 0 && baiyaShield > 0 ? Math.min(100, (baiyaShield / baiyaMaxHp) * 100) : 0;
+          var summName = (ch.name || '').trim() || '召唤物';
+          var summMaxHp = Math.max(1, parseInt(ch.maxHp, 10) || 1);
+          var summHp = ch.hp != null ? Math.min(parseInt(ch.hp, 10) || 0, summMaxHp) : summMaxHp;
+          var summAtk = ch.atk != null ? parseInt(ch.atk, 10) : 0;
+          var summDef = ch.def != null ? parseInt(ch.def, 10) : 0;
+          var summShield = ch.currentShield != null ? Math.max(0, parseInt(ch.currentShield, 10) || 0) : 0;
+          var summApFallback = ch.name === '白牙' || ch.daughterUnit === true ? 2 : getApByLevel(ch.level != null ? ch.level : 1);
+          var summAp =
+            ch.currentAp !== undefined && ch.currentAp !== null
+              ? Math.max(0, parseInt(ch.currentAp, 10) || 0)
+              : summApFallback;
+          var summHpPct = summMaxHp ? Math.min(100, (summHp / summMaxHp) * 100) : 0;
+          var summShieldPct = summMaxHp > 0 && summShield > 0 ? Math.min(100, (summShield / summMaxHp) * 100) : 0;
           slotEl.classList.add('slot-char', 'slot-enemy');
           slotEl.title =
-            '白牙 HP ' +
-            baiyaHp +
+            summName +
+            ' HP ' +
+            summHp +
             '/' +
-            baiyaMaxHp +
-            (baiyaShield > 0 ? ' 护盾' + baiyaShield : '') +
+            summMaxHp +
+            (summShield > 0 ? ' 护盾' + summShield : '') +
             ' 攻击' +
-            baiyaAtk +
+            summAtk +
             ' 防御' +
-            baiyaDef;
-          if (baiyaHp <= 0) {
-            var baiyaNameEl = slotEl.querySelector('.slot-char-name');
-            var baiyaHasOverlay = slotEl.querySelector('.slot-defeated-overlay');
-            if (baiyaNameEl && baiyaHasOverlay && (baiyaNameEl.textContent || '').trim() === '白牙') {
+            summDef;
+          if (summHp <= 0) {
+            var summNameEl = slotEl.querySelector('.slot-char-name');
+            var summHasOverlay = slotEl.querySelector('.slot-defeated-overlay');
+            if (summNameEl && summHasOverlay && (summNameEl.textContent || '').trim() === summName) {
               slotEl.classList.add('slot-defeated');
               slotEl.classList.remove('slot-defeated-shake');
               continue;
@@ -1547,33 +1679,35 @@
             '</button>' +
             '<div class="slot-char-portrait slot-enemy-portrait-empty" aria-hidden="true"></div>' +
             '<div class="slot-char-info">' +
-            '<div class="slot-char-name">白牙</div>' +
+            '<div class="slot-char-name">' +
+            summName.replace(/</g, '&lt;').replace(/>/g, '&gt;') +
+            '</div>' +
             '<div class="slot-char-bar slot-char-hp"><div class="slot-char-bar-fill" style="width:' +
-            baiyaHpPct +
+            summHpPct +
             '%"></div>' +
-            (baiyaShield > 0
+            (summShield > 0
               ? '<div class="slot-char-bar-shield-edge' +
-                (baiyaShieldPct >= 100 ? ' slot-char-bar-shield-edge-full' : '') +
+                (summShieldPct >= 100 ? ' slot-char-bar-shield-edge-full' : '') +
                 '" style="width:' +
-                baiyaShieldPct +
+                summShieldPct +
                 '%"></div>'
               : '') +
             '<span class="slot-char-bar-text">' +
-            baiyaHp +
+            summHp +
             '/' +
-            baiyaMaxHp +
-            (baiyaShield > 0 ? ' <span class="slot-char-shield">+' + baiyaShield + '</span>' : '') +
+            summMaxHp +
+            (summShield > 0 ? ' <span class="slot-char-shield">+' + summShield + '</span>' : '') +
             '</span></div>' +
             '<div class="slot-enemy-stats-row" style="font-size:11px;color:#5c4a3a;margin-top:4px;display:flex;align-items:center;gap:4px">' +
             '<span class="slot-enemy-atk-icon">' +
             (SKILL_ATTACK_SVG || '') +
             '</span><span>' +
-            baiyaAtk +
+            summAtk +
             '</span><span>·</span>' +
             '<span class="slot-enemy-def-wrap"><span class="slot-enemy-def-icon">' +
             (SKILL_DEFENSE_SVG || '') +
             '</span><span>' +
-            baiyaDef +
+            summDef +
             '</span></span></div>' +
             '<div class="slot-char-buffs">' +
             renderBuffsHtml(ch.buffs || []) +
@@ -1581,12 +1715,12 @@
             '<div class="slot-char-ap"><span class="slot-char-ap-text">行动</span><span class="slot-char-ap-icon">' +
             AP_FLAME_SVG +
             '</span><span class="slot-char-ap-value">' +
-            baiyaAp +
+            summAp +
             '</span></div></div>' +
-            (baiyaHp <= 0
+            (summHp <= 0
               ? '<div class="slot-defeated-overlay" aria-hidden="true"><span class="slot-defeated-overlay-text">战斗不能</span></div>'
               : '');
-          if (baiyaHp <= 0) {
+          if (summHp <= 0) {
             slotEl.classList.add('slot-defeated');
             if (ch._justDefeated) {
               slotEl.classList.add('slot-defeated-shake');
@@ -1611,7 +1745,7 @@
         var hp = ch.hp != null ? Math.min(ch.hp, maxHp) : maxHp;
         var exp = ch.exp != null ? ch.exp : 0;
         var maxExp = getMaxExpForLevel(level);
-        var maxAp = getApByLevel(level);
+        var maxAp = getEffectiveMaxApForAlly(ch);
         var ap =
           ch.currentAp !== undefined && ch.currentAp !== null ? Math.max(0, parseInt(ch.currentAp, 10) || 0) : maxAp;
         var shieldNum = ch.currentShield != null ? Math.max(0, parseInt(ch.currentShield, 10) || 0) : 0;
@@ -2418,8 +2552,9 @@
               if (layers <= 0) continue;
               if (id === '再生') {
                 var add = Math.min(layers, maxHp - curHp);
-                regenHeal += add;
-                curHp = Math.min(maxHp, curHp + layers);
+                var effRegen = apply丝伊德共生母胎HealMultiplier(unit, add);
+                regenHeal += effRegen;
+                curHp = Math.min(maxHp, curHp + effRegen);
                 buff.layers = Math.max(0, layers - 5);
               } else if (id === '重伤' || id === '流血' || id === '燃烧' || id === '中毒') {
                 if (id === '重伤') heavyWoundDmg += layers;
@@ -3047,10 +3182,11 @@
         var hs = hSlots[Math.floor(Math.random() * hSlots.length)];
         var he = enemies[hs - 1];
         var hv = Math.max(1, parseInt(p1, 10) || 10);
+        var hvEff = apply丝伊德共生母胎HealMultiplier(he, hv);
         var curHp = parseInt(he.hp, 10) || 0;
         var mxHp = parseInt(he.maxHp, 10) || curHp || 1;
-        he.hp = Math.min(mxHp, curHp + hv);
-        appendCombatLog(name + ' 治疗友方「' + (he.name || '') + '」回复 ' + hv + ' HP');
+        he.hp = Math.min(mxHp, curHp + hvEff);
+        appendCombatLog(name + ' 治疗友方「' + (he.name || '') + '」回复 ' + hvEff + ' HP');
         function fh() {
           saveBattleData(party, enemies);
           renderEnemySlots(enemies);
@@ -3617,9 +3753,10 @@
                     ? Math.max(0, layers - 5)
                     : Math.max(0, layers - 1);
                 if (id === '再生') {
-                  var add = Math.min(layers, maxHp - curHp);
-                  regenHeal += add;
-                  curHp = Math.min(maxHp, curHp + layers);
+                  var addE = Math.min(layers, maxHp - curHp);
+                  var effRegenE = apply丝伊德共生母胎HealMultiplier(unit, addE);
+                  regenHeal += effRegenE;
+                  curHp = Math.min(maxHp, curHp + effRegenE);
                   buff.layers = layersAfter;
                   console.info(
                     '[战斗] 敌方结算 ' +
@@ -3705,7 +3842,7 @@
     function isAllyDefeated(unit) {
       if (!unit) return true;
       var hp =
-        unit.name === '白牙'
+        unit.name === '白牙' || unit.daughterUnit === true
           ? unit.hp != null
             ? Math.min(parseInt(unit.hp, 10) || 0, Math.max(1, parseInt(unit.maxHp, 10) || 1))
             : Math.max(1, parseInt(unit.maxHp, 10) || 1)
@@ -4236,6 +4373,130 @@
         return (x.id || x.name || '').trim() !== buffId;
       });
     }
+    /** 扣除单位身上某 buff 的层数；层数不足则返回 false 且不修改。扣至 0 时移除该 buff。 */
+    function consumeUnitBuffLayers(unit, buffId, count) {
+      if (!unit || !unit.buffs || count <= 0) return false;
+      var bid = (buffId || '').trim();
+      var b = null;
+      for (var i = 0; i < unit.buffs.length; i++) {
+        if ((unit.buffs[i].id || unit.buffs[i].name || '').trim() === bid) {
+          b = unit.buffs[i];
+          break;
+        }
+      }
+      if (!b) return false;
+      var L = Math.max(0, parseInt(b.layers, 10) || 0);
+      if (L < count) return false;
+      b.layers = L - count;
+      if (b.layers <= 0) {
+        unit.buffs = unit.buffs.filter(function (x) {
+          return (x.id || x.name || '').trim() !== bid;
+        });
+      }
+      return true;
+    }
+    /** 丝伊德·白 AP 上限：姬骑形态 -2（至少 1） */
+    function getEffectiveMaxApForAlly(unit) {
+      if (!unit) return 3;
+      if (unit.name === '白牙' || unit.daughterUnit === true) return 2;
+      var lv = unit.level != null ? unit.level : 1;
+      var m = getApByLevel(lv);
+      if ((unit.name || '') === '丝伊德·白' && getUnitBuffLayers(unit, '姬骑') > 0) m = Math.max(1, m - 2);
+      return m;
+    }
+    function hasAnyNegativeDebuffFor异种外壳(unit) {
+      if (!unit || !unit.buffs || !unit.buffs.length) return false;
+      for (var ni = 0; ni < unit.buffs.length; ni++) {
+        var bb = unit.buffs[ni];
+        var idn = (bb.id || bb.name || '').trim();
+        if (NEGATIVE_DEBUFF_IDS.indexOf(idn) === -1) continue;
+        if ((parseInt(bb.layers, 10) || 0) > 0) return true;
+      }
+      return false;
+    }
+    function removeOneNegativeDebuffStack(unit) {
+      if (!unit || !unit.buffs) return false;
+      for (var ki = 0; ki < NEGATIVE_DEBUFF_IDS.length; ki++) {
+        var want = NEGATIVE_DEBUFF_IDS[ki];
+        for (var jj = 0; jj < unit.buffs.length; jj++) {
+          var bx = unit.buffs[jj];
+          if ((bx.id || bx.name || '').trim() !== want) continue;
+          var L = Math.max(0, parseInt(bx.layers, 10) || 0);
+          if (L <= 0) continue;
+          bx.layers = L - 1;
+          if (bx.layers <= 0) unit.buffs.splice(jj, 1);
+          return true;
+        }
+      }
+      return false;
+    }
+    /** 丝伊德·白「魔物孕育」Lv5-A：玩家行动回合开始时获得 1 层【孕育】。 */
+    function run丝伊德魔物孕育Lv5A玩家回合开始() {
+      var party = getParty();
+      if (!party || !party.length) return;
+      var changed = false;
+      for (var i = 0; i < party.length; i++) {
+        var u = party[i];
+        if (!u || (u.name || '') !== '丝伊德·白' || isAllyDefeated(u)) continue;
+        var sk = null;
+        if (u.skills) {
+          for (var si = 0; si < u.skills.length; si++) {
+            if ((u.skills[si].name || '') === '魔物孕育') {
+              sk = u.skills[si];
+              break;
+            }
+          }
+        }
+        if (!sk) continue;
+        var lv = Math.max(1, parseInt(sk.level, 10) || 1);
+        if (lv < 5 || sk.advancement !== 'A') continue;
+        addBuffLayers(u, '孕育', '孕育', 1, u);
+        capUnitBuffs(u);
+        changed = true;
+      }
+      if (changed) saveBattleData(getParty(), getEnemyParty());
+    }
+    /** 姬骑解禁：每回合开始自动对随机存活敌方发动一次无消耗【碧血魔剑】。 */
+    function run丝伊德姬骑自动碧血魔剑玩家回合开始() {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      if (!party || !enemies || !party.length) return;
+      for (var i = 0; i < party.length; i++) {
+        var u = party[i];
+        if (!u || (u.name || '') !== '丝伊德·白') continue;
+        var hpU = u.hp != null ? parseInt(u.hp, 10) : 1;
+        if (hpU <= 0) continue;
+        if (!u.specialSkillsUnlocked || u.specialSkillsUnlocked.indexOf('姬骑解禁') === -1) continue;
+        if (getUnitBuffLayers(u, '姬骑') <= 0) continue;
+        var skIdx = -1;
+        if (u.skills) {
+          for (var si = 0; si < u.skills.length; si++) {
+            if ((u.skills[si].name || '') === '碧血魔剑') {
+              skIdx = si;
+              break;
+            }
+          }
+        }
+        if (skIdx < 0) continue;
+        var alive = [];
+        for (var es = 1; es <= 6; es++) {
+          var d = enemies[es - 1];
+          if (d && (parseInt(d.hp, 10) || 0) > 0) alive.push(es);
+        }
+        if (!alive.length) continue;
+        var pick = alive[Math.floor(Math.random() * alive.length)];
+        executePlayer碧血魔剑(i + 1, pick, skIdx, { free: true, logSuffix: '（姬骑·自动）' });
+      }
+    }
+    /** 魔物孕育：按技能等级与分支返回需消耗的【孕育】层数。 */
+    function get魔物孕育消耗层数(skill) {
+      if (!skill || (skill.name || '') !== '魔物孕育') return 999;
+      var lv = Math.max(1, parseInt(skill.level, 10) || 1);
+      var adv = skill.advancement || null;
+      if (lv >= 5 && adv === 'B') return 8;
+      if (lv >= 5 && adv === 'A') return 5;
+      return Math.max(5, 9 - lv);
+    }
     /** 技能弹窗某一选项对应的 AP 消耗（与弹窗禁用规则一致：潮汐沧澜视为 0；猎手本能单独排除）。 */
     function getApCostForSkillPopupChoice(ch, idx, specialId) {
       if (specialId === '猎手本能') return 0;
@@ -4266,6 +4527,7 @@
      */
     function tryConsume眩晕浪费行动(unit, apCost) {
       if (!unit || !unit.buffs || !unit.buffs.length) return false;
+      if ((unit.name || '') === '丝伊德·白' && getUnitBuffLayers(unit, '姬骑') > 0) return false;
       var payAp = apCost != null ? Math.max(0, parseInt(apCost, 10) || 0) : 0;
       var stunBuff = null;
       for (var si = 0; si < unit.buffs.length; si++) {
@@ -4285,7 +4547,7 @@
       });
       capUnitBuffs(unit);
       if (payAp > 0) {
-        var maxAp = unit.name === '白牙' ? 2 : getApByLevel(unit.level);
+        var maxAp = getEffectiveMaxApForAlly(unit);
         var curAp = unit.currentAp !== undefined && unit.currentAp != null ? parseInt(unit.currentAp, 10) : maxAp;
         unit.currentAp = Math.max(0, curAp - payAp);
       }
@@ -4718,11 +4980,15 @@
         }
       }
       if (!skill) return;
-      var maxAp = getApByLevel(attacker.level);
+      var maxAp = getEffectiveMaxApForAlly(attacker);
       var curAp =
         attacker.currentAp !== undefined && attacker.currentAp !== null ? parseInt(attacker.currentAp, 10) : maxAp;
       if (curAp < skillAp) {
         if (typeof window.toastr !== 'undefined') window.toastr.warning('AP 不足，无法使用该技能');
+        return;
+      }
+      if (specialId === '破阵冲锋') {
+        executePlayer破阵冲锋(allySlot, enemySlotNum);
         return;
       }
       if ((skill.name || '') === '幽灵舞踏') {
@@ -4743,6 +5009,10 @@
       }
       if ((skill.name || '') === '圣光斩') {
         executePlayer圣光斩(allySlot, enemySlotNum, skillIndex);
+        return;
+      }
+      if ((skill.name || '') === '碧血魔剑') {
+        executePlayer碧血魔剑(allySlot, enemySlotNum, skillIndex);
         return;
       }
       if ((skill.name || '') === '清算之手') {
@@ -4923,6 +5193,10 @@
               addBuffLayers(defender, '破甲', '破甲', 1);
               addBuffLayers(defender, '缴械', '缴械', 1);
             }
+          } else if (skillName === '缠绕撕咬') {
+            addBuffLayers(defender, '破甲', '破甲', 1, attacker);
+          } else if (skillName === '血触侵蚀') {
+            addBuffLayers(defender, '中毒', '中毒', 2, attacker);
           }
           if (skill.id === '狼群围猎') {
             var partyAfter = getParty();
@@ -5038,7 +5312,7 @@
         }
       }
       function doResolutionAndHit() {
-        var result = resolveAttack(attacker, defender, baseDamage, true, skillRangeOpts);
+        var result = resolveAttack(attacker, defender, baseDamage, true, skillRangeOpts || undefined);
         if (result.crit && attacker.纳刀共鸣暴击加成 != null) {
           result.finalDamage = Math.max(1, Math.floor(result.finalDamage * (1 + attacker.纳刀共鸣暴击加成)));
           attacker.纳刀共鸣暴击加成 = null;
@@ -5055,12 +5329,13 @@
         }
       }
       var isAttackSkill = (skill.name || '') === '攻击';
-      var skillRangeOpts =
-        (skill.attribute2 || '') === '近战'
-          ? { isMelee: true }
-          : (skill.attribute2 || '') === '远程'
-            ? { isRanged: true }
-            : undefined;
+      var skillRangeOpts = null;
+      var _rangeTmp = {};
+      if ((skill.attribute2 || '') === '近战') _rangeTmp.isMelee = true;
+      else if ((skill.attribute2 || '') === '远程') _rangeTmp.isRanged = true;
+      var _a1 = String(skill.attribute1 || '').trim();
+      if (_a1 === '自然' || _a1 === '奥术' || _a1 === '心灵' || _a1 === '火焰') _rangeTmp.magicOnly = true;
+      if (Object.keys(_rangeTmp).length) skillRangeOpts = _rangeTmp;
       if (isAttackSkill) {
         var result = resolveAttack(attacker, defender, baseDamage, true, { isMelee: true });
         if (result.crit && attacker.纳刀共鸣暴击加成 != null) {
@@ -5863,6 +6138,7 @@
         if (hasCharm) charmCount++;
       }
       var totalHeal = charmCount * healPerCharm;
+      totalHeal = apply丝伊德共生母胎HealMultiplier(attacker, totalHeal);
       var attackerSlotEl = document.querySelector('.slot[data-slot="ally-' + allySlot + '"]');
       var enemySideEl = document.querySelector('.side-enemy');
       function afterSoulAnim() {
@@ -6964,6 +7240,7 @@
             }
             if (dispelled) {
               var healVal = Math.floor((getDisplayStat(attacker, 'int') || 0) * 0.4);
+              healVal = apply丝伊德共生母胎HealMultiplier(attacker, healVal);
               var beforeHp = attacker.hp != null ? parseInt(attacker.hp, 10) : 0;
               var maxHp =
                 attacker.maxHp != null
@@ -7007,6 +7284,949 @@
       } else {
         applyDamageAndLog();
       }
+    }
+    /** 碧血魔剑：丝伊德·白技能。混合/近战/单体，1 AP。物理段+自然段分别判定；Lv5-A 侵蚀共鸣：可瑞存活时对目标叠2层【破甲】；Lv5-B 粘液浸透：莉莉姆存活时叠1层【迟缓】且莉莉姆与丝伊德回复莉莉姆DEF×0.3。execOpts.free 时不扣 AP、不校验 AP；logSuffix 追加在战斗日志技能名上。 */
+    function executePlayer碧血魔剑(allySlot, enemySlotNum, skillIndex, execOpts) {
+      execOpts = execOpts || {};
+      var freeCast = !!execOpts.free;
+      var logSuffix = execOpts.logSuffix || '';
+      var party = getParty();
+      var enemies = getEnemyParty();
+      var attacker = party[allySlot - 1];
+      var defender = enemies[enemySlotNum - 1];
+      if (!attacker || !defender || isAllyDefeated(attacker)) return;
+      var skill =
+        skillIndex >= 0 && attacker.skills && attacker.skills[skillIndex] ? attacker.skills[skillIndex] : null;
+      if (!skill || (skill.name || '') !== '碧血魔剑') return;
+      var skillAp = 1;
+      var maxAp = getEffectiveMaxApForAlly(attacker);
+      var curAp =
+        attacker.currentAp !== undefined && attacker.currentAp !== null ? parseInt(attacker.currentAp, 10) : maxAp;
+      if (!freeCast && curAp < skillAp) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('AP 不足，无法使用该技能');
+        return;
+      }
+      var lv = Math.max(1, parseInt(skill.level, 10) || 1);
+      var strV = getDisplayStat(attacker, 'str') || 0;
+      var intV = getDisplayStat(attacker, 'int') || 0;
+      var multStr = lv === 1 ? 0.4 : lv === 2 ? 0.5 : lv === 3 ? 0.5 : 0.6;
+      var multInt = lv === 1 ? 0.4 : lv === 2 ? 0.4 : lv === 3 ? 0.5 : 0.6;
+      if (lv >= 5 && (skill.advancement === 'A' || skill.advancement === 'B')) {
+        multStr = 0.6;
+        multInt = 0.6;
+      }
+      var physDmg = Math.max(0, Math.floor(strV * multStr));
+      var natDmg = Math.max(0, Math.floor(intV * multInt));
+      var resP = resolveAttack(attacker, defender, physDmg, true);
+      var resN = resolveAttack(attacker, defender, natDmg, true, { magicOnly: true });
+      var attName = attacker.name || '己方';
+      var defName = defender.name || '敌方';
+      var advancement = skill.advancement;
+      var skillLabel =
+        lv >= 5 && advancement === 'A' ? '侵蚀共鸣' : lv >= 5 && advancement === 'B' ? '粘液浸透' : '碧血魔剑';
+      var defenderSlotEl = document.querySelector('.slot[data-slot="enemy-' + enemySlotNum + '"]');
+      var attackerSlotEl = document.querySelector('.slot[data-slot="ally-' + allySlot + '"]');
+      function findAliveAllyByName(nm) {
+        if (!party || !nm) return null;
+        for (var ai = 0; ai < party.length; ai++) {
+          var u = party[ai];
+          if (!u || (u.name || '') !== nm) continue;
+          if (isAllyDefeated(u)) continue;
+          return u;
+        }
+        return null;
+      }
+      function applyHealToAlly(unit, raw) {
+        if (!unit || raw == null || raw <= 0) return 0;
+        var eff = apply丝伊德共生母胎HealMultiplier(unit, raw);
+        var mHp =
+          unit.maxHp != null
+            ? parseInt(unit.maxHp, 10)
+            : typeof getHpFromSta === 'function'
+              ? getHpFromSta(getDisplayStat(unit, 'sta') || 1)
+              : 100;
+        var bHp = unit.hp != null ? parseInt(unit.hp, 10) : mHp;
+        unit.hp = Math.min(mHp, bHp + eff);
+        return eff;
+      }
+      function applyDamageAndLog() {
+        if (!freeCast) attacker.currentAp = Math.max(0, curAp - skillAp);
+        var anyHit = resP.hit || resN.hit;
+        var hpAfterPhys = defender.hp;
+        if (resP.hit) {
+          applyDamageToTarget(
+            defender,
+            resP.finalDamage,
+            resP.shadowDamage ? { shadowDamage: resP.shadowDamage } : undefined,
+          );
+          hpAfterPhys = defender.hp;
+        }
+        if (resN.hit) {
+          applyDamageToTarget(
+            defender,
+            resN.finalDamage,
+            resN.shadowDamage ? { shadowDamage: resN.shadowDamage } : undefined,
+          );
+        }
+        if (anyHit && lv >= 5 && advancement === 'A') {
+          var kerui = findAliveAllyByName('可瑞');
+          if (kerui) {
+            addBuffLayers(defender, '破甲', '破甲', 2, kerui);
+            appendCombatLog((kerui.name || '可瑞') + ' 对 ' + defName + ' 施加2层【破甲】（侵蚀共鸣）');
+          }
+        }
+        if (anyHit && lv >= 5 && advancement === 'B') {
+          var lilim = findAliveAllyByName('莉莉姆');
+          if (lilim) {
+            addBuffLayers(defender, '迟缓', '迟缓', 1, lilim);
+            appendCombatLog((lilim.name || '莉莉姆') + ' 对 ' + defName + ' 施加1层【迟缓】（粘液浸透）');
+            var baseHeal = Math.max(0, Math.floor((getDisplayStat(lilim, 'def') || 0) * 0.3));
+            if (baseHeal > 0) {
+              var hL = applyHealToAlly(lilim, baseHeal);
+              var hS = applyHealToAlly(attacker, baseHeal);
+              appendCombatLog(
+                (lilim.name || '莉莉姆') +
+                  ' 回复 ' +
+                  hL +
+                  ' 点生命，' +
+                  attName +
+                  ' 回复 ' +
+                  hS +
+                  ' 点生命（粘液浸透，基础为莉莉姆防御×0.3）',
+              );
+            }
+          }
+        }
+        saveBattleData(party, enemies);
+        renderAllySlots(party);
+        renderEnemySlots(enemies);
+        appendCombatLog(
+          formatAttackLogLine(
+            attName,
+            skillLabel + '·物理' + logSuffix,
+            defName,
+            resP,
+            physDmg,
+            '力量',
+            multStr,
+            hpAfterPhys,
+            '力量×' + multStr + '=' + physDmg,
+          ),
+        );
+        appendCombatLog(
+          formatAttackLogLine(
+            attName,
+            skillLabel + '·自然' + logSuffix,
+            defName,
+            resN,
+            natDmg,
+            '智力',
+            multInt,
+            defender.hp,
+            '智力×' + multInt + '=' + natDmg,
+          ),
+        );
+        var totalD = (resP.hit ? resP.finalDamage : 0) + (resN.hit ? resN.finalDamage : 0);
+        if (typeof window.toastr !== 'undefined' && !freeCast) {
+          if (!anyHit) window.toastr.success('碧血魔剑 未命中');
+          else window.toastr.success('碧血魔剑 共造成 ' + totalD + ' 点伤害');
+        }
+      }
+      if (defenderSlotEl) {
+        if (!resP.hit && !resN.hit) {
+          playMissEffect(defenderSlotEl);
+          applyDamageAndLog();
+        } else if (attackerSlotEl) {
+          playStrikeShake(attackerSlotEl, defenderSlotEl, function () {
+            playAnimationOnSlot(defenderSlotEl, 'Holy3', applyDamageAndLog);
+          });
+        } else {
+          applyDamageAndLog();
+        }
+      } else {
+        applyDamageAndLog();
+      }
+    }
+    /** 威吓：丝伊德·白。2层【嘲讽】+护盾；Lv5-A 堇在场则免费再生菌丝；Lv5-B 蒙特卡洛在场则免费金粉弥漫。 */
+    function executePlayer姬骑解禁(allySlot) {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      var attacker = party[allySlot - 1];
+      if (!attacker || (attacker.name || '') !== '丝伊德·白' || isAllyDefeated(attacker)) return;
+      if (!attacker.specialSkillsUnlocked || attacker.specialSkillsUnlocked.indexOf('姬骑解禁') === -1) return;
+      var skillAp = 3;
+      var maxAp = getEffectiveMaxApForAlly(attacker);
+      var curAp =
+        attacker.currentAp !== undefined && attacker.currentAp !== null ? parseInt(attacker.currentAp, 10) : maxAp;
+      if (curAp < skillAp) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('AP 不足，无法使用该技能');
+        return;
+      }
+      addBuffLayers(attacker, '姬骑', '姬骑', 1, attacker);
+      capUnitBuffs(attacker);
+      var newMax = getEffectiveMaxApForAlly(attacker);
+      attacker.currentAp = Math.min(Math.max(0, curAp - skillAp), newMax);
+      saveBattleData(party, enemies);
+      renderAllySlots(party);
+      renderEnemySlots(enemies);
+      appendCombatLog((attacker.name || '丝伊德·白') + ' 发动「全武装形态·姬骑解禁」，进入【姬骑】形态');
+      if (typeof window.toastr !== 'undefined') window.toastr.success('姬骑解禁：已进入姬骑形态');
+    }
+    function executePlayer腐蚀领域(allySlot) {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      var attacker = party[allySlot - 1];
+      if (!attacker || (attacker.name || '') !== '丝伊德·白' || isAllyDefeated(attacker)) return;
+      if (!attacker.specialSkillsUnlocked || attacker.specialSkillsUnlocked.indexOf('腐蚀领域') === -1) return;
+      var skillAp = 2;
+      var maxAp = getEffectiveMaxApForAlly(attacker);
+      var curAp =
+        attacker.currentAp !== undefined && attacker.currentAp !== null ? parseInt(attacker.currentAp, 10) : maxAp;
+      if (curAp < skillAp) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('AP 不足，无法使用该技能');
+        return;
+      }
+      var jinAlive = false;
+      for (var ji = 0; ji < party.length; ji++) {
+        var uj = party[ji];
+        if (!uj || (uj.name || '') !== '\u5807') continue;
+        if (isAllyDefeated(uj)) continue;
+        jinAlive = true;
+        break;
+      }
+      var poisonStacks = Math.max(1, Math.floor(1 * (jinAlive ? 1.5 : 1)));
+      var intV = getDisplayStat(attacker, 'int') || 0;
+      var natDmg = Math.max(0, Math.floor(intV * 1.2));
+      var attName = attacker.name || '丝伊德·白';
+      var targets = [];
+      for (var ti = 1; ti <= 6; ti++) {
+        var def = enemies[ti - 1];
+        if (!def || (def.hp != null && parseInt(def.hp, 10) <= 0)) continue;
+        var resN = resolveAttack(attacker, def, natDmg, true, { magicOnly: true });
+        targets.push({ slotNum: ti, defender: def, resN: resN });
+      }
+      if (targets.length === 0) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('没有可攻击的敌方单位');
+        return;
+      }
+      attacker.currentAp = Math.max(0, curAp - skillAp);
+      var attackerSlotEl = document.querySelector('.slot[data-slot="ally-' + allySlot + '"]');
+      var enemySideEl = document.querySelector('.side-enemy');
+      function afterAnim腐蚀领域() {
+        for (var t = 0; t < targets.length; t++) {
+          var d = targets[t].defender;
+          var rn = targets[t].resN;
+          if (rn.hit) {
+            applyDamageToTarget(
+              d,
+              rn.finalDamage,
+              rn.shadowDamage ? { shadowDamage: rn.shadowDamage } : undefined,
+            );
+            addBuffLayers(d, '中毒', '中毒', poisonStacks, attacker);
+          }
+          appendCombatLog(
+            formatAttackLogLine(
+              attName,
+              '腐蚀领域·自然',
+              d.name || '敌方',
+              rn,
+              natDmg,
+              '智力',
+              1.2,
+              d.hp,
+              '智力×1.2=' + natDmg,
+            ),
+          );
+        }
+        var poisonedCount = 0;
+        for (var ei = 0; ei < enemies.length; ei++) {
+          var en = enemies[ei];
+          if (!en) continue;
+          var eh = en.hp != null ? parseInt(en.hp, 10) : 0;
+          if (eh <= 0) continue;
+          if (getUnitBuffLayers(en, '中毒') > 0) poisonedCount++;
+        }
+        if (poisonedCount > 0) {
+          addBuffLayers(attacker, '孕育', '孕育', poisonedCount, attacker);
+          capUnitBuffs(attacker);
+          appendCombatLog(
+            attName + ' 腐蚀领域：场上 ' + poisonedCount + ' 名敌人处于【中毒】，获得 ' + poisonedCount + ' 层【孕育】',
+          );
+        }
+        saveBattleData(party, enemies);
+        renderAllySlots(party);
+        renderEnemySlots(enemies);
+        for (var tt = 0; tt < targets.length; tt++) {
+          var slotEl = document.querySelector('.slot[data-slot="enemy-' + targets[tt].slotNum + '"]');
+          if (slotEl && !targets[tt].resN.hit) playMissEffect(slotEl);
+        }
+        if (typeof window.toastr !== 'undefined') window.toastr.success('腐蚀领域 释放完毕');
+      }
+      if (attackerSlotEl && enemySideEl) {
+        playStrikeShake(attackerSlotEl, null, function () {
+          playAnimationOnContainer(enemySideEl, 'SlashSpecial1', afterAnim腐蚀领域);
+        });
+      } else {
+        afterAnim腐蚀领域();
+      }
+    }
+    function executePlayer异种外壳(allySlot) {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      var attacker = party[allySlot - 1];
+      if (!attacker || (attacker.name || '') !== '丝伊德·白' || isAllyDefeated(attacker)) return;
+      if (!attacker.specialSkillsUnlocked || attacker.specialSkillsUnlocked.indexOf('异种外壳') === -1) return;
+      var skillAp = 2;
+      var maxAp = getEffectiveMaxApForAlly(attacker);
+      var curAp =
+        attacker.currentAp !== undefined && attacker.currentAp !== null ? parseInt(attacker.currentAp, 10) : maxAp;
+      if (curAp < skillAp) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('AP 不足，无法使用该技能');
+        return;
+      }
+      var lilim = null;
+      for (var li = 0; li < party.length; li++) {
+        var ul = party[li];
+        if (!ul || (ul.name || '') !== '莉莉姆') continue;
+        if (isAllyDefeated(ul)) continue;
+        lilim = ul;
+        break;
+      }
+      var shield = 0;
+      if (lilim) {
+        var lh = lilim.hp != null ? parseInt(lilim.hp, 10) : 0;
+        shield = Math.max(0, Math.floor(lh * 1.2));
+      } else {
+        var staV = getDisplayStat(attacker, 'sta') || 0;
+        var defV = getDisplayStat(attacker, 'def') || 0;
+        shield = Math.max(0, Math.floor(staV * 1.2 + defV * 1.6));
+      }
+      attacker.currentAp = Math.max(0, curAp - skillAp);
+      attacker.currentShield =
+        (attacker.currentShield != null ? parseInt(attacker.currentShield, 10) || 0 : 0) + shield;
+      if (shield > 0) addBuffLayers(attacker, '护盾', '护盾', shield);
+      var cleansed = 0;
+      for (var ci = 0; ci < 2; ci++) {
+        if (getUnitBuffLayers(attacker, '孕育') <= 0) break;
+        if (!hasAnyNegativeDebuffFor异种外壳(attacker)) break;
+        if (!consumeUnitBuffLayers(attacker, '孕育', 1)) break;
+        if (removeOneNegativeDebuffStack(attacker)) cleansed++;
+      }
+      var yuFromShield = Math.min(3, Math.floor(shield / 20));
+      if (yuFromShield > 0) {
+        addBuffLayers(attacker, '孕育', '孕育', yuFromShield, attacker);
+        capUnitBuffs(attacker);
+      }
+      saveBattleData(party, enemies);
+      renderAllySlots(party);
+      renderEnemySlots(enemies);
+      appendCombatLog(
+        (attacker.name || '丝伊德·白') +
+          ' 异种外壳：获得 ' +
+          shield +
+          ' 点护盾' +
+          (cleansed > 0 ? '，消耗【孕育】清除 ' + cleansed + ' 个负面' : '') +
+          (yuFromShield > 0 ? '，护盾转化 ' + yuFromShield + ' 层【孕育】' : ''),
+      );
+      if (typeof window.toastr !== 'undefined') window.toastr.success('异种外壳：+' + shield + ' 护盾');
+      var el = document.querySelector('.slot[data-slot="ally-' + allySlot + '"]');
+      if (el) playAnimationOnSlot(el, 'Recovery4', function () {});
+    }
+    function executePlayer破阵冲锋(allySlot, enemySlotNum) {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      var attacker = party[allySlot - 1];
+      var defender = enemies[enemySlotNum - 1];
+      if (!attacker || !defender || (attacker.name || '') !== '丝伊德·白' || isAllyDefeated(attacker)) return;
+      if (!attacker.specialSkillsUnlocked || attacker.specialSkillsUnlocked.indexOf('破阵冲锋') === -1) return;
+      var skillAp = 2;
+      var maxAp = getEffectiveMaxApForAlly(attacker);
+      var curAp =
+        attacker.currentAp !== undefined && attacker.currentAp !== null ? parseInt(attacker.currentAp, 10) : maxAp;
+      if (curAp < skillAp) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('AP 不足，无法使用该技能');
+        return;
+      }
+      var strV = getDisplayStat(attacker, 'str') || 0;
+      var defV = getDisplayStat(attacker, 'def') || 0;
+      var baseDmg = Math.max(0, Math.floor(strV * 1.5 + defV * 0.75));
+      var result = resolveAttack(attacker, defender, baseDmg, true);
+      var attName = attacker.name || '丝伊德·白';
+      var defName = defender.name || '敌方';
+      var defenderSlotEl = document.querySelector('.slot[data-slot="enemy-' + enemySlotNum + '"]');
+      var attackerSlotEl = document.querySelector('.slot[data-slot="ally-' + allySlot + '"]');
+      var keruiSlot = -1;
+      for (var ks = 0; ks < party.length; ks++) {
+        var ku = party[ks];
+        if (!ku || (ku.name || '') !== '可瑞') continue;
+        if (isAllyDefeated(ku)) continue;
+        keruiSlot = ks + 1;
+        break;
+      }
+      function applyMainAndKerui() {
+        attacker.currentAp = Math.max(0, curAp - skillAp);
+        if (result.hit) {
+          applyDamageToTarget(
+            defender,
+            result.finalDamage,
+            result.shadowDamage ? { shadowDamage: result.shadowDamage } : undefined,
+          );
+          addBuffLayers(defender, '破甲', '破甲', 1, attacker);
+        }
+        appendCombatLog(
+          formatAttackLogLine(
+            attName,
+            '破阵冲锋',
+            defName,
+            result,
+            baseDmg,
+            '力+防',
+            null,
+            defender.hp,
+            'Str×1.5+Def×0.75=' + baseDmg,
+          ),
+        );
+        if (keruiSlot > 0) {
+          for (var es = 1; es <= 6; es++) {
+            var d2 = enemies[es - 1];
+            if (!d2) continue;
+            var h2 = d2.hp != null ? parseInt(d2.hp, 10) : 0;
+            if (h2 <= 0) continue;
+            executeKerui缠绕撕咬Scaled(keruiSlot, es, 0.5, '破阵冲锋');
+          }
+        }
+        saveBattleData(party, enemies);
+        renderAllySlots(party);
+        renderEnemySlots(enemies);
+        if (typeof window.toastr !== 'undefined')
+          window.toastr.success(result.hit ? '破阵冲锋 命中' : '破阵冲锋 未命中');
+      }
+      if (defenderSlotEl) {
+        if (!result.hit) {
+          playMissEffect(defenderSlotEl);
+          applyMainAndKerui();
+        } else if (attackerSlotEl) {
+          playStrikeShake(attackerSlotEl, defenderSlotEl, function () {
+            playAnimationOnSlot(defenderSlotEl, 'Holy3', applyMainAndKerui);
+          });
+        } else {
+          applyMainAndKerui();
+        }
+      } else {
+        applyMainAndKerui();
+      }
+    }
+    function executePlayer威吓(allySlot, skillIndex) {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      var attacker = party[allySlot - 1];
+      if (!attacker || (attacker.name || '') !== '丝伊德·白' || isAllyDefeated(attacker)) return;
+      var skill =
+        skillIndex >= 0 && attacker.skills && attacker.skills[skillIndex] ? attacker.skills[skillIndex] : null;
+      if (!skill || (skill.name || '') !== '威吓') return;
+      var skillAp = skill.ap != null ? skill.ap : 1;
+      var maxAp = getEffectiveMaxApForAlly(attacker);
+      var curAp =
+        attacker.currentAp !== undefined && attacker.currentAp !== null ? parseInt(attacker.currentAp, 10) : maxAp;
+      if (curAp < skillAp) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('AP 不足，无法使用该技能');
+        return;
+      }
+      var lv = Math.max(1, parseInt(skill.level, 10) || 1);
+      var mult = lv === 1 ? 0.5 : lv === 2 ? 0.6 : lv === 3 ? 0.7 : 0.8;
+      var adv = skill.advancement;
+      var label =
+        lv >= 5 && adv === 'A' ? '菌丝摇篮' : lv >= 5 && adv === 'B' ? '金粉帷幕' : '威吓';
+      addBuffLayers(attacker, '嘲讽', '嘲讽', 2);
+      var shield = Math.max(0, Math.floor((getDisplayStat(attacker, 'def') || 0) * mult));
+      attacker.currentShield =
+        (attacker.currentShield != null ? parseInt(attacker.currentShield, 10) || 0 : 0) + shield;
+      if (shield > 0) addBuffLayers(attacker, '护盾', '护盾', shield);
+      attacker.currentAp = Math.max(0, curAp - skillAp);
+      if (lv >= 5 && adv === 'A') {
+        var jinUnit = null;
+        for (var ji = 0; ji < party.length; ji++) {
+          var uj = party[ji];
+          if (!uj || (uj.name || '') !== '堇') continue;
+          if (isAllyDefeated(uj)) continue;
+          jinUnit = uj;
+          break;
+        }
+        if (jinUnit) {
+          addBuffLayers(attacker, '再生', '再生', 2, jinUnit);
+          addBuffLayers(attacker, '孕育', '孕育', 1);
+          capUnitBuffs(attacker);
+          appendCombatLog((jinUnit.name || '堇') + '（威吓）对丝伊德·白发动再生菌丝');
+        }
+      }
+      if (lv >= 5 && adv === 'B') {
+        var mcUnit = null;
+        for (var mi = 0; mi < party.length; mi++) {
+          var um = party[mi];
+          if (!um || (um.name || '') !== '蒙特卡洛') continue;
+          if (isAllyDefeated(um)) continue;
+          mcUnit = um;
+          break;
+        }
+        if (mcUnit) {
+          for (var ei = 0; ei < enemies.length; ei++) {
+            var en = enemies[ei];
+            if (!en) continue;
+            var ehp = en.hp != null ? parseInt(en.hp, 10) : 1;
+            if (ehp <= 0) continue;
+            addBuffLayers(en, '恍惚', '恍惚', 1, mcUnit);
+            addBuffLayers(en, '迟钝', '迟钝', 1, mcUnit);
+          }
+          appendCombatLog((mcUnit.name || '蒙特卡洛') + '（威吓）发动金粉弥漫');
+        }
+      }
+      saveBattleData(party, enemies);
+      renderAllySlots(party);
+      renderEnemySlots(enemies);
+      appendCombatLog(
+        (attacker.name || '丝伊德·白') + ' 使用「' + label + '」：2层【嘲讽】，' + shield + ' 点护盾',
+      );
+      if (typeof window.toastr !== 'undefined') window.toastr.success('威吓：嘲讽 + ' + shield + ' 护盾');
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          var el = document.querySelector('.slot[data-slot="ally-' + allySlot + '"]');
+          playAnimationOnSlot(el, 'Recovery2', function () {});
+        });
+      });
+    }
+    /** 绯色轮舞：丝伊德·白。混合近战群体 2 AP，敌方全体物+然双段；Lv5-A 蒙特卡洛在场则命中者恍惚+虚弱；Lv5-B 可瑞在场则命中者破甲+随机血触侵蚀。 */
+    function executePlayer绯色轮舞(allySlot, skillIndex) {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      var attacker = party[allySlot - 1];
+      if (!attacker || (attacker.name || '') !== '丝伊德·白' || isAllyDefeated(attacker)) return;
+      var skill =
+        skillIndex >= 0 && attacker.skills && attacker.skills[skillIndex] ? attacker.skills[skillIndex] : null;
+      if (!skill || (skill.name || '') !== '绯色轮舞') return;
+      var skillAp = skill.ap != null ? skill.ap : 2;
+      var maxAp = getEffectiveMaxApForAlly(attacker);
+      var curAp =
+        attacker.currentAp !== undefined && attacker.currentAp !== null ? parseInt(attacker.currentAp, 10) : maxAp;
+      if (curAp < skillAp) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('AP 不足，无法使用该技能');
+        return;
+      }
+      var lv = Math.max(1, parseInt(skill.level, 10) || 1);
+      var strV = getDisplayStat(attacker, 'str') || 0;
+      var intV = getDisplayStat(attacker, 'int') || 0;
+      var multStr = lv === 1 ? 0.4 : lv === 2 ? 0.5 : lv === 3 ? 0.5 : 0.6;
+      var multInt = lv === 1 ? 0.4 : lv === 2 ? 0.4 : lv === 3 ? 0.5 : 0.6;
+      if (lv >= 5 && (skill.advancement === 'A' || skill.advancement === 'B')) {
+        multStr = 0.6;
+        multInt = 0.6;
+      }
+      var physDmg = Math.max(0, Math.floor(strV * multStr));
+      var natDmg = Math.max(0, Math.floor(intV * multInt));
+      var targets = [];
+      for (var ti = 1; ti <= 6; ti++) {
+        var def = enemies[ti - 1];
+        if (!def || (def.hp != null && parseInt(def.hp, 10) <= 0)) continue;
+        var resP = resolveAttack(attacker, def, physDmg, true);
+        var resN = resolveAttack(attacker, def, natDmg, true, { magicOnly: true });
+        targets.push({ slotNum: ti, defender: def, resP: resP, resN: resN });
+      }
+      if (targets.length === 0) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('没有可攻击的敌方单位');
+        return;
+      }
+      attacker.currentAp = Math.max(0, curAp - skillAp);
+      var adv = skill.advancement;
+      var skillLabel =
+        lv >= 5 && adv === 'A' ? '孢子旋风' : lv >= 5 && adv === 'B' ? '血触风暴' : '绯色轮舞';
+      var attName = attacker.name || '丝伊德·白';
+      var monteUnit = null;
+      var keruiUnit = null;
+      for (var pi = 0; pi < party.length; pi++) {
+        var pu = party[pi];
+        if (!pu || isAllyDefeated(pu)) continue;
+        if ((pu.name || '') === '蒙特卡洛') monteUnit = pu;
+        if ((pu.name || '') === '可瑞') keruiUnit = pu;
+      }
+      var attackerSlotEl = document.querySelector('.slot[data-slot="ally-' + allySlot + '"]');
+      var enemySideEl = document.querySelector('.side-enemy');
+      function afterAnim() {
+        var totalAll = 0;
+        for (var t = 0; t < targets.length; t++) {
+          var d = targets[t].defender;
+          var rp = targets[t].resP;
+          var rn = targets[t].resN;
+          var anyHit = rp.hit || rn.hit;
+          if (rp.hit) {
+            applyDamageToTarget(
+              d,
+              rp.finalDamage,
+              rp.shadowDamage ? { shadowDamage: rp.shadowDamage } : undefined,
+            );
+            totalAll += rp.finalDamage;
+          }
+          var hpAfterPhys = d.hp;
+          if (rn.hit) {
+            applyDamageToTarget(
+              d,
+              rn.finalDamage,
+              rn.shadowDamage ? { shadowDamage: rn.shadowDamage } : undefined,
+            );
+            totalAll += rn.finalDamage;
+          }
+          if (lv >= 5 && adv === 'A' && monteUnit && anyHit) {
+            addBuffLayers(d, '恍惚', '恍惚', 1, monteUnit);
+            addBuffLayers(d, '虚弱', '虚弱', 1, monteUnit);
+          }
+          if (lv >= 5 && adv === 'B' && keruiUnit && anyHit) {
+            addBuffLayers(d, '破甲', '破甲', 1, keruiUnit);
+          }
+          appendCombatLog(
+            formatAttackLogLine(
+              attName,
+              skillLabel + '·物理',
+              d.name || '敌方',
+              rp,
+              physDmg,
+              '力量',
+              multStr,
+              hpAfterPhys,
+              '力量×' + multStr + '=' + physDmg,
+            ),
+          );
+          appendCombatLog(
+            formatAttackLogLine(
+              attName,
+              skillLabel + '·自然',
+              d.name || '敌方',
+              rn,
+              natDmg,
+              '智力',
+              multInt,
+              d.hp,
+              '智力×' + multInt + '=' + natDmg,
+            ),
+          );
+        }
+        if (lv >= 5 && adv === 'B' && keruiUnit) {
+          var candidates = [];
+          for (var ci = 0; ci < enemies.length; ci++) {
+            var en = enemies[ci];
+            if (!en) continue;
+            var eh = en.hp != null ? parseInt(en.hp, 10) : 1;
+            if (eh > 0) candidates.push({ slotNum: ci + 1, defender: en });
+          }
+          if (candidates.length > 0) {
+            var pick = candidates[Math.floor(Math.random() * candidates.length)];
+            var keruiAtk = parseInt(keruiUnit.atk, 10) || 0;
+            var bleedBase = Math.max(0, Math.floor(keruiAtk * 0.7));
+            var resBleed = resolveAttack(keruiUnit, pick.defender, bleedBase, true, { magicOnly: true });
+            if (resBleed.hit) {
+              applyDamageToTarget(
+                pick.defender,
+                resBleed.finalDamage,
+                resBleed.shadowDamage ? { shadowDamage: resBleed.shadowDamage } : undefined,
+              );
+              addBuffLayers(pick.defender, '中毒', '中毒', 2, keruiUnit);
+              totalAll += resBleed.finalDamage;
+              appendCombatLog(
+                (keruiUnit.name || '可瑞') +
+                  ' 血触侵蚀（绯色轮舞）对 ' +
+                  (pick.defender.name || '敌方') +
+                  ' 造成 ' +
+                  resBleed.finalDamage +
+                  ' 伤害并施加【中毒】',
+              );
+            } else {
+              appendCombatLog(
+                (keruiUnit.name || '可瑞') + ' 血触侵蚀（绯色轮舞）未命中 ' + (pick.defender.name || '敌方'),
+              );
+            }
+          }
+        }
+        saveBattleData(party, enemies);
+        renderAllySlots(party);
+        renderEnemySlots(enemies);
+        for (var tt = 0; tt < targets.length; tt++) {
+          var slotEl = document.querySelector('.slot[data-slot="enemy-' + targets[tt].slotNum + '"]');
+          if (slotEl && !targets[tt].resP.hit && !targets[tt].resN.hit) playMissEffect(slotEl);
+        }
+        if (typeof window.toastr !== 'undefined')
+          window.toastr.success('绯色轮舞 完毕，共造成约 ' + totalAll + ' 点伤害');
+      }
+      if (attackerSlotEl && enemySideEl) {
+        playStrikeShake(attackerSlotEl, null, function () {
+          playAnimationOnContainer(enemySideEl, 'SlashSpecial1', afterAnim);
+        });
+      } else {
+        afterAnim();
+      }
+    }
+    /** 魔物孕育：校验通过返回上下文，失败返回 null（并已 toastr） */
+    function 魔物孕育TryGetContext(allySlot, skillIndex) {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      var attacker = party[allySlot - 1];
+      if (!attacker || (attacker.name || '') !== '丝伊德·白' || isAllyDefeated(attacker)) return null;
+      var skill =
+        skillIndex >= 0 && attacker.skills && attacker.skills[skillIndex] ? attacker.skills[skillIndex] : null;
+      if (!skill || (skill.name || '') !== '魔物孕育') return null;
+      var factories = [];
+      if (createSummonLilim) factories.push(createSummonLilim);
+      if (createSummonKerui) factories.push(createSummonKerui);
+      if (createSummonMonteCarlo) factories.push(createSummonMonteCarlo);
+      if (createSummonJin) factories.push(createSummonJin);
+      if (!factories.length) {
+        if (typeof window.toastr !== 'undefined') window.toastr.error('召唤数据未加载');
+        return null;
+      }
+      var skillAp = skill.ap != null ? parseInt(skill.ap, 10) : 2;
+      var maxAp = getEffectiveMaxApForAlly(attacker);
+      var curAp =
+        attacker.currentAp !== undefined && attacker.currentAp !== null ? parseInt(attacker.currentAp, 10) : maxAp;
+      if (curAp < skillAp) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('AP 不足，无法使用该技能');
+        return null;
+      }
+      var lv = Math.max(1, parseInt(skill.level, 10) || 1);
+      var adv = skill.advancement || null;
+      var dual = lv >= 5 && adv === 'B';
+      var needLayers = get魔物孕育消耗层数(skill);
+      var haveLayers = getUnitBuffLayers(attacker, '孕育');
+      if (haveLayers < needLayers) {
+        if (typeof window.toastr !== 'undefined')
+          window.toastr.warning('【孕育】不足（需要 ' + needLayers + ' 层，当前 ' + haveLayers + ' 层）');
+        return null;
+      }
+      var emptySlots = [];
+      for (var ei = 0; ei < SLOT_COUNT; ei++) {
+        if (party[ei] == null) emptySlots.push(ei + 1);
+      }
+      if (dual) {
+        if (emptySlots.length < 2) {
+          if (typeof window.toastr !== 'undefined') window.toastr.warning('需要至少 2 个己方空位才能双生孕育');
+          return null;
+        }
+        if (factories.length < 2) {
+          if (typeof window.toastr !== 'undefined') window.toastr.warning('女儿模板不足，无法双生召唤');
+          return null;
+        }
+      } else {
+        if (emptySlots.length < 1) {
+          if (typeof window.toastr !== 'undefined') window.toastr.warning('没有可用的己方空位');
+          return null;
+        }
+      }
+      function filterFactoriesExcludingPresentDaughters(allFactories, partyArr) {
+        return allFactories.filter(function (fac) {
+          var nm = fac && fac.name ? String(fac.name) : '';
+          if (!nm) return true;
+          for (var pi = 0; pi < partyArr.length; pi++) {
+            var pu = partyArr[pi];
+            if (!pu || isAllyDefeated(pu)) continue;
+            if ((pu.name || '') === nm) return false;
+          }
+          return true;
+        });
+      }
+      var factoriesAvailable = filterFactoriesExcludingPresentDaughters(factories, party);
+      if (dual) {
+        if (factoriesAvailable.length < 2) {
+          if (typeof window.toastr !== 'undefined')
+            window.toastr.warning('可召唤的不同女儿不足 2 名（每种女儿同时只能存在 1 个）');
+          return null;
+        }
+      } else {
+        if (factoriesAvailable.length < 1) {
+          if (typeof window.toastr !== 'undefined')
+            window.toastr.warning('四种女儿均已在场，无法召唤重复种类');
+          return null;
+        }
+      }
+      return {
+        party: party,
+        enemies: enemies,
+        attacker: attacker,
+        skill: skill,
+        skillAp: skillAp,
+        curAp: curAp,
+        dual: dual,
+        needLayers: needLayers,
+        emptySlots: emptySlots,
+        factoriesAvailable: factoriesAvailable,
+        hpMult: dual ? 0.8 : 1,
+        lv: lv,
+        adv: adv,
+      };
+    }
+    /** 魔物孕育：先高亮己方空位供玩家选择，再执行召唤（双生孕育需选两个不同空位） */
+    function startPlayer魔物孕育SlotPick(allySlot, skillIndex) {
+      var ctx = 魔物孕育TryGetContext(allySlot, skillIndex);
+      if (!ctx) return;
+      if (!window.BattleGrid || !window.BattleGrid.enterAllyEmptySlotTargetMode) {
+        if (typeof window.toastr !== 'undefined') window.toastr.error('目标选择未就绪');
+        return;
+      }
+      if (typeof window.toastr !== 'undefined') {
+        window.toastr.info(ctx.dual ? '请选择第一个己方空位（双生孕育需再选第二个）' : '请选择己方空位以召唤女儿');
+      }
+      if (!ctx.dual) {
+        window.BattleGrid.enterAllyEmptySlotTargetMode(ctx.party, function (slotNum) {
+          executePlayer魔物孕育(allySlot, skillIndex, [slotNum]);
+        });
+        return;
+      }
+      window.BattleGrid.enterAllyEmptySlotTargetMode(ctx.party, function (slot1) {
+        var party2 = getParty();
+        if (typeof window.toastr !== 'undefined') window.toastr.info('请选择第二个己方空位');
+        window.BattleGrid.enterAllyEmptySlotTargetMode(
+          party2,
+          function (slot2) {
+            executePlayer魔物孕育(allySlot, skillIndex, [slot1, slot2]);
+          },
+          { excludeSlotNums: [slot1] },
+        );
+      });
+    }
+    /** 魔物孕育：丝伊德·白。消耗【孕育】在玩家选择的己方空位召唤女儿；女儿种类仍随机；Lv5-B 双生孕育 MaxHP×0.8。召唤特效使用 Revival1。 */
+    function executePlayer魔物孕育(allySlot, skillIndex, chosenSlots) {
+      var ctx = 魔物孕育TryGetContext(allySlot, skillIndex);
+      if (!ctx) return;
+      if (!chosenSlots || !chosenSlots.length) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('未指定召唤位置');
+        return;
+      }
+      var party = getParty();
+      var enemies = getEnemyParty();
+      var attacker = party[allySlot - 1];
+      if (!attacker) return;
+      var dual = ctx.dual;
+      var needLen = dual ? 2 : 1;
+      if (chosenSlots.length !== needLen) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('所选空位数量不正确');
+        return;
+      }
+      var emptyNow = [];
+      for (var ei = 0; ei < SLOT_COUNT; ei++) {
+        if (party[ei] == null) emptyNow.push(ei + 1);
+      }
+      var chosen = [];
+      for (var ci = 0; ci < chosenSlots.length; ci++) {
+        var sn = parseInt(chosenSlots[ci], 10);
+        if (sn < 1 || sn > 6 || emptyNow.indexOf(sn) === -1) {
+          if (typeof window.toastr !== 'undefined') window.toastr.warning('所选空位已不可用，请重试');
+          return;
+        }
+        chosen.push(sn);
+      }
+      if (dual && chosen[0] === chosen[1]) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('双生孕育需要两个不同的空位');
+        return;
+      }
+      function cloneSkillList(skills) {
+        if (!skills || !skills.length) return [];
+        return skills.map(function (sk) {
+          var o = {};
+          for (var k in sk) {
+            if (Object.prototype.hasOwnProperty.call(sk, k)) o[k] = sk[k];
+          }
+          return o;
+        });
+      }
+      function buildUnitFromTemplate(template, hpMult) {
+        hpMult = hpMult == null ? 1 : hpMult;
+        var maxHp = Math.max(1, Math.floor(template.maxHpFromOwner(attacker) * hpMult));
+        var u = {
+          name: template.name,
+          hp: maxHp,
+          maxHp: maxHp,
+          atk: Math.max(0, template.atkFromOwner(attacker)),
+          def: Math.max(0, template.defFromOwner(attacker)),
+          currentAp: template.ap != null ? parseInt(template.ap, 10) || 2 : 2,
+          level: Math.max(1, parseInt(attacker.level, 10) || 1),
+          skills: cloneSkillList(template.skills),
+          buffs: [],
+        };
+        if (template.daughterUnit) u.daughterUnit = true;
+        if (template.trait柔软躯体) u.trait柔软躯体 = true;
+        if (template.introduce) u.introduce = template.introduce;
+        if (template.passiveSkills) {
+          u.passiveSkills = template.passiveSkills.map(function (ps) {
+            var po = {};
+            for (var pk in ps) {
+              if (Object.prototype.hasOwnProperty.call(ps, pk)) po[pk] = ps[pk];
+            }
+            return po;
+          });
+        }
+        return u;
+      }
+      var needLayers = ctx.needLayers;
+      var skillAp = ctx.skillAp;
+      var curAp = ctx.curAp;
+      var factoriesAvailable = ctx.factoriesAvailable;
+      var hpMult = ctx.hpMult;
+      var dualFlag = ctx.dual;
+      var lv = ctx.lv;
+      var adv = ctx.adv;
+      if (!consumeUnitBuffLayers(attacker, '孕育', needLayers)) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('【孕育】扣除失败');
+        return;
+      }
+      attacker.currentAp = Math.max(0, curAp - skillAp);
+      var chosenSlotsFinal = chosen;
+      var units = [];
+      var names = [];
+      if (dualFlag) {
+        var idxA = Math.floor(Math.random() * factoriesAvailable.length);
+        var idxB = Math.floor(Math.random() * (factoriesAvailable.length - 1));
+        if (idxB >= idxA) idxB++;
+        var tA = factoriesAvailable[idxA];
+        var tB = factoriesAvailable[idxB];
+        units.push(buildUnitFromTemplate(tA, hpMult));
+        units.push(buildUnitFromTemplate(tB, hpMult));
+        names.push(units[0].name || '');
+        names.push(units[1].name || '');
+      } else {
+        var t0 = factoriesAvailable[Math.floor(Math.random() * factoriesAvailable.length)];
+        units.push(buildUnitFromTemplate(t0, hpMult));
+        names.push(units[0].name || '');
+      }
+      for (var pi = 0; pi < chosenSlotsFinal.length; pi++) {
+        party[chosenSlotsFinal[pi] - 1] = units[pi];
+      }
+      saveBattleData(party, enemies);
+      renderAllySlots(party);
+      renderEnemySlots(enemies);
+      var label = lv >= 5 && adv === 'A' ? '孕育加速' : lv >= 5 && adv === 'B' ? '双生孕育' : '魔物孕育';
+      var logExtra = dualFlag ? names.join('、') : names[0];
+      appendCombatLog(
+        (attacker.name || '丝伊德·白') +
+          ' 使用「' +
+          label +
+          '」：消耗 ' +
+          needLayers +
+          ' 层【孕育】，在 ' +
+          chosenSlotsFinal.join('、') +
+          ' 号位召唤 ' +
+          logExtra,
+      );
+      if (typeof window.toastr !== 'undefined')
+        window.toastr.success(dualFlag ? '已召唤：' + logExtra : '已召唤 ' + (names[0] || '女儿'));
+      function playOnSlotSeq(slotNums, idx, animDone) {
+        if (idx >= slotNums.length) {
+          if (typeof animDone === 'function') animDone();
+          return;
+        }
+        var el = document.querySelector('.slot[data-slot="ally-' + slotNums[idx] + '"]');
+        if (el) {
+          playAnimationOnSlot(el, 'Revival1', function () {
+            playOnSlotSeq(slotNums, idx + 1, animDone);
+          });
+        } else {
+          playOnSlotSeq(slotNums, idx + 1, animDone);
+        }
+      }
+      playOnSlotSeq(chosenSlotsFinal, 0, function () {});
     }
     /** 清算之手：艾丽卡技能。神圣/远程/单体，1 AP。Int×0.4～0.6 神圣伤害，艾丽卡获得2层【嘲讽】；Lv5-A 制裁 施加1层【眩晕】；Lv5-B 罪印 施加1层【碎魔】和1层【破甲】。 */
     function executePlayer清算之手(allySlot, enemySlotNum, skillIndex) {
@@ -7117,19 +8337,20 @@
         if (advancement === 'A' && target === attacker) baseHeal = Math.floor(baseHeal * 1.5);
       }
       baseHeal = Math.max(0, baseHeal);
+      var appliedHeal = apply丝伊德共生母胎HealMultiplier(target, baseHeal);
       attacker.currentAp = Math.max(0, curAp - skillAp);
       var maxHp = target.maxHp != null ? parseInt(target.maxHp, 10) : getHpFromSta(getDisplayStat(target, 'sta') || 1);
       var curHp = target.hp != null ? parseInt(target.hp, 10) : maxHp;
-      target.hp = Math.min(maxHp, curHp + baseHeal);
+      target.hp = Math.min(maxHp, curHp + appliedHeal);
       var attName = attacker.name || '己方';
       var targetName = target.name || '友方';
       var skillDisplayName = advancement === 'A' ? '自愈圣光' : advancement === 'B' ? '厚泽' : '神恩救赎';
       saveBattleData(party, getEnemyParty());
       renderAllySlots(party);
-      appendCombatLog(attName + ' 使用 ' + skillDisplayName + ' 为 ' + targetName + ' 回复 ' + baseHeal + ' 生命');
+      appendCombatLog(attName + ' 使用 ' + skillDisplayName + ' 为 ' + targetName + ' 回复 ' + appliedHeal + ' 生命');
       var targetSlotEl = document.querySelector('.slot[data-slot="ally-' + targetAllySlot + '"]');
       var attackerSlotEl = document.querySelector('.slot[data-slot="ally-' + allySlot + '"]');
-      if (targetSlotEl) playHealEffect(targetSlotEl, baseHeal);
+      if (targetSlotEl) playHealEffect(targetSlotEl, appliedHeal);
       if (attackerSlotEl && targetSlotEl && attackerSlotEl !== targetSlotEl) {
         playStrikeShake(attackerSlotEl, targetSlotEl, function () {
           if (targetSlotEl) playAnimationOnSlot(targetSlotEl, 'Holy2', function () {});
@@ -7138,7 +8359,329 @@
         playAnimationOnSlot(targetSlotEl, 'Holy2', function () {});
       }
       if (typeof window.toastr !== 'undefined')
-        window.toastr.success('神恩救赎 为 ' + targetName + ' 回复 ' + baseHeal + ' 生命');
+        window.toastr.success('神恩救赎 为 ' + targetName + ' 回复 ' + appliedHeal + ' 生命');
+    }
+    /** 孢子云：自然/远程/群体，对敌方全体自然伤害并【中毒】。 */
+    function executePlayer孢子云(allySlot, skillIndex) {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      var attacker = party[allySlot - 1];
+      if (!attacker || (attacker.name || '') !== '\u5807' || isAllyDefeated(attacker)) return;
+      var skill =
+        skillIndex >= 0 && attacker.skills && attacker.skills[skillIndex] ? attacker.skills[skillIndex] : null;
+      if (!skill || (skill.name || '') !== '孢子云') return;
+      var skillAp = skill.ap != null ? skill.ap : 1;
+      var maxAp =
+        attacker.name === '白牙' || attacker.daughterUnit === true
+          ? 2
+          : getApByLevel(attacker.level != null ? attacker.level : 1);
+      var curAp =
+        attacker.currentAp !== undefined && attacker.currentAp !== null ? parseInt(attacker.currentAp, 10) : maxAp;
+      if (curAp < skillAp) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('AP 不足，无法使用该技能');
+        return;
+      }
+      var rawEffect = skill.effectByLevel ? getSkillEffectForLevel(skill, skill.level || 1) : skill.effect || '';
+      var resolvedEffect = resolveSkillEffect(rawEffect, attacker);
+      var baseDamage = getBaseDamageFromResolvedEffect(resolvedEffect);
+      if (baseDamage !== baseDamage || baseDamage <= 0) baseDamage = getBaseDamageForSkill(attacker, skill);
+      baseDamage = Math.max(0, Math.floor(baseDamage));
+      var targets = [];
+      for (var si = 1; si <= 6; si++) {
+        var def = enemies[si - 1];
+        if (def && (def.hp == null || parseInt(def.hp, 10) > 0)) {
+          var res = resolveAttack(attacker, def, baseDamage, true, { isRanged: true, magicOnly: true });
+          targets.push({ slotNum: si, defender: def, result: res });
+        }
+      }
+      if (targets.length === 0) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('没有可攻击的敌方单位');
+        return;
+      }
+      attacker.currentAp = Math.max(0, curAp - skillAp);
+      var attName = attacker.name || '\u5807';
+      var damageCalcStr = '攻击×0.4=' + baseDamage;
+      var attackerSlotEl = document.querySelector('.slot[data-slot="ally-' + allySlot + '"]');
+      var enemySideEl = document.querySelector('.side-enemy');
+      function after孢子云Anim() {
+        for (var t = 0; t < targets.length; t++) {
+          var d = targets[t].defender;
+          var r = targets[t].result;
+          applyDamageToTarget(d, r.finalDamage, r.shadowDamage ? { shadowDamage: r.shadowDamage } : undefined);
+          if (r.hit) addBuffLayers(d, '中毒', '中毒', 1, attacker);
+        }
+        saveBattleData(party, enemies);
+        renderAllySlots(party);
+        renderEnemySlots(enemies);
+        for (var tt = 0; tt < targets.length; tt++) {
+          var d2 = targets[tt].defender;
+          var r2 = targets[tt].result;
+          appendCombatLog(
+            formatAttackLogLine(attName, '孢子云', d2.name || '敌方', r2, baseDamage, null, null, d2.hp, damageCalcStr),
+          );
+        }
+        for (var t2 = 0; t2 < targets.length; t2++) {
+          var slotEl = document.querySelector('.slot[data-slot="enemy-' + targets[t2].slotNum + '"]');
+          if (slotEl && !targets[t2].result.hit) playMissEffect(slotEl);
+        }
+        if (typeof window.toastr !== 'undefined') window.toastr.success('孢子云 释放完毕');
+      }
+      if (attackerSlotEl && enemySideEl) {
+        playStrikeShake(attackerSlotEl, null, function () {
+          playAnimationOnContainer(enemySideEl, 'SlashSpecial1', after孢子云Anim);
+        });
+      } else {
+        after孢子云Anim();
+      }
+    }
+    /** 黏液包裹：莉莉姆。自然/近战/单体，1 AP。ATK×0.6 自然伤害，命中叠 1 层【迟缓】。 */
+    function executePlayer黏液包裹(allySlot, skillIndex, enemySlotNum) {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      var attacker = party[allySlot - 1];
+      var defender = enemies[enemySlotNum - 1];
+      if (!attacker || (attacker.name || '') !== '莉莉姆' || isAllyDefeated(attacker)) return;
+      if (!defender || (defender.hp != null && parseInt(defender.hp, 10) <= 0)) return;
+      var skill =
+        skillIndex >= 0 && attacker.skills && attacker.skills[skillIndex] ? attacker.skills[skillIndex] : null;
+      if (!skill || (skill.name || '') !== '黏液包裹') return;
+      var skillAp = skill.ap != null ? skill.ap : 1;
+      var maxAp = attacker.daughterUnit === true ? 2 : getApByLevel(attacker.level != null ? attacker.level : 1);
+      var curAp =
+        attacker.currentAp !== undefined && attacker.currentAp !== null ? parseInt(attacker.currentAp, 10) : maxAp;
+      if (curAp < skillAp) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('AP 不足，无法使用该技能');
+        return;
+      }
+      var baseDamage = Math.max(0, Math.floor(getBaseDamageForSkill(attacker, skill)));
+      var result = resolveAttack(attacker, defender, baseDamage, true, { magicOnly: true, isMelee: true });
+      var attName = attacker.name || '莉莉姆';
+      var defName = defender.name || '敌方';
+      var damageCalcStr = 'ATK×0.6=' + baseDamage;
+      var defenderSlotEl = document.querySelector('.slot[data-slot="enemy-' + enemySlotNum + '"]');
+      var attackerSlotEl = document.querySelector('.slot[data-slot="ally-' + allySlot + '"]');
+      function applyDamageAndLog() {
+        attacker.currentAp = Math.max(0, curAp - skillAp);
+        if (result.hit) {
+          applyDamageToTarget(
+            defender,
+            result.finalDamage,
+            result.shadowDamage ? { shadowDamage: result.shadowDamage } : undefined,
+          );
+          addBuffLayers(defender, '迟缓', '迟缓', 1, attacker);
+          appendCombatLog(attName + ' 对 ' + defName + ' 施加1层【迟缓】');
+        }
+        saveBattleData(party, enemies);
+        renderAllySlots(party);
+        renderEnemySlots(enemies);
+        appendCombatLog(
+          formatAttackLogLine(attName, '黏液包裹', defName, result, baseDamage, null, null, defender.hp, damageCalcStr),
+        );
+        if (typeof window.toastr !== 'undefined') {
+          window.toastr.success(result.hit ? '黏液包裹 命中' : '黏液包裹 未命中');
+        }
+      }
+      if (defenderSlotEl) {
+        if (!result.hit) {
+          playMissEffect(defenderSlotEl);
+          applyDamageAndLog();
+        } else if (attackerSlotEl) {
+          playStrikeShake(attackerSlotEl, defenderSlotEl, function () {
+            playAnimationOnSlot(defenderSlotEl, 'Holy3', applyDamageAndLog);
+          });
+        } else {
+          applyDamageAndLog();
+        }
+      } else {
+        applyDamageAndLog();
+      }
+    }
+    /** 弹性护盾：莉莉姆。增益/自身，1 AP。DEF×1.2 护盾。 */
+    function executePlayer弹性护盾(allySlot, skillIndex) {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      var attacker = party[allySlot - 1];
+      if (!attacker || (attacker.name || '') !== '莉莉姆' || isAllyDefeated(attacker)) return;
+      var skill =
+        skillIndex >= 0 && attacker.skills && attacker.skills[skillIndex] ? attacker.skills[skillIndex] : null;
+      if (!skill || (skill.name || '') !== '弹性护盾') return;
+      var skillAp = skill.ap != null ? skill.ap : 1;
+      var maxAp = attacker.daughterUnit === true ? 2 : getApByLevel(attacker.level != null ? attacker.level : 1);
+      var curAp =
+        attacker.currentAp !== undefined && attacker.currentAp !== null ? parseInt(attacker.currentAp, 10) : maxAp;
+      if (curAp < skillAp) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('AP 不足，无法使用该技能');
+        return;
+      }
+      var rawEffect = skill.effect || '';
+      var resolvedEffect = resolveSkillEffect(rawEffect, attacker);
+      var shieldValue = getShieldFromResolvedEffect(resolvedEffect);
+      if (shieldValue !== shieldValue || shieldValue <= 0) shieldValue = getShieldForSkill(attacker, skill);
+      shieldValue = Math.max(0, Math.floor(shieldValue));
+      attacker.currentShield =
+        (attacker.currentShield != null ? parseInt(attacker.currentShield, 10) || 0 : 0) + shieldValue;
+      if (shieldValue > 0) addBuffLayers(attacker, '护盾', '护盾', shieldValue);
+      attacker.currentAp = Math.max(0, curAp - skillAp);
+      saveBattleData(party, enemies);
+      renderAllySlots(party);
+      renderEnemySlots(enemies);
+      appendCombatLog((attacker.name || '莉莉姆') + ' 使用弹性护盾，获得 ' + shieldValue + ' 点护盾');
+      if (typeof window.toastr !== 'undefined') window.toastr.success('弹性护盾：' + shieldValue + ' 护盾');
+      var slotNum = allySlot;
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          var allySlotEl = document.querySelector('.slot[data-slot="ally-' + slotNum + '"]');
+          if (allySlotEl) playAnimationOnSlot(allySlotEl, 'Recovery2', function () {});
+        });
+      });
+    }
+    /** 再生菌丝：治疗/远程/单体，对友方 2 层【再生】；目标为丝伊德·白时 +1 层【孕育】。 */
+    function executePlayer再生菌丝(allySlot, targetAllySlot, skillIndex) {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      var attacker = party[allySlot - 1];
+      var target = party[targetAllySlot - 1];
+      if (!attacker || (attacker.name || '') !== '\u5807' || isAllyDefeated(attacker)) return;
+      if (!target || isAllyDefeated(target)) return;
+      var skill =
+        skillIndex >= 0 && attacker.skills && attacker.skills[skillIndex] ? attacker.skills[skillIndex] : null;
+      if (!skill || (skill.name || '') !== '再生菌丝') return;
+      var skillAp = skill.ap != null ? skill.ap : 1;
+      var maxAp =
+        attacker.name === '白牙' || attacker.daughterUnit === true
+          ? 2
+          : getApByLevel(attacker.level != null ? attacker.level : 1);
+      var curAp =
+        attacker.currentAp !== undefined && attacker.currentAp !== null ? parseInt(attacker.currentAp, 10) : maxAp;
+      if (curAp < skillAp) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('AP 不足，无法使用该技能');
+        return;
+      }
+      attacker.currentAp = Math.max(0, curAp - skillAp);
+      addBuffLayers(target, '再生', '再生', 2, attacker);
+      if ((target.name || '') === '丝伊德·白') addBuffLayers(target, '孕育', '孕育', 1, attacker);
+      capUnitBuffs(target);
+      var attName = attacker.name || '\u5807';
+      var targetName = target.name || '友方';
+      saveBattleData(party, enemies);
+      renderAllySlots(party);
+      appendCombatLog(
+        attName +
+          ' 对 ' +
+          targetName +
+          ' 使用再生菌丝：2层【再生】' +
+          ((target.name || '') === '丝伊德·白' ? '，1层【孕育】' : ''),
+      );
+      var attackerSlotEl = document.querySelector('.slot[data-slot="ally-' + allySlot + '"]');
+      var targetSlotEl = document.querySelector('.slot[data-slot="ally-' + targetAllySlot + '"]');
+      if (targetSlotEl) playAnimationOnSlot(targetSlotEl, 'Recovery2', function () {});
+      if (attackerSlotEl && targetSlotEl && attackerSlotEl !== targetSlotEl)
+        playStrikeShake(attackerSlotEl, targetSlotEl, function () {});
+      if (typeof window.toastr !== 'undefined') window.toastr.success('再生菌丝 已施加');
+    }
+    /** 金粉弥漫：蒙特卡洛。减益/远程/群体，对存活敌方全体各 1 层【恍惚】【迟钝】。 */
+    function executePlayer金粉弥漫(allySlot, skillIndex) {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      var attacker = party[allySlot - 1];
+      if (!attacker || (attacker.name || '') !== '蒙特卡洛' || isAllyDefeated(attacker)) return;
+      var skill =
+        skillIndex >= 0 && attacker.skills && attacker.skills[skillIndex] ? attacker.skills[skillIndex] : null;
+      if (!skill || (skill.name || '') !== '金粉弥漫') return;
+      var skillAp = skill.ap != null ? skill.ap : 1;
+      var maxAp =
+        attacker.name === '白牙' || attacker.daughterUnit === true
+          ? 2
+          : getApByLevel(attacker.level != null ? attacker.level : 1);
+      var curAp =
+        attacker.currentAp !== undefined && attacker.currentAp !== null ? parseInt(attacker.currentAp, 10) : maxAp;
+      if (curAp < skillAp) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('AP 不足，无法使用该技能');
+        return;
+      }
+      var hitAny = false;
+      for (var i = 0; i < (enemies || []).length; i++) {
+        var en = enemies[i];
+        if (en && (en.hp == null || parseInt(en.hp, 10) > 0)) {
+          addBuffLayers(en, '恍惚', '恍惚', 1, attacker);
+          addBuffLayers(en, '迟钝', '迟钝', 1, attacker);
+          capUnitBuffs(en);
+          hitAny = true;
+        }
+      }
+      if (!hitAny) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('没有可施加减益的敌方单位');
+        return;
+      }
+      attacker.currentAp = Math.max(0, curAp - skillAp);
+      saveBattleData(party, enemies);
+      renderAllySlots(party);
+      renderEnemySlots(enemies);
+      var attName = attacker.name || '蒙特卡洛';
+      appendCombatLog(attName + ' 使用 金粉弥漫，对所有存活敌人施加1层【恍惚】和1层【迟钝】');
+      var attackerSlotEl = document.querySelector('.slot[data-slot="ally-' + allySlot + '"]');
+      var enemySideEl = document.querySelector('.side-enemy');
+      function afterMonteDebuff() {
+        if (typeof window.toastr !== 'undefined') window.toastr.success('金粉弥漫 释放完毕');
+      }
+      if (attackerSlotEl && enemySideEl) {
+        playStrikeShake(attackerSlotEl, null, function () {
+          playAnimationOnContainer(enemySideEl, 'Holy2', afterMonteDebuff);
+        });
+      } else {
+        afterMonteDebuff();
+      }
+    }
+    /** 芬芳治愈：蒙特卡洛。治疗/远程/单体，回复 ATK×0.8；目标为丝伊德·白时 +1 层【孕育】。 */
+    function executePlayer芬芳治愈(allySlot, targetAllySlot, skillIndex) {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      var attacker = party[allySlot - 1];
+      var target = party[targetAllySlot - 1];
+      if (!attacker || (attacker.name || '') !== '蒙特卡洛' || isAllyDefeated(attacker)) return;
+      if (!target || isAllyDefeated(target)) return;
+      var skill =
+        skillIndex >= 0 && attacker.skills && attacker.skills[skillIndex] ? attacker.skills[skillIndex] : null;
+      if (!skill || (skill.name || '') !== '芬芳治愈') return;
+      var skillAp = skill.ap != null ? skill.ap : 1;
+      var maxAp =
+        attacker.name === '白牙' || attacker.daughterUnit === true
+          ? 2
+          : getApByLevel(attacker.level != null ? attacker.level : 1);
+      var curAp =
+        attacker.currentAp !== undefined && attacker.currentAp !== null ? parseInt(attacker.currentAp, 10) : maxAp;
+      if (curAp < skillAp) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('AP 不足，无法使用该技能');
+        return;
+      }
+      var atkVal = attacker.atk != null ? parseInt(attacker.atk, 10) : 0;
+      var baseHeal = Math.max(0, Math.floor(atkVal * 0.8));
+      var appliedHeal = apply丝伊德共生母胎HealMultiplier(target, baseHeal);
+      attacker.currentAp = Math.max(0, curAp - skillAp);
+      var maxHp = target.maxHp != null ? parseInt(target.maxHp, 10) : getHpFromSta(getDisplayStat(target, 'sta') || 1);
+      var curHp = target.hp != null ? parseInt(target.hp, 10) : maxHp;
+      target.hp = Math.min(maxHp, curHp + appliedHeal);
+      if ((target.name || '') === '丝伊德·白') {
+        addBuffLayers(target, '孕育', '孕育', 1, attacker);
+        capUnitBuffs(target);
+      }
+      var attName = attacker.name || '蒙特卡洛';
+      var targetName = target.name || '友方';
+      saveBattleData(party, enemies);
+      renderAllySlots(party);
+      appendCombatLog(attName + ' 使用 芬芳治愈 为 ' + targetName + ' 回复 ' + appliedHeal + ' 生命');
+      var targetSlotEl = document.querySelector('.slot[data-slot="ally-' + targetAllySlot + '"]');
+      var attackerSlotEl = document.querySelector('.slot[data-slot="ally-' + allySlot + '"]');
+      if (targetSlotEl) playHealEffect(targetSlotEl, appliedHeal);
+      if (attackerSlotEl && targetSlotEl && attackerSlotEl !== targetSlotEl) {
+        playStrikeShake(attackerSlotEl, targetSlotEl, function () {
+          if (targetSlotEl) playAnimationOnSlot(targetSlotEl, 'Holy2', function () {});
+        });
+      } else if (targetSlotEl) {
+        playAnimationOnSlot(targetSlotEl, 'Holy2', function () {});
+      }
+      if (typeof window.toastr !== 'undefined')
+        window.toastr.success('芬芳治愈 为 ' + targetName + ' 回复 ' + appliedHeal + ' 生命');
     }
     /** 罪罚宣告：艾丽卡技能。神圣/远程/群体，2 AP。对敌方全体 Int×0.8～1.1 神圣伤害+1层【虚弱】；Lv5-A 血祭宣判 消耗自身20%当前HP，伤害 Int×1.1+Sta×0.6，命中目标1层【虚弱】；Lv5-B 圣言镇压 伤害 Int×1.1，命中目标1层【虚弱】+2层【脆弱】。 */
     function executePlayer罪罚宣告(allySlot, skillIndex) {
@@ -7267,6 +8810,7 @@
       var cost = Math.max(0, Math.floor(curHpSelf * 0.3));
       attacker.hp = Math.max(0, curHpSelf - cost);
       var healVal = Math.floor(cost * 1.5);
+      healVal = apply丝伊德共生母胎HealMultiplier(target, healVal);
       if (cost > 0) appendCombatLog((attacker.name || '艾丽卡') + ' 消耗 ' + cost + ' 生命（救赎）');
       target.buffs = (target.buffs || []).filter(function (b) {
         return NEGATIVE_DEBUFF_IDS.indexOf((b.id || b.name || '').trim()) === -1;
@@ -8147,6 +9691,40 @@
         afterBiteAnim();
       }
     }
+    /** 可瑞【缠绕撕咬】按 damageScale 倍率（如破阵冲锋 0.5）；不扣 AP；命中施加 1 层【破甲】。 */
+    function executeKerui缠绕撕咬Scaled(keruiAllySlot, enemySlotNum, damageScale, logTag) {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      var kerui = party[keruiAllySlot - 1];
+      var defender = enemies[enemySlotNum - 1];
+      if (!kerui || (kerui.name || '') !== '可瑞' || !defender) return;
+      if (isAllyDefeated(kerui)) return;
+      var dh = defender.hp != null ? parseInt(defender.hp, 10) : 0;
+      if (dh <= 0) return;
+      var sc = damageScale != null ? damageScale : 1;
+      var atk = kerui.atk != null ? parseInt(kerui.atk, 10) : 0;
+      var baseDamage = Math.max(0, Math.floor(atk * 1.0 * sc));
+      var result = resolveAttack(kerui, defender, baseDamage, true);
+      var tag = logTag || '联动';
+      if (result.hit) {
+        applyDamageToTarget(
+          defender,
+          result.finalDamage,
+          result.shadowDamage ? { shadowDamage: result.shadowDamage } : undefined,
+        );
+        addBuffLayers(defender, '破甲', '破甲', 1, kerui);
+      }
+      appendCombatLog(
+        (kerui.name || '可瑞') +
+          ' 「缠绕撕咬」（' +
+          tag +
+          '，' +
+          Math.floor(sc * 100) +
+          '%）对 ' +
+          (defender.name || '敌方') +
+          (result.hit ? ' 造成 ' + result.finalDamage + ' 伤害并1层【破甲】' : ' 未命中'),
+      );
+    }
     /** 岚 猎手本能：击杀敌人时回复 [Agi×0.5] 生命。在 岚 造成伤害并应用后调用，defender 为被攻击者。 */
     function try岚猎手本能Heal(attacker, defender) {
       if (!attacker || attacker.name !== '岚' || !defender) return;
@@ -8159,6 +9737,7 @@
       if (unlocked.indexOf('猎手本能') === -1) return;
       var agi = getDisplayStat(attacker, 'agi') || 0;
       var healVal = Math.max(0, Math.floor(agi * 0.5));
+      healVal = apply丝伊德共生母胎HealMultiplier(attacker, healVal);
       if (healVal <= 0) return;
       var maxHp =
         attacker.maxHp != null ? parseInt(attacker.maxHp, 10) : getHpFromSta(getDisplayStat(attacker, 'sta') || 1);
@@ -8253,6 +9832,14 @@
         addBuffLayers(fromChar, '智力强化', '智力强化', 1);
       }
     }
+    /** 丝伊德·白 被动「共生母胎」：每层【孕育】使实际回复量 +3%。 */
+    function apply丝伊德共生母胎HealMultiplier(unit, rawHeal) {
+      if (!unit || unit.name !== '丝伊德·白' || rawHeal == null || rawHeal <= 0)
+        return Math.max(0, Math.floor(rawHeal));
+      var L = getUnitBuffLayers(unit, '孕育');
+      if (L <= 0) return Math.max(0, Math.floor(rawHeal));
+      return Math.max(0, Math.floor(rawHeal * (1 + 0.03 * L)));
+    }
     /** 对目标施加伤害：优先扣除护盾，护盾不足时再扣 HP；会同步扣减【护盾】buff 层数。opts 可选：{ shadowDamage } 当为 黯 被动暗影伤害时，先显示 (damage-shadowDamage) 红色，0.25s 后显示 shadowDamage 紫色。 */
     function applyDamageToTarget(unit, damage, opts) {
       if (!unit || damage == null || damage <= 0) return;
@@ -8284,6 +9871,10 @@
               : 100;
       unit.hp = Math.max(0, curHp - toHp);
       if (unit.hp === 0 && curHp > 0) unit._justDefeated = true;
+      if (unit.name === '丝伊德·白' && (absorb > 0 || toHp > 0)) {
+        addBuffLayers(unit, '孕育', '孕育', 1);
+        capUnitBuffs(unit);
+      }
       if (
         toHp > 0 &&
         unit.name === '艾丽卡' &&
@@ -8853,6 +10444,8 @@
         }
       }
       run清漓玩家回合开始处理();
+      run丝伊德魔物孕育Lv5A玩家回合开始();
+      run丝伊德姬骑自动碧血魔剑玩家回合开始();
       saveBattleData(partyR1, enemiesR1);
       renderAllySlots(partyR1);
       renderEnemySlots(enemiesR1);
@@ -8931,7 +10524,7 @@
                 var chForAp = partyForAp && partyForAp[allySlot - 1];
                 if (chForAp) {
                   var allyHp =
-                    chForAp.name === '白牙'
+                    chForAp.name === '白牙' || chForAp.daughterUnit === true
                       ? chForAp.hp != null
                         ? Math.min(parseInt(chForAp.hp, 10) || 0, Math.max(1, parseInt(chForAp.maxHp, 10) || 1))
                         : Math.max(1, parseInt(chForAp.maxHp, 10) || 1)
@@ -8954,7 +10547,7 @@
                   chForAp && chForAp.currentAp !== undefined && chForAp.currentAp !== null
                     ? parseInt(chForAp.currentAp, 10)
                     : chForAp
-                      ? getApByLevel(chForAp.level)
+                      ? getEffectiveMaxApForAlly(chForAp)
                       : 0;
                 if (!chForAp || curAp <= 0) {
                   if (typeof window.toastr !== 'undefined') window.toastr.warning('本回合行动点已用完，无法攻击');
@@ -8988,6 +10581,19 @@
                     if (is沧澜潮汐B(s)) return;
                     var needAp = s.ap != null ? s.ap : 1;
                     var insufficientAp = curAp < needAp;
+                    if ((s.name || '') === '魔物孕育' && ch && (ch.name || '') === '丝伊德·白') {
+                      var needYu = get魔物孕育消耗层数(s);
+                      var dualYu = Math.max(1, parseInt(s.level, 10) || 1) >= 5 && s.advancement === 'B';
+                      var needSlotsYu = dualYu ? 2 : 1;
+                      var emptyYu = 0;
+                      if (party && party.length >= SLOT_COUNT) {
+                        for (var yu = 0; yu < SLOT_COUNT; yu++) if (party[yu] == null) emptyYu++;
+                      }
+                      insufficientAp =
+                        insufficientAp ||
+                        getUnitBuffLayers(ch, '孕育') < needYu ||
+                        emptyYu < needSlotsYu;
+                    }
                     var advanceOpt =
                       s.advancement && s.advancementOptions
                         ? s.advancementOptions.filter(function (o) {
@@ -9068,7 +10674,27 @@
                                                                     ? SKILL_YAOYANYEHUO_SVG || SKILL_ATTACK_SVG
                                                                     : s.name === '圣光斩'
                                                                       ? SKILL_SHENGUANGZHAN_SVG || SKILL_ATTACK_SVG
-                                                                      : s.name === '清算之手'
+                                                                      : s.name === '碧血魔剑'
+                                                                        ? SKILL_ZANYUE_SVG || SKILL_BLADE_BITE_SVG || SKILL_ATTACK_SVG
+                                                                      : s.name === '威吓'
+                                                                        ? SKILL_ROAR_SVG || SKILL_DEFENSE_SVG || SKILL_ATTACK_SVG
+                                                                      : s.name === '绯色轮舞'
+                                                                        ? SKILL_FEISELUNWU_SVG ||
+                                                                          SKILL_WHIRLWIND_SVG ||
+                                                                          SKILL_ZANYUE_SVG ||
+                                                                          SKILL_ATTACK_SVG
+                                                                        : s.name === '魔物孕育'
+                                                                        ? SKILL_MOWUYUNYU_SVG ||
+                                                                          SKILL_BAIYA_SVG ||
+                                                                          SKILL_WHIRLWIND_SVG ||
+                                                                          SKILL_ATTACK_SVG
+                                                                        : s.name === '黏液包裹'
+                                                                          ? SKILL_YANMOCHUIXI_SVG || SKILL_ATTACK_SVG
+                                                                          : s.name === '弹性护盾'
+                                                                            ? SKILL_DEFENSE_SVG ||
+                                                                              SKILL_SHIELD_SWORD_SVG ||
+                                                                              SKILL_ATTACK_SVG
+                                                                        : s.name === '清算之手'
                                                                         ? SKILL_QINGSUANZHISHOU_SVG || SKILL_ATTACK_SVG
                                                                         : s.name === '神恩救赎'
                                                                           ? SKILL_SHENENJISHU_SVG || SKILL_ATTACK_SVG
@@ -9187,7 +10813,26 @@
                                                                       SKILL_SHENENJISHU_SVG ||
                                                                       SKILL_SHENGUANGZHAN_SVG ||
                                                                       SKILL_ATTACK_SVG
-                                                                    : SKILL_ATTACK_SVG;
+                                                                    : sk.id === '姬骑解禁'
+                                                                      ? SKILL_JIQIJIEJIN_SVG ||
+                                                                        SKILL_ZANYUE_SVG ||
+                                                                        SKILL_BLADE_BITE_SVG ||
+                                                                        SKILL_ATTACK_SVG
+                                                                      : sk.id === '腐蚀领域'
+                                                                        ? SKILL_FUSHIYU_SVG ||
+                                                                          SKILL_YANMOCHUIXI_SVG ||
+                                                                          SKILL_ATTACK_SVG
+                                                                        : sk.id === '异种外壳'
+                                                                          ? SKILL_YIZHONGWAIKE_SVG ||
+                                                                            SKILL_DEFENSE_SVG ||
+                                                                            SKILL_ROAR_SVG ||
+                                                                            SKILL_ATTACK_SVG
+                                                                          : sk.id === '破阵冲锋'
+                                                                            ? SKILL_POZHENCHONGFENG_SVG ||
+                                                                              SKILL_BLADE_BITE_SVG ||
+                                                                              SKILL_WOLF_PACK_SVG ||
+                                                                              SKILL_ATTACK_SVG
+                                                                            : SKILL_ATTACK_SVG;
                     opts.push(
                       '<div class="skill-popup-opt' +
                         (insufficientAp ? ' skill-popup-opt-disabled' : '') +
@@ -9259,6 +10904,10 @@
                       }
                       if (skillName === '见切') {
                         executePlayerDefense(allySlot, parseInt(idx, 10));
+                        return;
+                      }
+                      if (skillName === '威吓') {
+                        executePlayer威吓(allySlot, parseInt(idx, 10));
                         return;
                       }
                       if (skillName === '护卫') {
@@ -9343,6 +10992,57 @@
                       if (skillName === '罪罚宣告') {
                         skillPopupEl.classList.remove('show');
                         executePlayer罪罚宣告(allySlot, parseInt(idx, 10));
+                        return;
+                      }
+                      if (skillName === '绯色轮舞') {
+                        skillPopupEl.classList.remove('show');
+                        executePlayer绯色轮舞(allySlot, parseInt(idx, 10));
+                        return;
+                      }
+                      if (skillName === '魔物孕育') {
+                        skillPopupEl.classList.remove('show');
+                        startPlayer魔物孕育SlotPick(allySlot, parseInt(idx, 10));
+                        return;
+                      }
+                      if (skillName === '孢子云') {
+                        skillPopupEl.classList.remove('show');
+                        executePlayer孢子云(allySlot, parseInt(idx, 10));
+                        return;
+                      }
+                      if (skillName === '黏液包裹') {
+                        if (window.BattleGrid && window.BattleGrid.enterSkillTargetMode) {
+                          window.BattleGrid.enterSkillTargetMode(getEnemyParty(), function (enemySlotNum) {
+                            executePlayer黏液包裹(allySlot, parseInt(idx, 10), enemySlotNum);
+                          });
+                        }
+                        return;
+                      }
+                      if (skillName === '弹性护盾') {
+                        skillPopupEl.classList.remove('show');
+                        executePlayer弹性护盾(allySlot, parseInt(idx, 10));
+                        return;
+                      }
+                      if (skillName === '再生菌丝') {
+                        skillPopupEl.classList.remove('show');
+                        if (window.BattleGrid && window.BattleGrid.enterAllyFilledSlotTargetMode) {
+                          window.BattleGrid.enterAllyFilledSlotTargetMode(getParty(), function (targetAllySlot) {
+                            executePlayer再生菌丝(allySlot, targetAllySlot, parseInt(idx, 10));
+                          });
+                        }
+                        return;
+                      }
+                      if (skillName === '金粉弥漫') {
+                        skillPopupEl.classList.remove('show');
+                        executePlayer金粉弥漫(allySlot, parseInt(idx, 10));
+                        return;
+                      }
+                      if (skillName === '芬芳治愈') {
+                        skillPopupEl.classList.remove('show');
+                        if (window.BattleGrid && window.BattleGrid.enterAllyFilledSlotTargetMode) {
+                          window.BattleGrid.enterAllyFilledSlotTargetMode(getParty(), function (targetAllySlot) {
+                            executePlayer芬芳治愈(allySlot, targetAllySlot, parseInt(idx, 10));
+                          });
+                        }
                         return;
                       }
                       if (skillName === '妖艳业火') {
@@ -9499,6 +11199,28 @@
                         executePlayer祥瑞庇佑(allySlot);
                         return;
                       }
+                      if (specialId === '姬骑解禁') {
+                        skillPopupEl.classList.remove('show');
+                        executePlayer姬骑解禁(allySlot);
+                        return;
+                      }
+                      if (specialId === '腐蚀领域') {
+                        skillPopupEl.classList.remove('show');
+                        executePlayer腐蚀领域(allySlot);
+                        return;
+                      }
+                      if (specialId === '异种外壳') {
+                        skillPopupEl.classList.remove('show');
+                        executePlayer异种外壳(allySlot);
+                        return;
+                      }
+                      if (specialId === '破阵冲锋' && window.BattleGrid && window.BattleGrid.enterSkillTargetMode) {
+                        skillPopupEl.classList.remove('show');
+                        window.BattleGrid.enterSkillTargetMode(getEnemyParty(), function (enemySlotNum) {
+                          executePlayer破阵冲锋(allySlot, enemySlotNum);
+                        });
+                        return;
+                      }
                       if (window.BattleGrid && window.BattleGrid.enterSkillTargetMode) {
                         var skillIndex = idx != null ? parseInt(idx, 10) : -1;
                         window.BattleGrid.enterSkillTargetMode(getEnemyParty(), function (enemySlotNum) {
@@ -9559,12 +11281,14 @@
           for (var i = 0; i < (party && party.length) ? party.length : 0; i++) {
             var ch = party[i];
             if (!ch) continue;
-            var maxAp = ch.name === '白牙' ? 2 : getApByLevel(ch.level);
+            var maxAp = getEffectiveMaxApForAlly(ch);
             ch.currentAp = maxAp;
             if (ch.见切弹返) ch.见切弹返 = false;
             if (ch.影舞反击) ch.影舞反击 = false;
           }
           run清漓玩家回合开始处理();
+          run丝伊德魔物孕育Lv5A玩家回合开始();
+          run丝伊德姬骑自动碧血魔剑玩家回合开始();
           saveBattleData(party, getEnemyParty());
           renderAllySlots(party);
           injectEnemyIntentStyle();
