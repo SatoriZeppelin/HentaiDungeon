@@ -530,8 +530,7 @@
       id: '孕育',
       name: '孕育',
       desc: '每层治疗+3%、防御+5%',
-      tooltip:
-        '丝伊德·白被动「共生母胎」：受到伤害时叠加，上限10层。每层受到的治疗效果+3%、防御属性+5%。',
+      tooltip: '丝伊德·白被动「共生母胎」：受到伤害时叠加，上限10层。每层受到的治疗效果+3%、防御属性+5%。',
       maxLayers: 10,
       characterExclusive: '丝伊德·白',
     },
@@ -543,6 +542,84 @@
         '特殊技能「姬骑解禁」：全属性+50%，免疫眩晕等控制，AP上限-2；每回合开始自动对随机敌方发动无消耗碧血魔剑。持续至战斗结束。',
       maxLayers: 1,
       characterExclusive: '丝伊德·白',
+    },
+    {
+      id: '诗章',
+      name: '诗章',
+      desc: '每层智力+1；≥10层时额外耐力+5',
+      tooltip:
+        '凌遥仙被动「星海咏叹」：可从技能获得或使用。每层智力+1；【诗章】≥10层时额外耐力+5。上限15层。回合结束阶段-1层。',
+      maxLayers: 15,
+      characterExclusive: '凌遥仙',
+    },
+    {
+      id: '星辰加速',
+      name: '星辰加速',
+      desc: '本回合下数次行动的 AP 消耗-1（至少1）',
+      tooltip:
+        '凌遥仙特殊技能：每层使下一次行动的 AP 消耗减少1（最少为1），使用该次减免时消耗一层。回合结束时清除剩余【星辰加速】。',
+      maxLayers: 3,
+      characterExclusive: '凌遥仙',
+    },
+    {
+      id: '星命',
+      name: '星命',
+      desc: '受到致死伤害时保留1点生命并获得护盾，随后移除',
+      tooltip: '受到致死伤害时保留1点生命并获得护盾，随后移除。',
+      maxLayers: 1,
+    },
+    {
+      id: '命仪精准',
+      name: '命仪精准',
+      desc: '下次攻击必中必暴',
+      tooltip: '本回合下一次攻击必定命中且必定暴击。',
+      maxLayers: 1,
+    },
+    {
+      id: '愉悦',
+      name: '愉悦',
+      desc: '每层智力+2',
+      tooltip:
+        '月见遥被动「观测者的愉悦」：场上任意单位攻击未命中，或攻击方带有【混乱】且攻击命中时叠加，上限10层。每层智力+2。',
+      maxLayers: 10,
+      characterExclusive: '月见遥',
+    },
+    {
+      id: '虚实颠倒',
+      name: '虚实颠倒',
+      desc: '伤害与治疗对 HP 的效果反转',
+      tooltip:
+        '月见遥特殊「虚实颠倒」：持续1回合。期间受到的 HP 伤害转化为治疗，受到的治疗转化为伤害（护盾结算仍正常扣盾）。',
+      maxLayers: 1,
+      characterExclusive: '月见遥',
+    },
+    {
+      id: '力量增幅',
+      name: '力量增幅',
+      desc: '每层力量+3',
+      tooltip: '永恒咏唱升华：每层力量+3。',
+      maxLayers: 5,
+    },
+    {
+      id: '敏捷增幅',
+      name: '敏捷增幅',
+      desc: '每层敏捷+3',
+      tooltip: '永恒咏唱升华：每层敏捷+3。',
+      maxLayers: 5,
+    },
+    {
+      id: '智力增幅',
+      name: '智力增幅',
+      desc: '每层智力+3',
+      tooltip: '永恒咏唱升华：每层智力+3。',
+      maxLayers: 5,
+    },
+    {
+      id: '防御增幅',
+      name: '防御增幅',
+      desc: '每层防御+3',
+      tooltip: '永恒咏唱升华：每层防御+3。',
+      maxLayers: 5,
     },
   ];
   /** 净化斩击等驱散技能视为「增益」的 buff id 列表（驱散时只移除此类）。顺序：通用增益 → 角色专属。 */
@@ -573,6 +650,15 @@
     '嘲讽',
     '孕育',
     '姬骑',
+    '诗章',
+    '星辰加速',
+    '星命',
+    '命仪精准',
+    '愉悦',
+    '力量增幅',
+    '敏捷增幅',
+    '智力增幅',
+    '防御增幅',
   ];
   /** 救赎等清除负面状态时移除的 debuff id 列表。顺序：通用减益 → 色情类减益。 */
   var NEGATIVE_DEBUFF_IDS = [
@@ -601,7 +687,13 @@
     // 色情类减益
     '发情',
     '羞耻',
+    '虚实颠倒',
   ];
+  /**
+   * 月见遥「镜花水月」：以下减益视为「控制类」——目标任一层数大于 0 即触发控制增伤与 Lv5-A「心碎镜像」回复等。
+   * 与【眩晕】【魅惑】【沉默】【缴械】【混乱】一致。
+   */
+  var 镜花水月_CONTROL_DEBUFF_IDS = ['眩晕', '魅惑', '沉默', '缴械', '混乱'];
   /** 取 buff 的层数上限，无则返回 null（表示不封顶） */
   function getBuffMaxLayers(buffId) {
     var def = BUFF_DEFINITIONS.filter(function (x) {
@@ -679,6 +771,16 @@
     嘲讽: { fill: 'rgba(244,67,54,0.45)', border: '#f44336', color: '#f44336' },
     姬骑: { fill: 'rgba(106,27,154,0.4)', border: '#6a1b9a', color: '#4a148c' },
     孕育: { fill: 'rgba(233,30,99,0.35)', border: '#c2185b', color: '#880e4f' },
+    诗章: { fill: 'rgba(63,81,181,0.38)', border: '#5c6bc0', color: '#3949ab' },
+    星辰加速: { fill: 'rgba(0,188,212,0.4)', border: '#00acc1', color: '#00838f' },
+    星命: { fill: 'rgba(121,85,72,0.45)', border: '#8d6e63', color: '#5d4037' },
+    命仪精准: { fill: 'rgba(255,193,7,0.45)', border: '#ffa000', color: '#f57f17' },
+    愉悦: { fill: 'rgba(156,39,176,0.4)', border: '#ab47bc', color: '#6a1b9a' },
+    虚实颠倒: { fill: 'rgba(103,58,183,0.45)', border: '#7e57c2', color: '#4a148c' },
+    力量增幅: { fill: 'rgba(27,94,32,0.5)', border: '#2e7d32', color: '#1b5e20' },
+    敏捷增幅: { fill: 'rgba(46,125,50,0.5)', border: '#43a047', color: '#2e7d32' },
+    智力增幅: { fill: 'rgba(56,142,60,0.5)', border: '#66bb6a', color: '#388e3c' },
+    防御增幅: { fill: 'rgba(100,141,82,0.5)', border: '#7cb342', color: '#558b2f' },
   };
   function getBuffTheme(buffId) {
     return BUFF_THEME[buffId] || { fill: 'rgba(97,97,97,0.4)', border: '#757575', color: '#616161' };
@@ -918,6 +1020,14 @@
     phase: BATTLE_PHASE.PLAYER_ACTION,
     erika奉献TriggeredThisRound: false,
     currentActingAllySlot: null,
+    /** 凌遥仙：星辰定锚 / 星命逆转 / 命仪精准 每场各仅能使用一次，用后记入 id */
+    lingyaoOnceSpecialUsed: {},
+    /** 月见遥 Lv5-A「迷雾幻境·虚实倒错」：开启时敌方每次攻击 Miss 对自身造成 Atk×0.3 魔法伤害 */
+    迷雾幻境虚实倒错: false,
+    /** 月见遥特殊「心灵震爆」：本场战斗已触发次数（上限 2） */
+    月见遥心灵震爆次数: 0,
+    /** 月见遥特殊「完美谎言」：下一次敌方随机单体攻击若选中月见遥，改为攻击该友方槽位（1～6），用后即清 */
+    月见遥完美谎言替身槽: null,
     /** 是否在敌方卡上显示「本回合将执行的意图」预览（玩家回合为 true，敌方行动结束后为 false） */
     showEnemyIntentUI: false,
     /** 敌方 1～6 号位本回合锁定行动（与 pickEnemyActionType 返回值同格式）；不写入存档 */
@@ -1068,6 +1178,10 @@
    */
   function initBattleUI(options) {
     if (!options || typeof options.getParty !== 'function' || typeof options.saveBattleData !== 'function') return;
+    battleState.lingyaoOnceSpecialUsed = {};
+    battleState.迷雾幻境虚实倒错 = false;
+    battleState.月见遥心灵震爆次数 = 0;
+    battleState.月见遥完美谎言替身槽 = null;
     var getBattleFloorTitle =
       typeof options.getBattleFloorTitle === 'function'
         ? options.getBattleFloorTitle
@@ -1113,6 +1227,11 @@
           if (id === '敏捷强化' && key === 'agi') v += layers * 3;
           if (id === '智力强化' && key === 'int') v += layers * 3;
           if (id === '防御强化' && key === 'def') v += layers * 3;
+          if (id === '力量增幅' && key === 'str') v += layers * 3;
+          if (id === '敏捷增幅' && key === 'agi') v += layers * 3;
+          if (id === '智力增幅' && key === 'int') v += layers * 3;
+          if (id === '防御增幅' && key === 'def') v += layers * 3;
+          if (id === '愉悦' && key === 'int') v += layers * 2;
         }
       }
       if (unit && (unit.name || '') === '丝伊德·白') {
@@ -1152,6 +1271,20 @@
         if (jqLayersS > 0 && (key === 'str' || key === 'agi' || key === 'int' || key === 'sta' || key === 'def'))
           v = Math.floor(v * 1.5);
       }
+      if ((unit.name || '') === '凌遥仙') {
+        var szLayersB = 0;
+        if (unit.buffs && unit.buffs.length) {
+          for (var szB = 0; szB < unit.buffs.length; szB++) {
+            var bbSz = unit.buffs[szB];
+            if ((bbSz.id || bbSz.name) === '诗章') {
+              szLayersB = Math.max(0, parseInt(bbSz.layers, 10) || 0);
+              break;
+            }
+          }
+        }
+        if (key === 'int') v += szLayersB;
+        if (key === 'sta' && szLayersB >= 10) v += 5;
+      }
       return v;
     };
     /** 岚的远程多段技能结束时调用：消耗 1 层【锁定】并增加 1 层【心满意足】（若当前有锁定） */
@@ -1170,13 +1303,121 @@
         }
       }
     }
+    /** 月见遥被动「观测者的愉悦」：全场任意单位每次攻击判定未命中，或攻击方带【混乱】且本次攻击命中时，月见遥获得1层【愉悦】（上限10）。 */
+    function try月见遥观测者的愉悦OnAttackResult(attacker, hit) {
+      var party = getParty ? getParty() : null;
+      if (!party || !Array.isArray(party)) return;
+      var yue = null;
+      for (var yi = 0; yi < party.length; yi++) {
+        var u = party[yi];
+        if (u && (u.name || '') === '月见遥') {
+          yue = u;
+          break;
+        }
+      }
+      if (!yue) return;
+      try {
+        if (typeof isAllyDefeated === 'function' && isAllyDefeated(yue)) return;
+      } catch (eY) {}
+      var hpY = parseInt(yue.hp, 10) || 0;
+      if (hpY <= 0) return;
+      var gain = 0;
+      if (!hit) gain += 1;
+      else if (attacker && attacker.buffs && attacker.buffs.length) {
+        for (var bi = 0; bi < attacker.buffs.length; bi++) {
+          var bb = attacker.buffs[bi];
+          if ((bb.id || bb.name) === '混乱' && (parseInt(bb.layers, 10) || 0) > 0) {
+            gain += 1;
+            break;
+          }
+        }
+      }
+      if (gain <= 0) return;
+      var cur = typeof getUnitBuffLayers === 'function' ? getUnitBuffLayers(yue, '愉悦') : 0;
+      if (cur >= 10) return;
+      var add = Math.min(gain, 10 - cur);
+      if (add <= 0) return;
+      addBuffLayers(yue, '愉悦', '愉悦', add);
+      capUnitBuffs(yue);
+      try月见遥心灵震爆IfReady(yue);
+      saveBattleData();
+      try {
+        if (typeof renderAllySlots === 'function') renderAllySlots();
+      } catch (eR) {}
+    }
+    /** 月见遥特殊「心灵震爆」：【愉悦】满层时触发全体心灵伤害并清空【愉悦】，每场最多 2 次（需解锁）。 */
+    function try月见遥心灵震爆IfReady(yue) {
+      if (!yue || (yue.name || '') !== '月见遥') return;
+      if (!yue.specialSkillsUnlocked || yue.specialSkillsUnlocked.indexOf('心灵震爆') === -1) return;
+      var layers = typeof getUnitBuffLayers === 'function' ? getUnitBuffLayers(yue, '愉悦') : 0;
+      if (layers < 10) return;
+      battleState.月见遥心灵震爆次数 = battleState.月见遥心灵震爆次数 || 0;
+      if (battleState.月见遥心灵震爆次数 >= 2) return;
+      battleState.月见遥心灵震爆次数++;
+      var intv = getDisplayStat(yue, 'int') || 0;
+      var baseDmg = Math.max(0, Math.floor(intv * 1.5));
+      var enemies = getEnemyParty ? getEnemyParty() : null;
+      var party = getParty ? getParty() : null;
+      if (!enemies || !party) return;
+      var yi = 0;
+      for (yi = 1; yi <= 6; yi++) {
+        var def = enemies[yi - 1];
+        if (!def || (parseInt(def.hp, 10) || 0) <= 0) continue;
+        var res = resolveAttack(yue, def, baseDmg, true, { magicOnly: true });
+        applyDamageToTarget(def, res.finalDamage);
+        if (typeof appendCombatLog === 'function')
+          appendCombatLog(
+            (yue.name || '月见遥') +
+              ' 「心灵震爆」对 ' +
+              (def.name || '敌方') +
+              ' 造成 ' +
+              res.finalDamage +
+              ' 心灵伤害',
+          );
+      }
+      consumeBuffLayersFromUnit(yue, '愉悦', 99);
+      yue.buffs = (yue.buffs || []).filter(function (bx) {
+        return (bx.id || bx.name) !== '愉悦';
+      });
+      capUnitBuffs(yue);
+      if (typeof appendCombatLog === 'function')
+        appendCombatLog((yue.name || '月见遥') + ' 「心灵震爆」：清空【愉悦】（本场第 ' + battleState.月见遥心灵震爆次数 + ' 次）');
+      try {
+        saveBattleData(party, enemies);
+      } catch (eS) {}
+      try {
+        if (typeof renderEnemySlots === 'function') renderEnemySlots(enemies);
+      } catch (eR) {}
+    }
+    /** 月见遥「迷雾幻境·虚实倒错」：敌方攻击未命中时对攻击者自身造成 [Atk×0.3]（魔法伤害，走受击结算）。 */
+    function try月见遥迷雾幻境虚实倒错OnEnemyMiss(monster) {
+      if (!battleState.迷雾幻境虚实倒错) return;
+      if (!monster) return;
+      var hp = monster.hp != null ? parseInt(monster.hp, 10) : 0;
+      if (hp <= 0) return;
+      var atk = Math.max(0, parseInt(monster.atk, 10) || 0);
+      var dmg = Math.max(1, Math.floor(atk * 0.3));
+      applyDamageToTarget(monster, dmg);
+      if (typeof appendCombatLog === 'function')
+        appendCombatLog(
+          (monster.name || '敌方') + ' 「虚实倒错」：未命中，自受 ' + dmg + ' 点魔法伤害',
+        );
+      try {
+        saveBattleData(getParty(), getEnemyParty());
+      } catch (eM) {}
+      try {
+        if (typeof renderEnemySlots === 'function') renderEnemySlots(getEnemyParty());
+      } catch (eM2) {}
+    }
     var 暗夜帷幕A_State = null;
     function resolveAttack(attacker, defender, baseDamage, isPlayerAttacker, opts) {
       var magicOnly = opts && opts.magicOnly === true;
       var rollHit = roll1To100();
       var hitRate = isPlayerAttacker ? getPlayerHitRate(attacker, defender) : getMonsterHitRate(attacker, defender);
-      var hit = rollHit <= hitRate;
+      var hit = opts && opts.forceHit === true ? true : rollHit <= hitRate;
       if (!hit) {
+        try月见遥观测者的愉悦OnAttackResult(attacker, false);
+        if (!isPlayerAttacker) try月见遥迷雾幻境虚实倒错OnEnemyMiss(attacker);
         return {
           hit: false,
           crit: false,
@@ -1326,6 +1567,7 @@
           }
           if (opts && opts.isRanged && attacker.弹跳踩踏) attacker.弹跳踩踏 = false;
         }
+        try月见遥观测者的愉悦OnAttackResult(attacker, true);
         return {
           hit: true,
           crit: crit,
@@ -1412,6 +1654,7 @@
           }
           if (opts && opts.isRanged && attacker.弹跳踩踏) attacker.弹跳踩踏 = false;
         }
+        try月见遥观测者的愉悦OnAttackResult(attacker, true);
         return {
           hit: true,
           crit: crit,
@@ -1539,6 +1782,47 @@
         return !hasVoid;
       });
     };
+    function getAllySlotForCharacterName(party, name) {
+      if (!party || !name) return null;
+      for (var gsi = 0; gsi < party.length && gsi < SLOT_COUNT; gsi++) {
+        if (party[gsi] && (party[gsi].name || '') === name) return gsi + 1;
+      }
+      return null;
+    }
+    /** 月见遥「完美谎言」：敌方随机单体意图若选中月见遥，改为攻击替身槽位（一次性）。 */
+    function tryRedirect月见遥完美谎言(ts, party) {
+      if (ts == null || !party) return ts;
+      var yueSlot = getAllySlotForCharacterName(party, '月见遥');
+      var dec = battleState.月见遥完美谎言替身槽;
+      if (dec == null || !yueSlot || ts !== yueSlot) return ts;
+      var decUnit = party[dec - 1];
+      var decHp = decUnit ? parseInt(decUnit.hp, 10) || 0 : 0;
+      if (!decUnit || decHp <= 0 || dec === yueSlot) {
+        battleState.月见遥完美谎言替身槽 = null;
+        return ts;
+      }
+      battleState.月见遥完美谎言替身槽 = null;
+      if (typeof appendCombatLog === 'function')
+        appendCombatLog('「完美谎言」：攻击转向 ' + (decUnit.name || '友方'));
+      return dec;
+    }
+    /** 「大妃的魔宴」：目标身上不同减益种类数（含 NEGATIVE_DEBUFF_IDS 及 暗蚀/麻痹/冻结）。 */
+    function countDistinctDebuffTypesFor大妃魔宴(unit) {
+      if (!unit || !unit.buffs) return 0;
+      var extra = { 暗蚀: true, 麻痹: true, 冻结: true };
+      var seen = {};
+      var n = 0;
+      for (var di = 0; di < unit.buffs.length; di++) {
+        var b = unit.buffs[di];
+        var bid = (b.id || b.name || '').trim();
+        if ((parseInt(b.layers, 10) || 0) <= 0) continue;
+        if (NEGATIVE_DEBUFF_IDS.indexOf(bid) === -1 && !extra[bid]) continue;
+        if (seen[bid]) continue;
+        seen[bid] = true;
+        n++;
+      }
+      return n;
+    }
     var getShieldFromResolvedEffect =
       options.getShieldFromResolvedEffect ||
       function () {
@@ -1617,6 +1901,13 @@
     var SKILL_MANGMOUZHIGUANG_SVG = options.SKILL_MANGMOUZHIGUANG_SVG || '';
     var SKILL_JISHU_SVG = options.SKILL_JISHU_SVG || '';
     var SKILL_SHENGHUOJINGSHI_SVG = options.SKILL_SHENGHUOJINGSHI_SVG || '';
+    var SKILL_XINGYUZHUDAO_SVG = options.SKILL_XINGYUZHUDAO_SVG || '';
+    var SKILL_HUIJINBIZHANG_SVG = options.SKILL_HUIJINBIZHANG_SVG || '';
+    var SKILL_XINGHAITIAOHE_SVG = options.SKILL_XINGHAITIAOHE_SVG || '';
+    var SKILL_TIANQIONGSONGE_SVG = options.SKILL_TIANQIONGSONGE_SVG || '';
+    var SKILL_XINGCHENDINGMAO_SVG = options.SKILL_XINGCHENDINGMAO_SVG || '';
+    var SKILL_XINGCHENJIASU_SVG = options.SKILL_XINGCHENJIASU_SVG || '';
+    var SKILL_XINGMINGNIZHUAN_SVG = options.SKILL_XINGMINGNIZHUAN_SVG || '';
 
     function renderAllySlots(optionalParty) {
       var party = optionalParty != null && Array.isArray(optionalParty) ? optionalParty : getParty();
@@ -2553,8 +2844,15 @@
               if (id === '再生') {
                 var add = Math.min(layers, maxHp - curHp);
                 var effRegen = apply丝伊德共生母胎HealMultiplier(unit, add);
-                regenHeal += effRegen;
-                curHp = Math.min(maxHp, curHp + effRegen);
+                if (typeof getUnitBuffLayers === 'function' && getUnitBuffLayers(unit, '虚实颠倒') > 0) {
+                  applyDamageToTarget(unit, effRegen, { skip虚实颠倒: true });
+                  curHp = unit.hp != null ? parseInt(unit.hp, 10) : curHp;
+                  if (typeof appendCombatLog === 'function')
+                    appendCombatLog((unit.name || '友方') + ' 【虚实颠倒】【再生】治疗转为 ' + effRegen + ' 伤害');
+                } else {
+                  regenHeal += effRegen;
+                  curHp = Math.min(maxHp, curHp + effRegen);
+                }
                 buff.layers = Math.max(0, layers - 5);
               } else if (id === '重伤' || id === '流血' || id === '燃烧' || id === '中毒') {
                 if (id === '重伤') heavyWoundDmg += layers;
@@ -2569,6 +2867,7 @@
                 id === '迟缓' ||
                 id === '迟钝' ||
                 id === '恍惚' ||
+                id === '虚实颠倒' ||
                 id === '灵巧' ||
                 id === '专注' ||
                 id === '精准' ||
@@ -2584,9 +2883,17 @@
                 id === '敏捷强化' ||
                 id === '智力强化' ||
                 id === '攻击强化' ||
-                id === '防御强化'
+                id === '防御强化' ||
+                id === '力量增幅' ||
+                id === '敏捷增幅' ||
+                id === '智力增幅' ||
+                id === '防御增幅'
               ) {
                 buff.layers = Math.max(0, layers - 1);
+              } else if (id === '诗章') {
+                buff.layers = Math.max(0, layers - 1);
+              } else if (id === '星辰加速') {
+                buff.layers = 0;
               }
             }
             unit.hp = curHp;
@@ -2956,6 +3263,7 @@
           return;
         }
         var ts = tA[Math.floor(Math.random() * tA.length)];
+        ts = tryRedirect月见遥完美谎言(ts, party);
         var ally = party[ts - 1];
         var baseDmg = Math.max(1, parseInt(p1, 10) || Math.floor(atk * 0.85));
         var result = resolveAttack(monster, ally, baseDmg, false);
@@ -2989,7 +3297,7 @@
           onDone({ partyChanged: false });
           return;
         }
-        var lockSlot = taS[Math.floor(Math.random() * taS.length)];
+        var lockSlot = tryRedirect月见遥完美谎言(taS[Math.floor(Math.random() * taS.length)], party);
         var mIdxS = 0;
         function nextHitSingle() {
           if (mIdxS >= hitsS) {
@@ -3066,7 +3374,7 @@
             onDone();
             return;
           }
-          var slot = ta[Math.floor(Math.random() * ta.length)];
+          var slot = tryRedirect月见遥完美谎言(ta[Math.floor(Math.random() * ta.length)], party);
           var al = party[slot - 1];
           var res = resolveAttack(monster, al, perHit, false);
           var el = document.querySelector('.slot[data-slot="ally-' + slot + '"]');
@@ -3755,8 +4063,13 @@
                 if (id === '再生') {
                   var addE = Math.min(layers, maxHp - curHp);
                   var effRegenE = apply丝伊德共生母胎HealMultiplier(unit, addE);
-                  regenHeal += effRegenE;
-                  curHp = Math.min(maxHp, curHp + effRegenE);
+                  if (typeof getUnitBuffLayers === 'function' && getUnitBuffLayers(unit, '虚实颠倒') > 0) {
+                    applyDamageToTarget(unit, effRegenE, { skip虚实颠倒: true });
+                    curHp = unit.hp != null ? parseInt(unit.hp, 10) : curHp;
+                  } else {
+                    regenHeal += effRegenE;
+                    curHp = Math.min(maxHp, curHp + effRegenE);
+                  }
                   buff.layers = layersAfter;
                   console.info(
                     '[战斗] 敌方结算 ' +
@@ -3792,6 +4105,7 @@
                   id === '迟缓' ||
                   id === '迟钝' ||
                   id === '恍惚' ||
+                  id === '虚实颠倒' ||
                   id === '灵巧' ||
                   id === '专注' ||
                   id === '精准' ||
@@ -4430,6 +4744,41 @@
       }
       return false;
     }
+    /** 从单位身上消耗指定 buff 的层数（不足则只扣现有层数），返回实际消耗层数。 */
+    function consumeBuffLayersFromUnit(unit, buffId, amount) {
+      if (!unit || !unit.buffs || amount <= 0) return 0;
+      for (var ci = 0; ci < unit.buffs.length; ci++) {
+        var bb = unit.buffs[ci];
+        if ((bb.id || bb.name) !== buffId) continue;
+        var L = Math.max(0, parseInt(bb.layers, 10) || 0);
+        var take = Math.min(amount, L);
+        bb.layers = L - take;
+        if (bb.layers <= 0) unit.buffs.splice(ci, 1);
+        return take;
+      }
+      return 0;
+    }
+    /** 凌遥仙【星辰加速】：本回合下数次行动 AP 消耗可视作 nominal 或 nominal-1（至少 1）。 */
+    function getEffectiveSkillApCostForAlly(unit, nominalAp) {
+      var n = nominalAp != null ? Math.max(0, parseInt(nominalAp, 10) || 0) : 1;
+      if (!unit || n <= 0) return n;
+      if (getUnitBuffLayers(unit, '星辰加速') > 0) return Math.max(1, n - 1);
+      return n;
+    }
+    /** 扣除 AP 并消耗 1 层【星辰加速】（若适用）。curApBefore 为扣减前读数。 */
+    function applyAllySkillApCost(ally, nominalCost, curApBefore) {
+      var cost = nominalCost != null ? nominalCost : 1;
+      if (ally && getUnitBuffLayers(ally, '星辰加速') > 0 && cost > 0) {
+        cost = Math.max(1, cost - 1);
+        consumeBuffLayersFromUnit(ally, '星辰加速', 1);
+      }
+      ally.currentAp = Math.max(0, curApBefore - cost);
+    }
+    function markLingyaoOnceSpecialUsed(skillId) {
+      if (!skillId) return;
+      battleState.lingyaoOnceSpecialUsed = battleState.lingyaoOnceSpecialUsed || {};
+      battleState.lingyaoOnceSpecialUsed[skillId] = true;
+    }
     /** 丝伊德·白「魔物孕育」Lv5-A：玩家行动回合开始时获得 1 层【孕育】。 */
     function run丝伊德魔物孕育Lv5A玩家回合开始() {
       var party = getParty();
@@ -4509,12 +4858,16 @@
           Math.max(1, parseInt(sk.level, 10) || 1) >= 5 &&
           sk.advancement === 'B';
         if (canglanTideB) return 0;
-        return sk.ap != null ? parseInt(sk.ap, 10) : 1;
+        var baseAp = sk.ap != null ? parseInt(sk.ap, 10) : 1;
+        return getEffectiveSkillApCostForAlly(ch, baseAp);
       }
       if (specialId && ch && typeof getSpecialSkillsForChar === 'function') {
         var list = getSpecialSkillsForChar(ch);
         for (var si = 0; si < list.length; si++) {
-          if (list[si].id === specialId) return list[si].ap != null ? parseInt(list[si].ap, 10) : 1;
+          if (list[si].id === specialId) {
+            var spAp = list[si].ap != null ? parseInt(list[si].ap, 10) : 1;
+            return getEffectiveSkillApCostForAlly(ch, spAp);
+          }
         }
       }
       return 0;
@@ -4983,7 +5336,8 @@
       var maxAp = getEffectiveMaxApForAlly(attacker);
       var curAp =
         attacker.currentAp !== undefined && attacker.currentAp !== null ? parseInt(attacker.currentAp, 10) : maxAp;
-      if (curAp < skillAp) {
+      var effApAtk = getEffectiveSkillApCostForAlly(attacker, skillAp);
+      if (curAp < effApAtk) {
         if (typeof window.toastr !== 'undefined') window.toastr.warning('AP 不足，无法使用该技能');
         return;
       }
@@ -5005,6 +5359,14 @@
       }
       if ((skill.name || '') === '心灵侵蚀') {
         executePlayer心灵侵蚀(allySlot, enemySlotNum, skillIndex);
+        return;
+      }
+      if ((skill.name || '') === '镜花水月') {
+        executePlayer镜花水月(allySlot, enemySlotNum, skillIndex);
+        return;
+      }
+      if ((skill.name || '') === '心智侵蚀') {
+        executePlayer心智侵蚀(allySlot, enemySlotNum, skillIndex);
         return;
       }
       if ((skill.name || '') === '圣光斩') {
@@ -5074,6 +5436,7 @@
       /** 被攻击的抖动、-N 掉血示意与血量条渲染同时发生：先扣血并渲染（避免 render 的 innerHTML 覆盖 -N/Miss），再播掉血/未命中表现 */
       var HIT_EFFECT_MS = 920;
       function applyAttackResult(result) {
+        var had命仪精准 = getUnitBuffLayers(attacker, '命仪精准') > 0;
         applyDamageToTarget(
           defender,
           result.finalDamage,
@@ -5082,7 +5445,31 @@
         var maxAp = getApByLevel(attacker.level);
         var curAp =
           attacker.currentAp !== undefined && attacker.currentAp !== null ? parseInt(attacker.currentAp, 10) : maxAp;
-        attacker.currentAp = Math.max(0, curAp - skillAp);
+        applyAllySkillApCost(attacker, skillAp, curAp);
+        if (had命仪精准 && result.hit) {
+          consumeBuffLayersFromUnit(attacker, '命仪精准', 99);
+          attacker.buffs = (attacker.buffs || []).filter(function (bx) {
+            return (bx.id || bx.name) !== '命仪精准';
+          });
+          var dhAfter = defender.hp != null ? parseInt(defender.hp, 10) : 0;
+          if (dhAfter <= 0) {
+            var partyLx = getParty();
+            if (partyLx && partyLx.length) {
+              for (var li = 0; li < partyLx.length; li++) {
+                var lx = partyLx[li];
+                if (!lx || (lx.name || '') !== '凌遥仙' || isAllyDefeated(lx)) continue;
+                var maxLxAp = getEffectiveMaxApForAlly(lx);
+                var curLxAp =
+                  lx.currentAp !== undefined && lx.currentAp !== null ? parseInt(lx.currentAp, 10) : maxLxAp;
+                lx.currentAp = Math.min(maxLxAp, curLxAp + 1);
+                appendCombatLog(
+                  (lx.name || '凌遥仙') + ' 命仪精准：友方击杀，回复 1 AP',
+                );
+                break;
+              }
+            }
+          }
+        }
         if ((skill.name || '') === '斩月') {
           var 攻势Layers = skill.advancement === 'A' ? 3 : 2;
           addBuffLayers(attacker, '攻势', '攻势', 攻势Layers);
@@ -5312,7 +5699,17 @@
         }
       }
       function doResolutionAndHit() {
-        var result = resolveAttack(attacker, defender, baseDamage, true, skillRangeOpts || undefined);
+        var raOpts = {};
+        if (skillRangeOpts) {
+          for (var rk in skillRangeOpts) {
+            if (Object.prototype.hasOwnProperty.call(skillRangeOpts, rk)) raOpts[rk] = skillRangeOpts[rk];
+          }
+        }
+        if (getUnitBuffLayers(attacker, '命仪精准') > 0) {
+          raOpts.forceHit = true;
+          raOpts.forceCrit = true;
+        }
+        var result = resolveAttack(attacker, defender, baseDamage, true, raOpts);
         if (result.crit && attacker.纳刀共鸣暴击加成 != null) {
           result.finalDamage = Math.max(1, Math.floor(result.finalDamage * (1 + attacker.纳刀共鸣暴击加成)));
           attacker.纳刀共鸣暴击加成 = null;
@@ -5337,7 +5734,12 @@
       if (_a1 === '自然' || _a1 === '奥术' || _a1 === '心灵' || _a1 === '火焰') _rangeTmp.magicOnly = true;
       if (Object.keys(_rangeTmp).length) skillRangeOpts = _rangeTmp;
       if (isAttackSkill) {
-        var result = resolveAttack(attacker, defender, baseDamage, true, { isMelee: true });
+        var atkOpts0 = { isMelee: true };
+        if (getUnitBuffLayers(attacker, '命仪精准') > 0) {
+          atkOpts0.forceHit = true;
+          atkOpts0.forceCrit = true;
+        }
+        var result = resolveAttack(attacker, defender, baseDamage, true, atkOpts0);
         if (result.crit && attacker.纳刀共鸣暴击加成 != null) {
           result.finalDamage = Math.max(1, Math.floor(result.finalDamage * (1 + attacker.纳刀共鸣暴击加成)));
           attacker.纳刀共鸣暴击加成 = null;
@@ -5359,7 +5761,17 @@
           });
         });
       } else {
-        var result = resolveAttack(attacker, defender, baseDamage, true, skillRangeOpts);
+        var raOptsAnim = {};
+        if (skillRangeOpts) {
+          for (var rka in skillRangeOpts) {
+            if (Object.prototype.hasOwnProperty.call(skillRangeOpts, rka)) raOptsAnim[rka] = skillRangeOpts[rka];
+          }
+        }
+        if (getUnitBuffLayers(attacker, '命仪精准') > 0) {
+          raOptsAnim.forceHit = true;
+          raOptsAnim.forceCrit = true;
+        }
+        var result = resolveAttack(attacker, defender, baseDamage, true, raOptsAnim);
         if (result.crit && attacker.纳刀共鸣暴击加成 != null) {
           result.finalDamage = Math.max(1, Math.floor(result.finalDamage * (1 + attacker.纳刀共鸣暴击加成)));
           attacker.纳刀共鸣暴击加成 = null;
@@ -5382,6 +5794,7 @@
           var slotEl = document.querySelector('.slot[data-slot="enemy-' + enemySlotNum + '"]');
           playStrikeShake(attackerSlotEl, slotEl, function () {
             playAnimationOnSlot(slotEl, animKey, function () {
+              var had命仪精准Anim = getUnitBuffLayers(attacker, '命仪精准') > 0;
               applyDamageToTarget(
                 defender,
                 result.finalDamage,
@@ -5392,7 +5805,31 @@
                 attacker.currentAp !== undefined && attacker.currentAp !== null
                   ? parseInt(attacker.currentAp, 10)
                   : maxAp;
-              attacker.currentAp = Math.max(0, curAp - skillAp);
+              applyAllySkillApCost(attacker, skillAp, curAp);
+              if (had命仪精准Anim && result.hit) {
+                consumeBuffLayersFromUnit(attacker, '命仪精准', 99);
+                attacker.buffs = (attacker.buffs || []).filter(function (bx) {
+                  return (bx.id || bx.name) !== '命仪精准';
+                });
+                var dhAnim = defender.hp != null ? parseInt(defender.hp, 10) : 0;
+                if (dhAnim <= 0) {
+                  var partyMx = getParty();
+                  if (partyMx && partyMx.length) {
+                    for (var mi = 0; mi < partyMx.length; mi++) {
+                      var lxU = partyMx[mi];
+                      if (!lxU || (lxU.name || '') !== '凌遥仙' || isAllyDefeated(lxU)) continue;
+                      var maxLxU = getEffectiveMaxApForAlly(lxU);
+                      var curLxU =
+                        lxU.currentAp !== undefined && lxU.currentAp !== null
+                          ? parseInt(lxU.currentAp, 10)
+                          : maxLxU;
+                      lxU.currentAp = Math.min(maxLxU, curLxU + 1);
+                      appendCombatLog((lxU.name || '凌遥仙') + ' 命仪精准：友方击杀，回复 1 AP');
+                      break;
+                    }
+                  }
+                }
+              }
               if ((skill.name || '') === '斩月') {
                 var 攻势Layers = skill.advancement === 'A' ? 3 : 2;
                 addBuffLayers(attacker, '攻势', '攻势', 攻势Layers);
@@ -6186,6 +6623,207 @@
       } else {
         afterSoulAnim();
       }
+    }
+    /** 大妃的魔宴：月见遥特殊。奥术/远程/单体，3 AP。[Int×2.5]；每种不同减益 +15%（至多 5 种）。 */
+    function executePlayer大妃的魔宴(allySlot, enemySlotNum) {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      var attacker = party[allySlot - 1];
+      var defender = enemies[enemySlotNum - 1];
+      if (!attacker || attacker.name !== '月见遥' || !defender || isAllyDefeated(attacker)) return;
+      var skillAp = 3;
+      var maxAp = getEffectiveMaxApForAlly(attacker);
+      var curAp =
+        attacker.currentAp !== undefined && attacker.currentAp != null ? parseInt(attacker.currentAp, 10) : maxAp;
+      var effAp = getEffectiveSkillApCostForAlly(attacker, skillAp);
+      if (curAp < effAp) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('AP 不足，无法使用该技能');
+        return;
+      }
+      var intv = getDisplayStat(attacker, 'int') || 0;
+      var baseDmg = Math.max(0, Math.floor(intv * 2.5));
+      var distinct = countDistinctDebuffTypesFor大妃魔宴(defender);
+      var bonusPct = Math.min(5, distinct) * 0.15;
+      var finalBase = Math.max(0, Math.floor(baseDmg * (1 + bonusPct)));
+      var result = resolveAttack(attacker, defender, finalBase, true, { magicOnly: true });
+      applyAllySkillApCost(attacker, skillAp, curAp);
+      applyDamageToTarget(defender, result.finalDamage);
+      appendCombatLog(
+        formatAttackLogLine(
+          attacker.name || '月见遥',
+          '大妃的魔宴',
+          defender.name || '敌方',
+          result,
+          finalBase,
+          null,
+          null,
+          defender.hp,
+          'Int×2.5，' + distinct + ' 种减益',
+        ),
+      );
+      saveBattleData(party, enemies);
+      renderAllySlots(party);
+      renderEnemySlots(enemies);
+      if (typeof window.toastr !== 'undefined') window.toastr.success('大妃的魔宴');
+    }
+    function pick傀儡剧场随机目标槽(party, enemies, yueSlot) {
+      var opts = [];
+      var i,
+        u,
+        hp,
+        hpE = 0;
+      for (i = 1; i <= SLOT_COUNT; i++) {
+        u = party[i - 1];
+        if (!u || i === yueSlot) continue;
+        hp = u.hp != null ? parseInt(u.hp, 10) : getHpFromSta(getDisplayStat(u, 'sta') || 1);
+        if ((hp || 0) <= 0) continue;
+        opts.push({ side: 'ally', slot: i, unit: u });
+      }
+      for (i = 1; i <= SLOT_COUNT; i++) {
+        u = enemies[i - 1];
+        if (!u) continue;
+        hpE = parseInt(u.hp, 10) || 0;
+        if (hpE <= 0) continue;
+        opts.push({ side: 'enemy', slot: i, unit: u });
+      }
+      if (opts.length === 0) return null;
+      return opts[Math.floor(Math.random() * opts.length)];
+    }
+    /** 傀儡剧场：月见遥特殊。心灵/远程/群体，2 AP。 */
+    function executePlayer傀儡剧场(allySlot) {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      var attacker = party[allySlot - 1];
+      if (!attacker || attacker.name !== '月见遥' || isAllyDefeated(attacker)) return;
+      var skillAp = 2;
+      var maxAp = getEffectiveMaxApForAlly(attacker);
+      var curAp =
+        attacker.currentAp !== undefined && attacker.currentAp != null ? parseInt(attacker.currentAp, 10) : maxAp;
+      var effAp = getEffectiveSkillApCostForAlly(attacker, skillAp);
+      if (curAp < effAp) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('AP 不足，无法使用该技能');
+        return;
+      }
+      var intv = getDisplayStat(attacker, 'int') || 0;
+      var baseAoe = Math.max(0, Math.floor(intv * 0.6));
+      var yueSlot = allySlot;
+      var hasAnyEnemy = false;
+      var ei;
+      for (ei = 1; ei <= 6; ei++) {
+        var de = enemies[ei - 1];
+        if (de && (parseInt(de.hp, 10) || 0) > 0) {
+          hasAnyEnemy = true;
+          break;
+        }
+      }
+      if (!hasAnyEnemy) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('没有可攻击的敌方单位');
+        return;
+      }
+      applyAllySkillApCost(attacker, skillAp, curAp);
+      for (ei = 1; ei <= 6; ei++) {
+        var def = enemies[ei - 1];
+        if (!def || (parseInt(def.hp, 10) || 0) <= 0) continue;
+        var res = resolveAttack(attacker, def, baseAoe, true, { magicOnly: true });
+        applyDamageToTarget(def, res.finalDamage);
+        appendCombatLog(
+          formatAttackLogLine(
+            attacker.name || '月见遥',
+            '傀儡剧场（群体）',
+            def.name || '敌方',
+            res,
+            baseAoe,
+            null,
+            null,
+            def.hp,
+            'Int×0.6',
+          ),
+        );
+      }
+      for (ei = 1; ei <= 6; ei++) {
+        var mon = enemies[ei - 1];
+        if (!mon || (parseInt(mon.hp, 10) || 0) <= 0) continue;
+        var atkVal = Math.max(1, parseInt(mon.atk, 10) || 0);
+        var pick = pick傀儡剧场随机目标槽(party, enemies, yueSlot);
+        if (!pick) continue;
+        var tgt = pick.unit;
+        var res2 = resolveAttack(mon, tgt, atkVal, false);
+        if (pick.side === 'ally') {
+          applyDamageToAllyAndTry弹返(tgt, mon, res2.finalDamage);
+        } else {
+          applyDamageToTarget(tgt, res2.finalDamage);
+        }
+        appendCombatLog(
+          (mon.name || '敌方') +
+            ' 傀儡剧场：攻击 ' +
+            (tgt.name || '目标') +
+            ' ' +
+            (res2.hit ? '命中' : '未命中') +
+            '，' +
+            res2.finalDamage +
+            ' 伤害',
+        );
+      }
+      saveBattleData(party, enemies);
+      renderAllySlots(party);
+      renderEnemySlots(enemies);
+      if (typeof window.toastr !== 'undefined') window.toastr.success('傀儡剧场');
+    }
+    /** 完美谎言：月见遥特殊。1 AP，指定友方为替身。 */
+    function executePlayer完美谎言(allySlot, decoySlot) {
+      var party = getParty();
+      var attacker = party[allySlot - 1];
+      var decoy = decoySlot >= 1 && decoySlot <= 6 ? party[decoySlot - 1] : null;
+      if (!attacker || attacker.name !== '月见遥' || isAllyDefeated(attacker)) return;
+      if (!decoy || decoySlot === allySlot || (parseInt(decoy.hp, 10) || 0) <= 0) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('请选择一名其他友方作为替身');
+        return;
+      }
+      var skillAp = 1;
+      var maxAp = getEffectiveMaxApForAlly(attacker);
+      var curAp =
+        attacker.currentAp !== undefined && attacker.currentAp != null ? parseInt(attacker.currentAp, 10) : maxAp;
+      var effAp = getEffectiveSkillApCostForAlly(attacker, skillAp);
+      if (curAp < effAp) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('AP 不足，无法使用该技能');
+        return;
+      }
+      applyAllySkillApCost(attacker, skillAp, curAp);
+      battleState.月见遥完美谎言替身槽 = decoySlot;
+      appendCombatLog(
+        (attacker.name || '月见遥') + ' 「完美谎言」：' + (decoy.name || '友方') + ' 成为幻术替身（下一次敌方随机单体攻击若指向月见遥则改打该目标）',
+      );
+      saveBattleData(party, getEnemyParty());
+      renderAllySlots(party);
+      if (typeof window.toastr !== 'undefined') window.toastr.success('完美谎言');
+    }
+    /** 虚实颠倒：月见遥特殊。魔法/远程/单体，2 AP。 */
+    function executePlayer虚实颠倒(allySlot, enemySlotNum) {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      var attacker = party[allySlot - 1];
+      var defender = enemies[enemySlotNum - 1];
+      if (!attacker || attacker.name !== '月见遥' || !defender || isAllyDefeated(attacker)) return;
+      var skillAp = 2;
+      var maxAp = getEffectiveMaxApForAlly(attacker);
+      var curAp =
+        attacker.currentAp !== undefined && attacker.currentAp != null ? parseInt(attacker.currentAp, 10) : maxAp;
+      var effAp = getEffectiveSkillApCostForAlly(attacker, skillAp);
+      if (curAp < effAp) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('AP 不足，无法使用该技能');
+        return;
+      }
+      if ((parseInt(defender.hp, 10) || 0) <= 0) return;
+      applyAllySkillApCost(attacker, skillAp, curAp);
+      addBuffLayers(defender, '虚实颠倒', '虚实颠倒', 1);
+      capUnitBuffs(defender);
+      appendCombatLog(
+        (attacker.name || '月见遥') + ' 对 ' + (defender.name || '敌方') + ' 施加【虚实颠倒】（1 回合）',
+      );
+      saveBattleData(party, enemies);
+      renderAllySlots(party);
+      renderEnemySlots(enemies);
+      if (typeof window.toastr !== 'undefined') window.toastr.success('虚实颠倒');
     }
     /** 竭魂之火：夜露特殊技能。火焰/远程/单体，2 AP。对单体造成 [Int×1.2] 火焰伤害；消耗目标全部【燃烧】层数，造成双倍于消耗层数的伤害。 */
     function executePlayer竭魂之火(allySlot, enemySlotNum) {
@@ -7166,6 +7804,224 @@
         if (typeof window.toastr !== 'undefined')
           window.toastr.success(
             result.hit || effectiveDamage > 0 ? '心灵侵蚀 造成 ' + effectiveDamage + ' 点伤害' : '心灵侵蚀 未命中',
+          );
+      }
+      if (defenderSlotEl) {
+        if (!result.hit) {
+          playMissEffect(defenderSlotEl);
+          applyDamageAndLog();
+        } else if (attackerSlotEl) {
+          playStrikeShake(attackerSlotEl, defenderSlotEl, function () {
+            playAnimationOnSlot(defenderSlotEl, 'Mist-Pink', applyDamageAndLog);
+          });
+        } else {
+          applyDamageAndLog();
+        }
+      } else {
+        applyDamageAndLog();
+      }
+    }
+    /** 镜花水月：月见遥技能。心灵/远程/单体，1 AP。Int 倍率随等级；目标带控制类减益时增伤；Lv5-A 心碎镜像 控制时 +50% 并回复 Int×0.3；Lv5-B 幻影穿刺 目标有【魅惑】时必中并施加1层【碎魔】。 */
+    function targetHas镜花水月控制状态(unit) {
+      if (!unit || !unit.buffs || !unit.buffs.length) return false;
+      for (var ti = 0; ti < unit.buffs.length; ti++) {
+        var tb = unit.buffs[ti];
+        var tid = (tb.id || tb.name || '').trim();
+        if (镜花水月_CONTROL_DEBUFF_IDS.indexOf(tid) === -1) continue;
+        if ((parseInt(tb.layers, 10) || 0) > 0) return true;
+      }
+      return false;
+    }
+    function executePlayer镜花水月(allySlot, enemySlotNum, skillIndex) {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      var attacker = party[allySlot - 1];
+      var defender = enemies[enemySlotNum - 1];
+      if (!attacker || !defender || isAllyDefeated(attacker)) return;
+      var skill =
+        skillIndex >= 0 && attacker.skills && attacker.skills[skillIndex] ? attacker.skills[skillIndex] : null;
+      if (!skill || (skill.name || '') !== '镜花水月') return;
+      var skillAp = 1;
+      var maxAp = getApByLevel(attacker.level);
+      var curAp =
+        attacker.currentAp !== undefined && attacker.currentAp !== null ? parseInt(attacker.currentAp, 10) : maxAp;
+      if (curAp < skillAp) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('AP 不足，无法使用该技能');
+        return;
+      }
+      var intStat = getDisplayStat(attacker, 'int') || 0;
+      var lv = Math.max(1, parseInt(skill.level, 10) || 1);
+      var multInt = lv === 1 ? 0.7 : lv === 2 ? 0.75 : lv === 3 ? 0.75 : 0.8;
+      if (lv >= 5 && (skill.advancement === 'A' || skill.advancement === 'B')) multInt = 0.8;
+      var baseBefore = Math.max(0, Math.floor(intStat * multInt));
+      var hasControl = targetHas镜花水月控制状态(defender);
+      var ctrlPct = 0;
+      if (hasControl) {
+        if (lv <= 2) ctrlPct = 0.2;
+        else if (lv <= 4) ctrlPct = 0.25;
+        else if (skill.advancement === 'A') ctrlPct = 0.5;
+        else ctrlPct = 0.25;
+      }
+      var baseDamage = hasControl ? Math.max(0, Math.floor(baseBefore * (1 + ctrlPct))) : baseBefore;
+      var damageCalcStr =
+        '智力×' + multInt + '=' + baseBefore + (hasControl ? '；控制+' + Math.round(ctrlPct * 100) + '%=' + baseDamage : '');
+      var has魅惑 =
+        defender.buffs &&
+        defender.buffs.some(function (b) {
+          return (b.id || b.name) === '魅惑' && (parseInt(b.layers, 10) || 0) > 0;
+        });
+      var atkOpts = { magicOnly: true };
+      if (lv >= 5 && skill.advancement === 'B' && has魅惑) atkOpts.forceHit = true;
+      var result = resolveAttack(attacker, defender, baseDamage, true, atkOpts);
+      var attName = attacker.name || '己方';
+      var defName = defender.name || '敌方';
+      var adv = skill.advancement;
+      var skillLogName =
+        lv >= 5 && adv === 'A' ? '心碎镜像' : lv >= 5 && adv === 'B' ? '幻影穿刺' : '镜花水月';
+      var effectiveDamage = result.finalDamage;
+      var defenderSlotEl = document.querySelector('.slot[data-slot="enemy-' + enemySlotNum + '"]');
+      var attackerSlotEl = document.querySelector('.slot[data-slot="ally-' + allySlot + '"]');
+      function applyDamageAndLog() {
+        attacker.currentAp = Math.max(0, curAp - skillAp);
+        applyDamageToTarget(
+          defender,
+          effectiveDamage,
+          result.shadowDamage ? { shadowDamage: result.shadowDamage } : undefined,
+        );
+        if (result.hit && lv >= 5 && adv === 'A' && hasControl) {
+          var healRaw = Math.max(0, Math.floor(intStat * 0.3));
+          healRaw = apply丝伊德共生母胎HealMultiplier(attacker, healRaw);
+          var maxHp =
+            attacker.maxHp != null
+              ? parseInt(attacker.maxHp, 10)
+              : getHpFromSta(getDisplayStat(attacker, 'sta') || 1);
+          var beforeHp = attacker.hp != null ? parseInt(attacker.hp, 10) : 0;
+          attacker.hp = Math.min(maxHp, beforeHp + healRaw);
+          appendCombatLog(attName + ' 「心碎镜像」回复 ' + healRaw + ' 生命');
+        }
+        if (result.hit && lv >= 5 && adv === 'B' && has魅惑) {
+          addBuffLayers(defender, '碎魔', '碎魔', 1, attacker);
+          appendCombatLog(attName + ' 「幻影穿刺」对 ' + defName + ' 施加1层【碎魔】');
+        }
+        saveBattleData(party, enemies);
+        renderAllySlots(party);
+        renderEnemySlots(enemies);
+        appendCombatLog(
+          formatAttackLogLine(
+            attName,
+            skillLogName,
+            defName,
+            effectiveDamage > 0 ? { ...result, hit: true, finalDamage: effectiveDamage } : result,
+            baseDamage,
+            null,
+            null,
+            defender.hp,
+            damageCalcStr,
+          ),
+        );
+        if (typeof window.toastr !== 'undefined')
+          window.toastr.success(
+            result.hit || effectiveDamage > 0 ? skillLogName + ' 造成 ' + effectiveDamage + ' 点伤害' : skillLogName + ' 未命中',
+          );
+      }
+      if (defenderSlotEl) {
+        if (!result.hit) {
+          playMissEffect(defenderSlotEl);
+          applyDamageAndLog();
+        } else if (attackerSlotEl) {
+          playStrikeShake(attackerSlotEl, defenderSlotEl, function () {
+            playAnimationOnSlot(defenderSlotEl, 'Mist-Pink', applyDamageAndLog);
+          });
+        } else {
+          applyDamageAndLog();
+        }
+      } else {
+        applyDamageAndLog();
+      }
+    }
+    /** 心智侵蚀：月见遥。心灵/远程/单体，1 AP。Lv1～2 命中后 50%【碎魔】；Lv3+ 必【碎魔】；Lv5-A 断筋蚀骨、Lv5-B 封喉噤声：额外 Cha×5% 施加【缴械】/【沉默】。 */
+    function executePlayer心智侵蚀(allySlot, enemySlotNum, skillIndex) {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      var attacker = party[allySlot - 1];
+      var defender = enemies[enemySlotNum - 1];
+      if (!attacker || !defender || isAllyDefeated(attacker)) return;
+      var skill =
+        skillIndex >= 0 && attacker.skills && attacker.skills[skillIndex] ? attacker.skills[skillIndex] : null;
+      if (!skill || (skill.name || '') !== '心智侵蚀') return;
+      var skillAp = 1;
+      var maxAp = getApByLevel(attacker.level);
+      var curAp =
+        attacker.currentAp !== undefined && attacker.currentAp !== null ? parseInt(attacker.currentAp, 10) : maxAp;
+      if (curAp < skillAp) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('AP 不足，无法使用该技能');
+        return;
+      }
+      var intStat = getDisplayStat(attacker, 'int') || 0;
+      var lv = Math.max(1, parseInt(skill.level, 10) || 1);
+      var multInt = lv === 1 ? 0.6 : lv === 2 ? 0.7 : lv === 3 ? 0.8 : 0.9;
+      if (lv >= 5 && (skill.advancement === 'A' || skill.advancement === 'B')) multInt = 0.9;
+      var baseDamage = Math.max(0, Math.floor(intStat * multInt));
+      var damageCalcStr = '智力×' + multInt + '=' + baseDamage;
+      var result = resolveAttack(attacker, defender, baseDamage, true, { magicOnly: true });
+      var attName = attacker.name || '己方';
+      var defName = defender.name || '敌方';
+      var adv = skill.advancement;
+      var skillLogName =
+        lv >= 5 && adv === 'A' ? '断筋蚀骨' : lv >= 5 && adv === 'B' ? '封喉噤声' : '心智侵蚀';
+      var effectiveDamage = result.finalDamage;
+      var defenderSlotEl = document.querySelector('.slot[data-slot="enemy-' + enemySlotNum + '"]');
+      var attackerSlotEl = document.querySelector('.slot[data-slot="ally-' + allySlot + '"]');
+      function applyDamageAndLog() {
+        attacker.currentAp = Math.max(0, curAp - skillAp);
+        applyDamageToTarget(
+          defender,
+          effectiveDamage,
+          result.shadowDamage ? { shadowDamage: result.shadowDamage } : undefined,
+        );
+        if (result.hit) {
+          var apply碎魔 = lv >= 3 ? true : roll1To100() <= 50;
+          if (apply碎魔) {
+            addBuffLayers(defender, '碎魔', '碎魔', 1, attacker);
+            appendCombatLog(attName + ' 「' + skillLogName + '」对 ' + defName + ' 施加1层【碎魔】');
+          }
+          if (lv >= 5 && adv === 'A') {
+            var chaA = getDisplayStat(attacker, 'cha') || 0;
+            var p缴械 = Math.min(100, Math.floor(chaA * 5));
+            if (roll1To100() <= p缴械) {
+              addBuffLayers(defender, '缴械', '缴械', 1, attacker);
+              appendCombatLog(attName + ' 「断筋蚀骨」对 ' + defName + ' 施加1层【缴械】');
+            }
+          }
+          if (lv >= 5 && adv === 'B') {
+            var chaB = getDisplayStat(attacker, 'cha') || 0;
+            var p沉默 = Math.min(100, Math.floor(chaB * 5));
+            if (roll1To100() <= p沉默) {
+              addBuffLayers(defender, '沉默', '沉默', 1, attacker);
+              appendCombatLog(attName + ' 「封喉噤声」对 ' + defName + ' 施加1层【沉默】');
+            }
+          }
+          capUnitBuffs(defender);
+        }
+        saveBattleData(party, enemies);
+        renderAllySlots(party);
+        renderEnemySlots(enemies);
+        appendCombatLog(
+          formatAttackLogLine(
+            attName,
+            skillLogName,
+            defName,
+            effectiveDamage > 0 ? { ...result, hit: true, finalDamage: effectiveDamage } : result,
+            baseDamage,
+            null,
+            null,
+            defender.hp,
+            damageCalcStr,
+          ),
+        );
+        if (typeof window.toastr !== 'undefined')
+          window.toastr.success(
+            result.hit || effectiveDamage > 0 ? skillLogName + ' 造成 ' + effectiveDamage + ' 点伤害' : skillLogName + ' 未命中',
           );
       }
       if (defenderSlotEl) {
@@ -8361,6 +9217,456 @@
       if (typeof window.toastr !== 'undefined')
         window.toastr.success('神恩救赎 为 ' + targetName + ' 回复 ' + appliedHeal + ' 生命');
     }
+    /** 星语祝祷：凌遥仙。增益/远程/单体，2 AP。回复 Int×系数；对目标施加最高属性对应强化（2 层，Lv5-A 为 3 层）；Lv5-B 额外 2 层【防御强化】；凌遥仙获得 2 层【诗章】。 */
+    function pick星语祝祷HighestStatBuffId(target) {
+      if (!target || typeof getDisplayStat !== 'function') return { id: '智力强化', label: '智力强化' };
+      var s = getDisplayStat(target, 'str') || 0;
+      var a = getDisplayStat(target, 'agi') || 0;
+      var i = getDisplayStat(target, 'int') || 0;
+      if (i >= s && i >= a) return { id: '智力强化', label: '智力强化' };
+      if (s >= a && s >= i) return { id: '力量强化', label: '力量强化' };
+      return { id: '敏捷强化', label: '敏捷强化' };
+    }
+    function executePlayer星语祝祷(allySlot, targetAllySlot, skillIndex) {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      var attacker = party[allySlot - 1];
+      var target = party[targetAllySlot - 1];
+      if (!attacker || (attacker.name || '') !== '凌遥仙' || isAllyDefeated(attacker)) return;
+      if (!target || isAllyDefeated(target)) return;
+      var skill =
+        skillIndex >= 0 && attacker.skills && attacker.skills[skillIndex] ? attacker.skills[skillIndex] : null;
+      if (!skill || (skill.name || '') !== '星语祝祷') return;
+      var skillAp = skill.ap != null ? skill.ap : 2;
+      var maxAp = getApByLevel(attacker.level != null ? attacker.level : 1);
+      var curAp =
+        attacker.currentAp !== undefined && attacker.currentAp !== null ? parseInt(attacker.currentAp, 10) : maxAp;
+      if (curAp < skillAp) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('AP 不足，无法使用该技能');
+        return;
+      }
+      var lv = Math.max(1, parseInt(skill.level, 10) || 1);
+      var adv = skill.advancement;
+      var baseHeal = Math.max(0, Math.floor(getBaseDamageForSkill(attacker, skill) || 0));
+      var appliedHeal = apply丝伊德共生母胎HealMultiplier(target, baseHeal);
+      attacker.currentAp = Math.max(0, curAp - skillAp);
+      var maxHp = target.maxHp != null ? parseInt(target.maxHp, 10) : getHpFromSta(getDisplayStat(target, 'sta') || 1);
+      var curHp = target.hp != null ? parseInt(target.hp, 10) : maxHp;
+      target.hp = Math.min(maxHp, curHp + appliedHeal);
+      var statLayers = lv >= 5 && adv === 'A' ? 3 : 2;
+      var pick = pick星语祝祷HighestStatBuffId(target);
+      addBuffLayers(target, pick.id, pick.label, statLayers, attacker);
+      if (lv >= 5 && adv === 'B') addBuffLayers(target, '防御强化', '防御强化', 2, attacker);
+      addBuffLayers(attacker, '诗章', '诗章', 2, attacker);
+      capUnitBuffs(target);
+      capUnitBuffs(attacker);
+      var attName = attacker.name || '凌遥仙';
+      var targetName = target.name || '友方';
+      var skillDisplayName =
+        lv >= 5 && adv === 'A' ? '星辉灌注' : lv >= 5 && adv === 'B' ? '星光共鸣' : '星语祝祷';
+      saveBattleData(party, enemies);
+      renderAllySlots(party);
+      var logExtra =
+        statLayers +
+        '层【' +
+        pick.label +
+        '】' +
+        (lv >= 5 && adv === 'B' ? '、2层【防御强化】' : '') +
+        '，2层【诗章】';
+      appendCombatLog(
+        attName +
+          ' 使用「' +
+          skillDisplayName +
+          '」为 ' +
+          targetName +
+          ' 回复 ' +
+          appliedHeal +
+          ' 生命，' +
+          logExtra,
+      );
+      var targetSlotEl = document.querySelector('.slot[data-slot="ally-' + targetAllySlot + '"]');
+      var attackerSlotEl = document.querySelector('.slot[data-slot="ally-' + allySlot + '"]');
+      if (targetSlotEl) playHealEffect(targetSlotEl, appliedHeal);
+      if (attackerSlotEl && targetSlotEl && attackerSlotEl !== targetSlotEl) {
+        playStrikeShake(attackerSlotEl, targetSlotEl, function () {
+          if (targetSlotEl) playAnimationOnSlot(targetSlotEl, 'Holy2', function () {});
+        });
+      } else if (targetSlotEl) {
+        playAnimationOnSlot(targetSlotEl, 'Holy2', function () {});
+      }
+      if (typeof window.toastr !== 'undefined')
+        window.toastr.success(skillDisplayName + '：为 ' + targetName + ' 回复 ' + appliedHeal + ' 生命');
+    }
+    /** 辉烬壁障：凌遥仙。增益/远程/单体，1 AP。Int×+Def× 护盾；凌遥仙获得 2 层【诗章】。Lv5-A 星纱帷幕：诗章≥5 时清 1 负面+【扰魔】；Lv5-B 辉烬坚壁：破盾时剩余辉烬的 50% 治疗+【格挡】。 */
+    function executePlayer辉烬壁障(allySlot, targetAllySlot, skillIndex) {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      var attacker = party[allySlot - 1];
+      var target = party[targetAllySlot - 1];
+      if (!attacker || (attacker.name || '') !== '凌遥仙' || isAllyDefeated(attacker)) return;
+      if (!target || isAllyDefeated(target)) return;
+      var skill =
+        skillIndex >= 0 && attacker.skills && attacker.skills[skillIndex] ? attacker.skills[skillIndex] : null;
+      if (!skill || (skill.name || '') !== '辉烬壁障') return;
+      var skillAp = skill.ap != null ? skill.ap : 1;
+      var maxAp = getApByLevel(attacker.level != null ? attacker.level : 1);
+      var curAp =
+        attacker.currentAp !== undefined && attacker.currentAp !== null ? parseInt(attacker.currentAp, 10) : maxAp;
+      if (curAp < skillAp) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('AP 不足，无法使用该技能');
+        return;
+      }
+      var lv = Math.max(1, parseInt(skill.level, 10) || 1);
+      var adv = skill.advancement;
+      var poemBefore = getUnitBuffLayers(attacker, '诗章');
+      var shieldValue = getShieldForSkill(attacker, skill);
+      if (shieldValue !== shieldValue || shieldValue <= 0) shieldValue = 0;
+      shieldValue = Math.max(0, Math.floor(shieldValue));
+      attacker.currentAp = Math.max(0, curAp - skillAp);
+      if (adv === 'B') {
+        var prevH = target._辉烬坚壁剩余 != null ? Math.max(0, parseInt(target._辉烬坚壁剩余, 10) || 0) : 0;
+        target._辉烬坚壁剩余 = prevH + shieldValue;
+      } else if (target._辉烬坚壁剩余 != null) delete target._辉烬坚壁剩余;
+      if (shieldValue > 0) {
+        target.currentShield =
+          (target.currentShield != null ? parseInt(target.currentShield, 10) || 0 : 0) + shieldValue;
+        addBuffLayers(target, '护盾', '护盾', shieldValue, attacker);
+      }
+      addBuffLayers(attacker, '诗章', '诗章', 2, attacker);
+      if (lv >= 5 && adv === 'A') {
+        if (poemBefore >= 5) removeOneNegativeDebuffStack(target);
+        addBuffLayers(target, '扰魔', '扰魔', 1, attacker);
+      } else if (lv >= 5 && adv === 'B') {
+        addBuffLayers(target, '格挡', '格挡', 1, attacker);
+      }
+      capUnitBuffs(target);
+      capUnitBuffs(attacker);
+      var attName = attacker.name || '凌遥仙';
+      var targetName = target.name || '友方';
+      var skillDisplayName =
+        lv >= 5 && adv === 'A' ? '星纱帷幕' : lv >= 5 && adv === 'B' ? '辉烬坚壁' : '辉烬壁障';
+      saveBattleData(party, enemies);
+      renderAllySlots(party);
+      var logLine =
+        attName +
+        ' 使用「' +
+        skillDisplayName +
+        '」为 ' +
+        targetName +
+        ' 提供 ' +
+        shieldValue +
+        ' 点护盾，2层【诗章】';
+      if (lv >= 5 && adv === 'A') {
+        logLine += '，1层【扰魔】';
+        if (poemBefore >= 5) logLine += '，清除1个负面状态';
+      } else if (lv >= 5 && adv === 'B') logLine += '，1层【格挡】';
+      appendCombatLog(logLine);
+      if (typeof window.toastr !== 'undefined')
+        window.toastr.success(skillDisplayName + '：' + shieldValue + ' 护盾');
+      var attackerSlotEl = document.querySelector('.slot[data-slot="ally-' + allySlot + '"]');
+      var targetSlotEl = document.querySelector('.slot[data-slot="ally-' + targetAllySlot + '"]');
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          if (targetSlotEl) playAnimationOnSlot(targetSlotEl, 'Recovery2', function () {});
+          if (attackerSlotEl && targetSlotEl && attackerSlotEl !== targetSlotEl)
+            playStrikeShake(attackerSlotEl, targetSlotEl, function () {});
+        });
+      });
+    }
+    /** 星海调和：凌遥仙。治疗/远程/单体，1 AP。2 层【再生】+ 即时治疗（Lv.1 无）；+1【诗章】。Lv5-A 星海漫灌：目标当前生命低于 50% 时消耗 2 层【诗章】使本次治疗翻倍；Lv5-B 星辉回流：消耗 2 层【诗章】额外施加 Int×0.6 护盾。 */
+    function executePlayer星海调和(allySlot, targetAllySlot, skillIndex) {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      var attacker = party[allySlot - 1];
+      var target = party[targetAllySlot - 1];
+      if (!attacker || (attacker.name || '') !== '凌遥仙' || isAllyDefeated(attacker)) return;
+      if (!target || isAllyDefeated(target)) return;
+      var skill =
+        skillIndex >= 0 && attacker.skills && attacker.skills[skillIndex] ? attacker.skills[skillIndex] : null;
+      if (!skill || (skill.name || '') !== '星海调和') return;
+      var skillAp = skill.ap != null ? skill.ap : 1;
+      var maxAp = getApByLevel(attacker.level != null ? attacker.level : 1);
+      var curAp =
+        attacker.currentAp !== undefined && attacker.currentAp !== null ? parseInt(attacker.currentAp, 10) : maxAp;
+      if (curAp < skillAp) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('AP 不足，无法使用该技能');
+        return;
+      }
+      var lv = Math.max(1, parseInt(skill.level, 10) || 1);
+      var adv = skill.advancement;
+      attacker.currentAp = Math.max(0, curAp - skillAp);
+      addBuffLayers(target, '再生', '再生', 2, attacker);
+      var baseHeal = Math.max(0, Math.floor(getBaseDamageForSkill(attacker, skill) || 0));
+      var intStat = getDisplayStat(attacker, 'int') || 0;
+      var maxHp = target.maxHp != null ? parseInt(target.maxHp, 10) : getHpFromSta(getDisplayStat(target, 'sta') || 1);
+      var curHp = target.hp != null ? parseInt(target.hp, 10) : maxHp;
+      var shieldExtra = 0;
+      var doubledHeal = false;
+      if (lv >= 5 && adv === 'A' && maxHp > 0 && curHp / maxHp < 0.5 && getUnitBuffLayers(attacker, '诗章') >= 2) {
+        if (consumeBuffLayersFromUnit(attacker, '诗章', 2) === 2) {
+          baseHeal *= 2;
+          doubledHeal = true;
+        }
+      } else if (lv >= 5 && adv === 'B' && getUnitBuffLayers(attacker, '诗章') >= 2) {
+        if (consumeBuffLayersFromUnit(attacker, '诗章', 2) === 2) {
+          shieldExtra = Math.max(0, Math.floor(intStat * 0.6));
+        }
+      }
+      var appliedHeal = apply丝伊德共生母胎HealMultiplier(target, baseHeal);
+      target.hp = Math.min(maxHp, curHp + appliedHeal);
+      if (shieldExtra > 0) {
+        target.currentShield =
+          (target.currentShield != null ? parseInt(target.currentShield, 10) || 0 : 0) + shieldExtra;
+        addBuffLayers(target, '护盾', '护盾', shieldExtra, attacker);
+      }
+      addBuffLayers(attacker, '诗章', '诗章', 1, attacker);
+      capUnitBuffs(target);
+      capUnitBuffs(attacker);
+      var attName = attacker.name || '凌遥仙';
+      var targetName = target.name || '友方';
+      var skillDisplayName =
+        lv >= 5 && adv === 'A' ? '星海漫灌' : lv >= 5 && adv === 'B' ? '星辉回流' : '星海调和';
+      saveBattleData(party, enemies);
+      renderAllySlots(party);
+      var logLine =
+        attName +
+        ' 使用「' +
+        skillDisplayName +
+        '」：' +
+        targetName +
+        ' 获得2层【再生】';
+      if (appliedHeal > 0) logLine += '，回复 ' + appliedHeal + ' 生命';
+      if (doubledHeal) logLine += '（诗章翻倍）';
+      if (shieldExtra > 0) logLine += '，' + shieldExtra + ' 额外护盾（星辉回流）';
+      logLine += '，1层【诗章】';
+      appendCombatLog(logLine);
+      if (typeof window.toastr !== 'undefined')
+        window.toastr.success(skillDisplayName + (appliedHeal > 0 ? ' +' + appliedHeal : ''));
+      var attackerSlotEl = document.querySelector('.slot[data-slot="ally-' + allySlot + '"]');
+      var targetSlotEl = document.querySelector('.slot[data-slot="ally-' + targetAllySlot + '"]');
+      if (targetSlotEl && appliedHeal > 0) playHealEffect(targetSlotEl, appliedHeal);
+      if (attackerSlotEl && targetSlotEl && attackerSlotEl !== targetSlotEl) {
+        playStrikeShake(attackerSlotEl, targetSlotEl, function () {
+          if (targetSlotEl) playAnimationOnSlot(targetSlotEl, 'Holy2', function () {});
+        });
+      } else if (targetSlotEl) {
+        playAnimationOnSlot(targetSlotEl, 'Holy2', function () {});
+      }
+    }
+    /** 天穹颂歌：凌遥仙。增益/远程/群体，2 AP。友方全体 Int× 护盾；诗章≥5 时消耗 5 层并对友方全体施加【激励】；Lv5-A 终末咏唱另对敌方全体【脆弱】；Lv5-B 星河永续另对友方全体 1 层【再生】。 */
+    function executePlayer天穹颂歌(allySlot, skillIndex) {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      var attacker = party[allySlot - 1];
+      if (!attacker || (attacker.name || '') !== '凌遥仙' || isAllyDefeated(attacker)) return;
+      var skill =
+        skillIndex >= 0 && attacker.skills && attacker.skills[skillIndex] ? attacker.skills[skillIndex] : null;
+      if (!skill || (skill.name || '') !== '天穹颂歌') return;
+      var skillAp = skill.ap != null ? skill.ap : 2;
+      var maxAp = getApByLevel(attacker.level != null ? attacker.level : 1);
+      var curAp =
+        attacker.currentAp !== undefined && attacker.currentAp !== null ? parseInt(attacker.currentAp, 10) : maxAp;
+      var effApTq = getEffectiveSkillApCostForAlly(attacker, skillAp);
+      if (curAp < effApTq) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('AP 不足，无法使用该技能');
+        return;
+      }
+      var lv = Math.max(1, parseInt(skill.level, 10) || 1);
+      var adv = skill.advancement;
+      var shieldValue = getShieldForSkill(attacker, skill);
+      if (shieldValue !== shieldValue || shieldValue <= 0) shieldValue = 0;
+      shieldValue = Math.max(0, Math.floor(shieldValue));
+      applyAllySkillApCost(attacker, skillAp, curAp);
+      var poemBonus = false;
+      if (getUnitBuffLayers(attacker, '诗章') >= 5 && consumeBuffLayersFromUnit(attacker, '诗章', 5) === 5) {
+        poemBonus = true;
+      }
+      var ai;
+      for (ai = 0; ai < party.length; ai++) {
+        var ally = party[ai];
+        if (!ally || isAllyDefeated(ally)) continue;
+        if (shieldValue > 0) {
+          ally.currentShield =
+            (ally.currentShield != null ? parseInt(ally.currentShield, 10) || 0 : 0) + shieldValue;
+          addBuffLayers(ally, '护盾', '护盾', shieldValue, attacker);
+        }
+        if (poemBonus) {
+          addBuffLayers(ally, '激励', '激励', 1, attacker);
+          if (lv >= 5 && adv === 'B') addBuffLayers(ally, '再生', '再生', 1, attacker);
+        }
+        capUnitBuffs(ally);
+      }
+      if (poemBonus && lv >= 5 && adv === 'A' && enemies && enemies.length) {
+        for (var ei = 0; ei < enemies.length; ei++) {
+          var en = enemies[ei];
+          if (!en || (en.hp != null && parseInt(en.hp, 10) <= 0)) continue;
+          addBuffLayers(en, '脆弱', '脆弱', 1, attacker);
+          capUnitBuffs(en);
+        }
+      }
+      capUnitBuffs(attacker);
+      var attName = attacker.name || '凌遥仙';
+      var skillDisplayName =
+        lv >= 5 && adv === 'A' ? '终末咏唱' : lv >= 5 && adv === 'B' ? '星河永续' : '天穹颂歌';
+      saveBattleData(party, enemies);
+      renderAllySlots(party);
+      renderEnemySlots(enemies);
+      var logLine =
+        attName +
+        ' 使用「' +
+        skillDisplayName +
+        '」：友方全体' +
+        (shieldValue > 0 ? ' +' + shieldValue + ' 护盾' : '');
+      if (poemBonus) {
+        logLine += '，消耗5层【诗章】，友方全体1层【激励】';
+        if (lv >= 5 && adv === 'A') logLine += '，敌方全体1层【脆弱】';
+        if (lv >= 5 && adv === 'B') logLine += '，友方全体1层【再生】';
+      }
+      appendCombatLog(logLine);
+      if (typeof window.toastr !== 'undefined') window.toastr.success(skillDisplayName + ' 释放完毕');
+      var allySideEl = document.querySelector('.side-ally');
+      if (allySideEl) playAnimationOnContainer(allySideEl, 'Cure2', function () {});
+    }
+    /** 凌遥仙特殊：星辰定锚。3 次命中判定，每次成功叠 1 层【眩晕】；+3【诗章】。每场 1 次。 */
+    function executePlayer星辰定锚(allySlot, enemySlotNum) {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      var attacker = party[allySlot - 1];
+      var defender = enemies[enemySlotNum - 1];
+      if (!attacker || (attacker.name || '') !== '凌遥仙' || isAllyDefeated(attacker)) return;
+      if (!defender || (defender.hp != null && parseInt(defender.hp, 10) <= 0)) return;
+      var skillAp = 2;
+      var maxAp = getApByLevel(attacker.level != null ? attacker.level : 1);
+      var curAp =
+        attacker.currentAp !== undefined && attacker.currentAp !== null ? parseInt(attacker.currentAp, 10) : maxAp;
+      var effAp = getEffectiveSkillApCostForAlly(attacker, skillAp);
+      if (curAp < effAp) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('AP 不足，无法使用该技能');
+        return;
+      }
+      var hits = 0;
+      var t;
+      for (t = 0; t < 3; t++) {
+        var hr = getPlayerHitRate(attacker, defender);
+        var roll = roll1To100();
+        if (roll <= hr) {
+          hits++;
+          addBuffLayers(defender, '眩晕', '眩晕', 1, attacker);
+        }
+      }
+      addBuffLayers(attacker, '诗章', '诗章', 3, attacker);
+      capUnitBuffs(defender);
+      capUnitBuffs(attacker);
+      applyAllySkillApCost(attacker, skillAp, curAp);
+      markLingyaoOnceSpecialUsed('星辰定锚');
+      saveBattleData(party, enemies);
+      renderAllySlots(party);
+      renderEnemySlots(enemies);
+      appendCombatLog(
+        (attacker.name || '凌遥仙') +
+          ' 星辰定锚：3 次判定命中 ' +
+          hits +
+          ' 次，眩晕叠加；获得3层【诗章】',
+      );
+      if (typeof window.toastr !== 'undefined') window.toastr.success('星辰定锚');
+    }
+    /** 凌遥仙特殊：星辰加速。友方 3 层【星辰加速】。 */
+    function executePlayer星辰加速(allySlot, targetAllySlot) {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      var attacker = party[allySlot - 1];
+      var target = party[targetAllySlot - 1];
+      if (!attacker || (attacker.name || '') !== '凌遥仙' || isAllyDefeated(attacker)) return;
+      if (!target || isAllyDefeated(target)) return;
+      var skillAp = 1;
+      var maxAp = getApByLevel(attacker.level != null ? attacker.level : 1);
+      var curAp =
+        attacker.currentAp !== undefined && attacker.currentAp !== null ? parseInt(attacker.currentAp, 10) : maxAp;
+      var effAp = getEffectiveSkillApCostForAlly(attacker, skillAp);
+      if (curAp < effAp) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('AP 不足，无法使用该技能');
+        return;
+      }
+      addBuffLayers(target, '星辰加速', '星辰加速', 3, attacker);
+      capUnitBuffs(target);
+      applyAllySkillApCost(attacker, skillAp, curAp);
+      saveBattleData(party, enemies);
+      renderAllySlots(party);
+      appendCombatLog(
+        (attacker.name || '凌遥仙') + ' 星辰加速：' + (target.name || '友方') + ' 获得3层【星辰加速】',
+      );
+      if (typeof window.toastr !== 'undefined') window.toastr.success('星辰加速');
+    }
+    /** 凌遥仙特殊：星命逆转。耗 5【诗章】，友方【星命】+ 护盾快照。每场 1 次。 */
+    function executePlayer星命逆转(allySlot, targetAllySlot) {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      var attacker = party[allySlot - 1];
+      var target = party[targetAllySlot - 1];
+      if (!attacker || (attacker.name || '') !== '凌遥仙' || isAllyDefeated(attacker)) return;
+      if (!target || isAllyDefeated(target)) return;
+      if (getUnitBuffLayers(attacker, '诗章') < 5) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('【诗章】不足 5 层');
+        return;
+      }
+      var skillAp = 2;
+      var maxAp = getApByLevel(attacker.level != null ? attacker.level : 1);
+      var curAp =
+        attacker.currentAp !== undefined && attacker.currentAp !== null ? parseInt(attacker.currentAp, 10) : maxAp;
+      var effAp = getEffectiveSkillApCostForAlly(attacker, skillAp);
+      if (curAp < effAp) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('AP 不足，无法使用该技能');
+        return;
+      }
+      if (consumeBuffLayersFromUnit(attacker, '诗章', 5) < 5) return;
+      var intL = getDisplayStat(attacker, 'int') || 0;
+      var defL = getDisplayStat(attacker, 'def') || 0;
+      var shSnap = Math.max(0, Math.floor(intL * 1.5) + Math.floor(defL * 1.0));
+      target._星命护盾值 = shSnap;
+      addBuffLayers(target, '星命', '星命', 1, attacker);
+      capUnitBuffs(target);
+      applyAllySkillApCost(attacker, skillAp, curAp);
+      markLingyaoOnceSpecialUsed('星命逆转');
+      saveBattleData(party, enemies);
+      renderAllySlots(party);
+      appendCombatLog(
+        (attacker.name || '凌遥仙') +
+          ' 星命逆转：' +
+          (target.name || '友方') +
+          ' 获得【星命】（免死护盾 ' +
+          shSnap +
+          '）',
+      );
+      if (typeof window.toastr !== 'undefined') window.toastr.success('星命逆转');
+    }
+    /** 凌遥仙特殊：命仪精准。友方 1 层【命仪精准】。每场 1 次。 */
+    function executePlayer命仪精准(allySlot, targetAllySlot) {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      var attacker = party[allySlot - 1];
+      var target = party[targetAllySlot - 1];
+      if (!attacker || (attacker.name || '') !== '凌遥仙' || isAllyDefeated(attacker)) return;
+      if (!target || isAllyDefeated(target)) return;
+      var skillAp = 2;
+      var maxAp = getApByLevel(attacker.level != null ? attacker.level : 1);
+      var curAp =
+        attacker.currentAp !== undefined && attacker.currentAp !== null ? parseInt(attacker.currentAp, 10) : maxAp;
+      var effAp = getEffectiveSkillApCostForAlly(attacker, skillAp);
+      if (curAp < effAp) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('AP 不足，无法使用该技能');
+        return;
+      }
+      addBuffLayers(target, '命仪精准', '命仪精准', 1, attacker);
+      capUnitBuffs(target);
+      applyAllySkillApCost(attacker, skillAp, curAp);
+      markLingyaoOnceSpecialUsed('命仪精准');
+      saveBattleData(party, enemies);
+      renderAllySlots(party);
+      appendCombatLog(
+        (attacker.name || '凌遥仙') + ' 命仪精准：' + (target.name || '友方') + ' 下次攻击必中必暴',
+      );
+      if (typeof window.toastr !== 'undefined') window.toastr.success('命仪精准');
+    }
     /** 孢子云：自然/远程/群体，对敌方全体自然伤害并【中毒】。 */
     function executePlayer孢子云(allySlot, skillIndex) {
       var party = getParty();
@@ -8535,6 +9841,67 @@
         });
       });
     }
+    /** 虚妄护盾：月见遥。1 AP。Int×a+Def×a 特殊护盾，仅第一次受击即整层清空；Lv5-A 镜面反射：被敌方攻击打碎护盾时反弹本次受到伤害的50%；Lv5-B 幻影替身：对任意友方施加。施放时替换目标身上原有【护盾】。 */
+    function executePlayer虚妄护盾(allySlot, targetAllySlot, skillIndex) {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      var attacker = party[allySlot - 1];
+      var target = party[targetAllySlot - 1];
+      if (!attacker || !target || isAllyDefeated(attacker) || isAllyDefeated(target)) return;
+      var skill =
+        skillIndex >= 0 && attacker.skills && attacker.skills[skillIndex] ? attacker.skills[skillIndex] : null;
+      if (!skill || (skill.name || '') !== '虚妄护盾') return;
+      var skillAp = skill.ap != null ? skill.ap : 1;
+      var maxAp = getApByLevel(attacker.level != null ? attacker.level : 1);
+      var curAp =
+        attacker.currentAp !== undefined && attacker.currentAp !== null ? parseInt(attacker.currentAp, 10) : maxAp;
+      if (curAp < skillAp) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('AP 不足，无法使用该技能');
+        return;
+      }
+      var lv = Math.max(1, parseInt(skill.level, 10) || 1);
+      var adv = skill.advancement;
+      var coeff = lv === 1 ? 0.5 : lv === 2 ? 0.6 : lv === 3 ? 0.7 : 0.8;
+      var intV = getDisplayStat(attacker, 'int') || 0;
+      var defV = getDisplayStat(attacker, 'def') || 0;
+      var shieldValue = Math.max(0, Math.floor(intV * coeff + defV * coeff));
+      var isMirror = lv >= 5 && adv === 'A';
+      if (target.buffs)
+        target.buffs = target.buffs.filter(function (b) {
+          return (b.id || b.name) !== '护盾';
+        });
+      target.currentShield = 0;
+      target._虚妄护盾一击 = false;
+      target._虚妄护盾镜面反射 = false;
+      if (shieldValue > 0) {
+        target.currentShield = shieldValue;
+        addBuffLayers(target, '护盾', '护盾', shieldValue, attacker);
+        target._虚妄护盾一击 = true;
+        if (isMirror) target._虚妄护盾镜面反射 = true;
+      }
+      attacker.currentAp = Math.max(0, curAp - skillAp);
+      capUnitBuffs(target);
+      saveBattleData(party, enemies);
+      renderAllySlots(party);
+      renderEnemySlots(enemies);
+      var skillLabel =
+        lv >= 5 && adv === 'A' ? '镜面反射' : lv >= 5 && adv === 'B' ? '幻影替身' : '虚妄护盾';
+      var attName = attacker.name || '月见遥';
+      var tgtName = target.name || '友方';
+      var logExtra =
+        targetAllySlot !== allySlot
+          ? '为 ' + tgtName + ' 施加 ' + shieldValue + ' 点虚妄护盾（仅承受1次攻击）'
+          : '获得 ' + shieldValue + ' 点虚妄护盾（仅承受1次攻击）';
+      appendCombatLog(attName + ' 使用「' + skillLabel + '」，' + logExtra);
+      if (typeof window.toastr !== 'undefined')
+        window.toastr.success(skillLabel + '：' + shieldValue + ' 护盾');
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          var tel = document.querySelector('.slot[data-slot="ally-' + targetAllySlot + '"]');
+          if (tel) playAnimationOnSlot(tel, 'Recovery4', function () {});
+        });
+      });
+    }
     /** 再生菌丝：治疗/远程/单体，对友方 2 层【再生】；目标为丝伊德·白时 +1 层【孕育】。 */
     function executePlayer再生菌丝(allySlot, targetAllySlot, skillIndex) {
       var party = getParty();
@@ -8630,6 +9997,63 @@
         });
       } else {
         afterMonteDebuff();
+      }
+    }
+    /** 迷雾幻境：月见遥。减益/远程/群体，2 AP。对存活敌方全体施加【恍惚】；Lv5-A 虚实倒错 敌方每次 Miss 对自身 Atk×0.3 魔法伤害；Lv5-B 认知崩解 另施加【迟钝】。 */
+    function executePlayer迷雾幻境(allySlot, skillIndex) {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      var attacker = party[allySlot - 1];
+      if (!attacker || (attacker.name || '') !== '月见遥' || isAllyDefeated(attacker)) return;
+      var skill =
+        skillIndex >= 0 && attacker.skills && attacker.skills[skillIndex] ? attacker.skills[skillIndex] : null;
+      if (!skill || (skill.name || '') !== '迷雾幻境') return;
+      var skillAp = skill.ap != null ? skill.ap : 2;
+      var maxAp = getApByLevel(attacker.level != null ? attacker.level : 1);
+      var curAp =
+        attacker.currentAp !== undefined && attacker.currentAp !== null ? parseInt(attacker.currentAp, 10) : maxAp;
+      if (curAp < skillAp) {
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('AP 不足，无法使用该技能');
+        return;
+      }
+      var lv = Math.max(1, parseInt(skill.level, 10) || 1);
+      var adv = skill.advancement;
+      var huanLayers = lv <= 2 ? 2 : 3;
+      battleState.迷雾幻境虚实倒错 = lv >= 5 && adv === 'A';
+      var hitAny = false;
+      for (var ei = 0; ei < (enemies || []).length; ei++) {
+        var en = enemies[ei];
+        if (en && (en.hp == null || parseInt(en.hp, 10) > 0)) {
+          addBuffLayers(en, '恍惚', '恍惚', huanLayers, attacker);
+          if (lv >= 5 && adv === 'B') addBuffLayers(en, '迟钝', '迟钝', 3, attacker);
+          capUnitBuffs(en);
+          hitAny = true;
+        }
+      }
+      if (!hitAny) {
+        battleState.迷雾幻境虚实倒错 = false;
+        if (typeof window.toastr !== 'undefined') window.toastr.warning('没有可施加减益的敌方单位');
+        return;
+      }
+      attacker.currentAp = Math.max(0, curAp - skillAp);
+      saveBattleData(party, enemies);
+      renderAllySlots(party);
+      renderEnemySlots(enemies);
+      var skillLabel =
+        lv >= 5 && adv === 'A' ? '虚实倒错' : lv >= 5 && adv === 'B' ? '认知崩解' : '迷雾幻境';
+      var logExtra =
+        huanLayers +
+        '层【恍惚】' +
+        (lv >= 5 && adv === 'B' ? '，3层【迟钝】' : '') +
+        (lv >= 5 && adv === 'A' ? '（虚实倒错：敌方 Miss 时自伤 Atk×0.3）' : '');
+      appendCombatLog((attacker.name || '月见遥') + ' 使用「' + skillLabel + '」，对存活敌方全体施加' + logExtra);
+      if (typeof window.toastr !== 'undefined') window.toastr.success(skillLabel + ' 已释放');
+      var attackerSlotEl = document.querySelector('.slot[data-slot="ally-' + allySlot + '"]');
+      var enemySideEl = document.querySelector('.side-enemy');
+      if (attackerSlotEl && enemySideEl) {
+        playStrikeShake(attackerSlotEl, null, function () {
+          playAnimationOnContainer(enemySideEl, 'Mist-Pink', function () {});
+        });
       }
     }
     /** 芬芳治愈：蒙特卡洛。治疗/远程/单体，回复 ATK×0.8；目标为丝伊德·白时 +1 层【孕育】。 */
@@ -9783,6 +11207,24 @@
           if (has流血) layers = layers + 1;
         }
       }
+      if (
+        fromChar &&
+        fromChar.name === '凌遥仙' &&
+        fromChar.specialSkillsUnlocked &&
+        fromChar.specialSkillsUnlocked.indexOf('永恒咏唱') !== -1
+      ) {
+        var mapYong = {
+          力量强化: '力量增幅',
+          敏捷强化: '敏捷增幅',
+          智力强化: '智力增幅',
+          防御强化: '防御增幅',
+          攻击强化: '力量增幅',
+        };
+        if (mapYong[buffId]) {
+          buffId = mapYong[buffId];
+          buffName = buffId;
+        }
+      }
       if (layers <= 0) return;
       var maxL = getBuffMaxLayers(buffId);
       if (maxL != null) layers = Math.min(layers, maxL);
@@ -9846,21 +11288,42 @@
       // 为自动飘字定位提供稳定标识（避免 getParty/getEnemyParty 返回新对象导致引用不一致）
       if (unit && !unit._damageFxUid) unit._damageFxUid = 'u' + Math.random().toString(36).slice(2) + Date.now();
       var shield = unit.currentShield != null ? Math.max(0, parseInt(unit.currentShield, 10) || 0) : 0;
-      var absorb = Math.min(damage, shield);
-      var toHp = Math.max(0, damage - absorb);
-      unit.currentShield = Math.max(0, shield - damage);
-      if (unit.buffs && absorb > 0) {
-        var sh = unit.buffs.find(function (b) {
-          return (b.id || b.name) === '护盾';
-        });
-        if (sh) {
-          sh.layers = Math.max(0, (sh.layers || 0) - absorb);
-          if (sh.layers <= 0)
-            unit.buffs = unit.buffs.filter(function (b) {
-              return (b.id || b.name) !== '护盾';
-            });
+      var huijinRemBefore =
+        unit._辉烬坚壁剩余 != null ? Math.max(0, parseInt(unit._辉烬坚壁剩余, 10) || 0) : 0;
+      var absorb, newShieldAfter, toHp;
+      if (unit._虚妄护盾一击 && shield > 0 && damage > 0) {
+        absorb = Math.min(damage, shield);
+        var huijinAbsorbedX = Math.min(absorb, huijinRemBefore);
+        unit._辉烬坚壁剩余 = Math.max(0, huijinRemBefore - huijinAbsorbedX);
+        toHp = Math.max(0, damage - absorb);
+        newShieldAfter = 0;
+        unit.currentShield = 0;
+        if (unit.buffs)
+          unit.buffs = unit.buffs.filter(function (b) {
+            return (b.id || b.name) !== '护盾';
+          });
+        unit._虚妄护盾一击 = false;
+      } else {
+        absorb = Math.min(damage, shield);
+        var huijinAbsorbed = Math.min(absorb, huijinRemBefore);
+        unit._辉烬坚壁剩余 = Math.max(0, huijinRemBefore - huijinAbsorbed);
+        newShieldAfter = Math.max(0, shield - damage);
+        toHp = Math.max(0, damage - absorb);
+        unit.currentShield = newShieldAfter;
+        if (unit.buffs && absorb > 0) {
+          var sh = unit.buffs.find(function (b) {
+            return (b.id || b.name) === '护盾';
+          });
+          if (sh) {
+            sh.layers = Math.max(0, (sh.layers || 0) - absorb);
+            if (sh.layers <= 0)
+              unit.buffs = unit.buffs.filter(function (b) {
+                return (b.id || b.name) !== '护盾';
+              });
+          }
         }
       }
+      var skip虚实颠倒 = opts && opts.skip虚实颠倒;
       var curHp =
         unit.hp != null
           ? parseInt(unit.hp, 10)
@@ -9869,7 +11332,82 @@
             : typeof getHpFromSta === 'function' && typeof getDisplayStat === 'function'
               ? getHpFromSta(getDisplayStat(unit, 'sta') || 1)
               : 100;
-      unit.hp = Math.max(0, curHp - toHp);
+      var newHpAfterDmg = curHp - toHp;
+      var maxHpFor虚实 =
+        unit.maxHp != null
+          ? parseInt(unit.maxHp, 10)
+          : typeof getHpFromSta === 'function' && typeof getDisplayStat === 'function'
+            ? getHpFromSta(getDisplayStat(unit, 'sta') || 1)
+            : 100;
+      var invert虚实颠倒 =
+        !skip虚实颠倒 &&
+        typeof getUnitBuffLayers === 'function' &&
+        getUnitBuffLayers(unit, '虚实颠倒') > 0 &&
+        toHp > 0;
+      if (invert虚实颠倒) {
+        unit.hp = Math.min(maxHpFor虚实, curHp + toHp);
+        if (typeof appendCombatLog === 'function')
+          appendCombatLog(
+            (unit.name || '单位') + ' 【虚实颠倒】：将 ' + toHp + ' 点 HP 伤害转为治疗',
+          );
+        unit._justDefeated = false;
+      } else if (newHpAfterDmg <= 0 && toHp > 0 && unit && getUnitBuffLayers(unit, '星命') > 0) {
+        var shStar =
+          unit._星命护盾值 != null ? Math.max(0, parseInt(unit._星命护盾值, 10) || 0) : 0;
+        consumeBuffLayersFromUnit(unit, '星命', 99);
+        unit.buffs = (unit.buffs || []).filter(function (bx) {
+          return (bx.id || bx.name) !== '星命';
+        });
+        unit._星命护盾值 = null;
+        unit.hp = 1;
+        if (shStar > 0) {
+          unit.currentShield =
+            (unit.currentShield != null ? parseInt(unit.currentShield, 10) || 0 : 0) + shStar;
+          addBuffLayers(unit, '护盾', '护盾', shStar);
+        }
+        if (typeof appendCombatLog === 'function')
+          appendCombatLog(
+            (unit.name || '友方') +
+              ' 【星命】：免除致死，生命保留为 1' +
+              (shStar > 0 ? '，获得 ' + shStar + ' 护盾' : ''),
+          );
+        unit._justDefeated = false;
+      } else {
+        unit.hp = Math.max(0, newHpAfterDmg);
+      }
+      if (shield > 0 && newShieldAfter <= 0 && huijinRemBefore > 0) {
+        var rawHuijinHeal = Math.floor(huijinRemBefore * 0.5);
+        if (rawHuijinHeal > 0) {
+          var appliedHuijin = apply丝伊德共生母胎HealMultiplier(unit, rawHuijinHeal);
+          var maxHpH =
+            unit.maxHp != null ? parseInt(unit.maxHp, 10) : getHpFromSta(getDisplayStat(unit, 'sta') || 1);
+          var curHpH = unit.hp != null ? parseInt(unit.hp, 10) : maxHpH;
+          if (typeof getUnitBuffLayers === 'function' && getUnitBuffLayers(unit, '虚实颠倒') > 0) {
+            applyDamageToTarget(unit, appliedHuijin, { skip虚实颠倒: true });
+            if (typeof appendCombatLog === 'function')
+              appendCombatLog((unit.name || '友方') + ' 【虚实颠倒】辉烬破裂治疗转为 ' + appliedHuijin + ' 伤害');
+          } else {
+            unit.hp = Math.min(maxHpH, curHpH + appliedHuijin);
+            if (typeof appendCombatLog === 'function')
+              appendCombatLog((unit.name || '友方') + ' 辉烬坚壁：护盾破裂，回复 ' + appliedHuijin + ' 生命');
+            Promise.resolve().then(function () {
+              var partyH = getParty();
+              if (partyH && partyH.length) {
+                for (var hi = 0; hi < partyH.length; hi++) {
+                  if (
+                    partyH[hi] === unit ||
+                    (unit._damageFxUid && partyH[hi] && partyH[hi]._damageFxUid === unit._damageFxUid)
+                  ) {
+                    var slotHeal = document.querySelector('.slot[data-slot="ally-' + (hi + 1) + '"]');
+                    if (slotHeal) playHealEffect(slotHeal, appliedHuijin);
+                    break;
+                  }
+                }
+              }
+            });
+          }
+        }
+      }
       if (unit.hp === 0 && curHp > 0) unit._justDefeated = true;
       if (unit.name === '丝伊德·白' && (absorb > 0 || toHp > 0)) {
         addBuffLayers(unit, '孕育', '孕育', 1);
@@ -10020,6 +11558,29 @@
     function applyDamageToAllyAndTry弹返(ally, attackerEnemy, finalDamage) {
       var shieldBefore = ally.currentShield != null ? Math.max(0, parseInt(ally.currentShield, 10) || 0) : 0;
       applyDamageToTarget(ally, finalDamage);
+      if (
+        shieldBefore > 0 &&
+        (ally.currentShield || 0) === 0 &&
+        ally._虚妄护盾镜面反射 &&
+        attackerEnemy &&
+        finalDamage > 0
+      ) {
+        ally._虚妄护盾镜面反射 = false;
+        var reflectDmg = Math.max(0, Math.floor(finalDamage * 0.5));
+        if (reflectDmg > 0 && (parseInt(attackerEnemy.hp, 10) || 0) > 0) {
+          applyDamageToTarget(attackerEnemy, reflectDmg);
+          appendCombatLog(
+            (ally.name || '己方') +
+              ' 「镜面反射」反弹 ' +
+              reflectDmg +
+              ' 伤害至 ' +
+              (attackerEnemy.name || '敌方'),
+          );
+          saveBattleData(getParty(), getEnemyParty());
+          renderAllySlots(getParty());
+          renderEnemySlots(getEnemyParty());
+        }
+      }
       if (shieldBefore > 0 && (ally.currentShield || 0) === 0 && ally.见切弹返 && attackerEnemy) {
         ally.见切弹返 = false;
         var counterDmg = Math.max(0, Math.floor((getDisplayStat(ally, 'str') || 0) * 0.6));
@@ -10580,7 +12141,11 @@
                     if (s.locked) return;
                     if (is沧澜潮汐B(s)) return;
                     var needAp = s.ap != null ? s.ap : 1;
-                    var insufficientAp = curAp < needAp;
+                    var needApEff =
+                      ch && typeof getEffectiveSkillApCostForAlly === 'function'
+                        ? getEffectiveSkillApCostForAlly(ch, needAp)
+                        : needAp;
+                    var insufficientAp = curAp < needApEff;
                     if ((s.name || '') === '魔物孕育' && ch && (ch.name || '') === '丝伊德·白') {
                       var needYu = get魔物孕育消耗层数(s);
                       var dualYu = Math.max(1, parseInt(s.level, 10) || 1) >= 5 && s.advancement === 'B';
@@ -10602,7 +12167,7 @@
                         : null;
                     var displayName = advanceOpt ? (s.name || '') + '-' + (advanceOpt.name || '') : s.name || '';
                     var name = displayName.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                    var ap = s.ap != null ? s.ap : '—';
+                    var ap = s.ap != null ? needApEff : '—';
                     var rawEffect =
                       s.advancementReplacesEffect && advanceOpt && advanceOpt.effect
                         ? advanceOpt.effect
@@ -10668,10 +12233,16 @@
                                                               ? SKILL_YANMOCHUIXI_SVG || SKILL_ATTACK_SVG
                                                               : s.name === '心灵侵蚀'
                                                                 ? SKILL_XINLINGQINSHI_SVG || SKILL_ATTACK_SVG
-                                                                : s.name === '虚无放逐'
+                                                              : s.name === '镜花水月'
+                                                                ? SKILL_XINLINGQINSHI_SVG || SKILL_ATTACK_SVG
+                                                                : s.name === '心智侵蚀'
+                                                                  ? SKILL_XINLINGQINSHI_SVG || SKILL_ATTACK_SVG
+                                                                  : s.name === '虚无放逐'
                                                                   ? SKILL_XUWUFANGZHU_SVG || SKILL_ATTACK_SVG
                                                                   : s.name === '妖艳业火'
                                                                     ? SKILL_YAOYANYEHUO_SVG || SKILL_ATTACK_SVG
+                                                                    : s.name === '迷雾幻境'
+                                                                      ? SKILL_YAOYANYEHUO_SVG || SKILL_ATTACK_SVG
                                                                     : s.name === '圣光斩'
                                                                       ? SKILL_SHENGUANGZHAN_SVG || SKILL_ATTACK_SVG
                                                                       : s.name === '碧血魔剑'
@@ -10694,10 +12265,30 @@
                                                                             ? SKILL_DEFENSE_SVG ||
                                                                               SKILL_SHIELD_SWORD_SVG ||
                                                                               SKILL_ATTACK_SVG
+                                                                            : s.name === '虚妄护盾'
+                                                                              ? SKILL_DEFENSE_SVG ||
+                                                                                SKILL_SHIELD_SWORD_SVG ||
+                                                                                SKILL_ATTACK_SVG
                                                                         : s.name === '清算之手'
                                                                         ? SKILL_QINGSUANZHISHOU_SVG || SKILL_ATTACK_SVG
                                                                         : s.name === '神恩救赎'
                                                                           ? SKILL_SHENENJISHU_SVG || SKILL_ATTACK_SVG
+                                                                          : s.name === '星语祝祷'
+                                                                            ? SKILL_XINGYUZHUDAO_SVG ||
+                                                                              SKILL_SHENENJISHU_SVG ||
+                                                                              SKILL_ATTACK_SVG
+                                                                            : s.name === '辉烬壁障'
+                                                                              ? SKILL_HUIJINBIZHANG_SVG ||
+                                                                                SKILL_SHENENJISHU_SVG ||
+                                                                                SKILL_ATTACK_SVG
+                                                                              : s.name === '星海调和'
+                                                                                ? SKILL_XINGHAITIAOHE_SVG ||
+                                                                                  SKILL_SHENENJISHU_SVG ||
+                                                                                  SKILL_ATTACK_SVG
+                                                                                : s.name === '天穹颂歌'
+                                                                                  ? SKILL_TIANQIONGSONGE_SVG ||
+                                                                                    SKILL_SHENENJISHU_SVG ||
+                                                                                    SKILL_ATTACK_SVG
                                                                           : s.name === '罪罚宣告'
                                                                             ? SKILL_ZUIFAXUANGAO_SVG || SKILL_ATTACK_SVG
                                                                             : SKILL_ATTACK_SVG;
@@ -10751,17 +12342,29 @@
                   }
                   specialList.forEach(function (sk) {
                     if (unlocked.indexOf(sk.id) === -1) return;
+                    if (
+                      ch &&
+                      ch.name === '凌遥仙' &&
+                      battleState.lingyaoOnceSpecialUsed &&
+                      ['星辰定锚', '星命逆转', '命仪精准'].indexOf(sk.id) !== -1 &&
+                      battleState.lingyaoOnceSpecialUsed[sk.id]
+                    )
+                      return;
                     var skTags =
                       window.色色地牢_character && window.色色地牢_character.getSkillTagsString
                         ? window.色色地牢_character.getSkillTagsString(sk)
                         : sk.tags || '';
                     if (skTags.indexOf('被动') !== -1 || (sk.attribute1 || '') === '被动') return;
                     var needAp = sk.ap != null ? sk.ap : 1;
-                    var insufficientAp = curAp < needAp;
+                    var needApSpEff =
+                      ch && typeof getEffectiveSkillApCostForAlly === 'function'
+                        ? getEffectiveSkillApCostForAlly(ch, needAp)
+                        : needAp;
+                    var insufficientAp = curAp < needApSpEff;
                     if (sk.id === '白牙！')
                       insufficientAp = insufficientAp || emptyAllySlots.length === 0 || hasBaiyaOnField;
                     var name = (sk.name || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                    var ap = sk.ap != null ? sk.ap : '—';
+                    var ap = sk.ap != null ? needApSpEff : '—';
                     var effectHtml = wrapBuffRefs(resolveSkillEffect(sk.effect || '', ch));
                     var iconSvg =
                       sk.id === '白牙！'
@@ -10832,7 +12435,29 @@
                                                                               SKILL_BLADE_BITE_SVG ||
                                                                               SKILL_WOLF_PACK_SVG ||
                                                                               SKILL_ATTACK_SVG
-                                                                            : SKILL_ATTACK_SVG;
+                                                                            : sk.id === '星辰定锚'
+                                                                              ? SKILL_XINGCHENDINGMAO_SVG ||
+                                                                                SKILL_SHENENJISHU_SVG ||
+                                                                                SKILL_ATTACK_SVG
+                                                                              : sk.id === '星辰加速'
+                                                                                ? SKILL_XINGCHENJIASU_SVG ||
+                                                                                  SKILL_SHENENJISHU_SVG ||
+                                                                                  SKILL_ATTACK_SVG
+                                                                                : sk.id === '星命逆转'
+                                                                                  ? SKILL_XINGMINGNIZHUAN_SVG ||
+                                                                                    SKILL_SHENENJISHU_SVG ||
+                                                                                    SKILL_ATTACK_SVG
+                                                                                  : sk.id === '命仪精准'
+                                                                                    ? SKILL_SHENENJISHU_SVG ||
+                                                                                      SKILL_ATTACK_SVG
+                                                                                    : sk.id === '大妃的魔宴' ||
+                                                                                        sk.id === '傀儡剧场' ||
+                                                                                        sk.id === '完美谎言' ||
+                                                                                        sk.id === '虚实颠倒'
+                                                                                      ? SKILL_MEIMOZHIWEN_SVG ||
+                                                                                        SKILL_SHENENJISHU_SVG ||
+                                                                                        SKILL_ATTACK_SVG
+                                                                              : SKILL_ATTACK_SVG;
                     opts.push(
                       '<div class="skill-popup-opt' +
                         (insufficientAp ? ' skill-popup-opt-disabled' : '') +
@@ -10989,6 +12614,38 @@
                         }
                         return;
                       }
+                      if (skillName === '星语祝祷') {
+                        skillPopupEl.classList.remove('show');
+                        if (window.BattleGrid && window.BattleGrid.enterAllyFilledSlotTargetMode) {
+                          window.BattleGrid.enterAllyFilledSlotTargetMode(getParty(), function (targetAllySlot) {
+                            executePlayer星语祝祷(allySlot, targetAllySlot, parseInt(idx, 10));
+                          });
+                        }
+                        return;
+                      }
+                      if (skillName === '辉烬壁障') {
+                        skillPopupEl.classList.remove('show');
+                        if (window.BattleGrid && window.BattleGrid.enterAllyFilledSlotTargetMode) {
+                          window.BattleGrid.enterAllyFilledSlotTargetMode(getParty(), function (targetAllySlot) {
+                            executePlayer辉烬壁障(allySlot, targetAllySlot, parseInt(idx, 10));
+                          });
+                        }
+                        return;
+                      }
+                      if (skillName === '星海调和') {
+                        skillPopupEl.classList.remove('show');
+                        if (window.BattleGrid && window.BattleGrid.enterAllyFilledSlotTargetMode) {
+                          window.BattleGrid.enterAllyFilledSlotTargetMode(getParty(), function (targetAllySlot) {
+                            executePlayer星海调和(allySlot, targetAllySlot, parseInt(idx, 10));
+                          });
+                        }
+                        return;
+                      }
+                      if (skillName === '天穹颂歌') {
+                        skillPopupEl.classList.remove('show');
+                        executePlayer天穹颂歌(allySlot, parseInt(idx, 10));
+                        return;
+                      }
                       if (skillName === '罪罚宣告') {
                         skillPopupEl.classList.remove('show');
                         executePlayer罪罚宣告(allySlot, parseInt(idx, 10));
@@ -11022,6 +12679,21 @@
                         executePlayer弹性护盾(allySlot, parseInt(idx, 10));
                         return;
                       }
+                      if (skillName === '虚妄护盾') {
+                        skillPopupEl.classList.remove('show');
+                        var skIdx虚 = parseInt(idx, 10);
+                        var skRef虚 = ch && ch.skills && ch.skills[skIdx虚];
+                        var lv虚 = skRef虚 && skRef虚.level != null ? parseInt(skRef虚.level, 10) || 1 : 1;
+                        var advB虚 = lv虚 >= 5 && skRef虚 && skRef虚.advancement === 'B';
+                        if (advB虚 && window.BattleGrid && window.BattleGrid.enterAllyFilledSlotTargetMode) {
+                          window.BattleGrid.enterAllyFilledSlotTargetMode(getParty(), function (targetAllySlot) {
+                            executePlayer虚妄护盾(allySlot, targetAllySlot, skIdx虚);
+                          });
+                        } else {
+                          executePlayer虚妄护盾(allySlot, allySlot, skIdx虚);
+                        }
+                        return;
+                      }
                       if (skillName === '再生菌丝') {
                         skillPopupEl.classList.remove('show');
                         if (window.BattleGrid && window.BattleGrid.enterAllyFilledSlotTargetMode) {
@@ -11048,6 +12720,11 @@
                       if (skillName === '妖艳业火') {
                         skillPopupEl.classList.remove('show');
                         executePlayer妖艳业火(allySlot, parseInt(idx, 10));
+                        return;
+                      }
+                      if (skillName === '迷雾幻境') {
+                        skillPopupEl.classList.remove('show');
+                        executePlayer迷雾幻境(allySlot, parseInt(idx, 10));
                         return;
                       }
                       if (ch.name === '白牙' && skillName === '横扫') {
@@ -11218,6 +12895,60 @@
                         skillPopupEl.classList.remove('show');
                         window.BattleGrid.enterSkillTargetMode(getEnemyParty(), function (enemySlotNum) {
                           executePlayer破阵冲锋(allySlot, enemySlotNum);
+                        });
+                        return;
+                      }
+                      if (specialId === '星辰定锚' && window.BattleGrid && window.BattleGrid.enterSkillTargetMode) {
+                        skillPopupEl.classList.remove('show');
+                        window.BattleGrid.enterSkillTargetMode(getEnemyParty(), function (enemySlotNum) {
+                          executePlayer星辰定锚(allySlot, enemySlotNum);
+                        });
+                        return;
+                      }
+                      if (specialId === '星辰加速' && window.BattleGrid && window.BattleGrid.enterAllyFilledSlotTargetMode) {
+                        skillPopupEl.classList.remove('show');
+                        window.BattleGrid.enterAllyFilledSlotTargetMode(getParty(), function (targetAllySlot) {
+                          executePlayer星辰加速(allySlot, targetAllySlot);
+                        });
+                        return;
+                      }
+                      if (specialId === '星命逆转' && window.BattleGrid && window.BattleGrid.enterAllyFilledSlotTargetMode) {
+                        skillPopupEl.classList.remove('show');
+                        window.BattleGrid.enterAllyFilledSlotTargetMode(getParty(), function (targetAllySlot) {
+                          executePlayer星命逆转(allySlot, targetAllySlot);
+                        });
+                        return;
+                      }
+                      if (specialId === '命仪精准' && window.BattleGrid && window.BattleGrid.enterAllyFilledSlotTargetMode) {
+                        skillPopupEl.classList.remove('show');
+                        window.BattleGrid.enterAllyFilledSlotTargetMode(getParty(), function (targetAllySlot) {
+                          executePlayer命仪精准(allySlot, targetAllySlot);
+                        });
+                        return;
+                      }
+                      if (specialId === '大妃的魔宴' && window.BattleGrid && window.BattleGrid.enterSkillTargetMode) {
+                        skillPopupEl.classList.remove('show');
+                        window.BattleGrid.enterSkillTargetMode(getEnemyParty(), function (enemySlotNum) {
+                          executePlayer大妃的魔宴(allySlot, enemySlotNum);
+                        });
+                        return;
+                      }
+                      if (specialId === '傀儡剧场') {
+                        skillPopupEl.classList.remove('show');
+                        executePlayer傀儡剧场(allySlot);
+                        return;
+                      }
+                      if (specialId === '完美谎言' && window.BattleGrid && window.BattleGrid.enterAllyFilledSlotTargetMode) {
+                        skillPopupEl.classList.remove('show');
+                        window.BattleGrid.enterAllyFilledSlotTargetMode(getParty(), function (targetAllySlot) {
+                          executePlayer完美谎言(allySlot, targetAllySlot);
+                        });
+                        return;
+                      }
+                      if (specialId === '虚实颠倒' && window.BattleGrid && window.BattleGrid.enterSkillTargetMode) {
+                        skillPopupEl.classList.remove('show');
+                        window.BattleGrid.enterSkillTargetMode(getEnemyParty(), function (enemySlotNum) {
+                          executePlayer虚实颠倒(allySlot, enemySlotNum);
                         });
                         return;
                       }

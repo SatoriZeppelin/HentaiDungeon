@@ -27,7 +27,7 @@
   function getBaseDamageForSkill(attacker, skill, getDisplayStat) {
     if (!attacker || !skill) return 0;
     var name = skill.name || '';
-    var lv, mult, str, agi, int, sta, multStr, multAgi;
+    var lv, mult, str, agi, int, def, sta, multStr, multAgi;
     if (name === '攻击') return Math.max(0, Math.floor(getDisplayStat(attacker, 'str') || 0));
     if (name === '狼牙碎击') return Math.max(0, Math.floor((getDisplayStat(attacker, 'str') || 0) * 3));
     if (name === '狼式旋风') {
@@ -161,6 +161,21 @@
       if (skill.advancement === 'B') mult = 1.1;
       return Math.max(0, Math.floor(int * mult));
     }
+    /** 凌遥仙·星语祝祷：治疗量 Int×1.2～1.8 */
+    if (name === '星语祝祷') {
+      int = getDisplayStat(attacker, 'int') || 0;
+      lv = Math.max(1, parseInt(skill.level, 10) || 1);
+      mult = lv === 1 ? 1.2 : lv === 2 ? 1.4 : lv === 3 ? 1.6 : 1.8;
+      return Math.max(0, Math.floor(int * mult));
+    }
+    /** 凌遥仙·星海调和：Lv.1 无即时治疗；Lv.2～5 为 Int×0.2～0.6 */
+    if (name === '星海调和') {
+      int = getDisplayStat(attacker, 'int') || 0;
+      lv = Math.max(1, parseInt(skill.level, 10) || 1);
+      if (lv === 1) return 0;
+      mult = lv === 2 ? 0.2 : lv === 3 ? 0.4 : 0.6;
+      return Math.max(0, Math.floor(int * mult));
+    }
     if (name === '虚无放逐') {
       int = getDisplayStat(attacker, 'int') || 0;
       lv = Math.max(1, parseInt(skill.level, 10) || 1);
@@ -179,6 +194,20 @@
         multCha = 0.4;
       }
       return Math.max(0, Math.floor(int * multInt + cha * multCha));
+    }
+    if (name === '镜花水月') {
+      int = getDisplayStat(attacker, 'int') || 0;
+      lv = Math.max(1, parseInt(skill.level, 10) || 1);
+      mult = lv === 1 ? 0.7 : lv === 2 ? 0.75 : lv === 3 ? 0.75 : 0.8;
+      if (skill.advancement === 'A' || skill.advancement === 'B') mult = 0.8;
+      return Math.max(0, Math.floor(int * mult));
+    }
+    if (name === '心智侵蚀') {
+      int = getDisplayStat(attacker, 'int') || 0;
+      lv = Math.max(1, parseInt(skill.level, 10) || 1);
+      mult = lv === 1 ? 0.6 : lv === 2 ? 0.7 : lv === 3 ? 0.8 : 0.9;
+      if (skill.advancement === 'A' || skill.advancement === 'B') mult = 0.9;
+      return Math.max(0, Math.floor(int * mult));
     }
     if (name === '妖艳业火') {
       int = getDisplayStat(attacker, 'int') || 0;
@@ -271,6 +300,18 @@
       var atkLmUse = !isNaN(atkLm) ? atkLm : getDisplayStat(attacker, 'int') || 0;
       return Math.max(0, Math.floor(atkLmUse * 0.6));
     }
+    if (skill && skill.id === '大妃的魔宴') {
+      int = getDisplayStat(attacker, 'int') || 0;
+      return Math.max(0, Math.floor(int * 2.5));
+    }
+    if (skill && skill.id === '傀儡剧场') {
+      int = getDisplayStat(attacker, 'int') || 0;
+      return Math.max(0, Math.floor(int * 0.6));
+    }
+    if (skill && skill.id === '心灵震爆') {
+      int = getDisplayStat(attacker, 'int') || 0;
+      return Math.max(0, Math.floor(int * 1.5));
+    }
     return 0;
   }
 
@@ -295,6 +336,7 @@
   function getShieldForSkill(attacker, skill, getDisplayStat) {
     if (!attacker || !skill) return NaN;
     var name = skill.name || '';
+    var int, adv;
     if (name === '防御') return Math.max(0, getDisplayStat(attacker, 'def') || 0);
     if (name === '剑脊格挡') {
       var lv = Math.max(1, parseInt(skill.level, 10) || 1);
@@ -329,6 +371,49 @@
     /** 女儿·莉莉姆：弹性护盾 DEF×1.2 */
     if (name === '弹性护盾') {
       return Math.max(0, Math.floor((getDisplayStat(attacker, 'def') || 0) * 1.2));
+    }
+    /** 月见遥·虚妄护盾：Int×a + Def×a 护盾（预览用，与战斗内替换护盾逻辑一致） */
+    if (name === '虚妄护盾') {
+      int = getDisplayStat(attacker, 'int') || 0;
+      def = getDisplayStat(attacker, 'def') || 0;
+      lv = Math.max(1, parseInt(skill.level, 10) || 1);
+      mult = lv === 1 ? 0.5 : lv === 2 ? 0.6 : lv === 3 ? 0.7 : 0.8;
+      return Math.max(0, Math.floor(int * mult + def * mult));
+    }
+    /** 凌遥仙·辉烬壁障：Int×a + Def×b 护盾 */
+    if (name === '辉烬壁障') {
+      int = getDisplayStat(attacker, 'int') || 0;
+      def = getDisplayStat(attacker, 'def') || 0;
+      lv = Math.max(1, parseInt(skill.level, 10) || 1);
+      adv = skill.advancement;
+      var miH, mdH;
+      if (lv >= 5 && adv === 'B') {
+        miH = 1.2;
+        mdH = 0.6;
+      } else if (lv >= 5 && adv === 'A') {
+        miH = 0.9;
+        mdH = 0.5;
+      } else if (lv === 1) {
+        miH = 0.6;
+        mdH = 0.4;
+      } else if (lv === 2) {
+        miH = 0.7;
+        mdH = 0.4;
+      } else if (lv === 3) {
+        miH = 0.7;
+        mdH = 0.5;
+      } else {
+        miH = 0.8;
+        mdH = 0.5;
+      }
+      return Math.max(0, Math.floor(int * miH) + Math.floor(def * mdH));
+    }
+    /** 凌遥仙·天穹颂歌：友方全体护盾 Int×0.75～0.9 */
+    if (name === '天穹颂歌') {
+      int = getDisplayStat(attacker, 'int') || 0;
+      lv = Math.max(1, parseInt(skill.level, 10) || 1);
+      var multSky = lv === 1 ? 0.75 : lv === 2 ? 0.8 : lv === 3 ? 0.85 : 0.9;
+      return Math.max(0, Math.floor(int * multSky));
     }
     return NaN;
   }

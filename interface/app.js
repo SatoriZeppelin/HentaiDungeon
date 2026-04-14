@@ -722,6 +722,113 @@
     var SKILL_FORMULA_ATTR_AGI_ICON =
       '<span class="attr-icon" style="color:#2e7d32;vertical-align:-2px">' +
       '<svg class="attr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>';
+    var SKILL_FORMULA_ATTR_INT_ICON =
+      '<span class="attr-icon" style="color:#1565c0;vertical-align:-2px">' +
+      '<svg class="attr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/></svg></span>';
+    var SKILL_FORMULA_ATTR_STA_ICON =
+      '<span class="attr-icon" style="color:#e65100;vertical-align:-2px">' +
+      '<svg class="attr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span>';
+    var SKILL_FORMULA_ATTR_DEF_ICON =
+      '<span class="attr-icon" style="color:#5d4037;vertical-align:-2px">' +
+      '<svg class="attr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>';
+    var SKILL_FORMULA_ATTR_ATK_ICON =
+      '<span class="attr-icon" style="color:#c62828;vertical-align:-2px">' +
+      '<svg class="attr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.596 12.768a2 2 0 1 0 2.829-2.829l-1.768-1.767a2 2 0 0 0 2.828-2.829l-2.828-2.828a2 2 0 0 0-2.829 2.828l-1.767-1.768a2 2 0 1 0-2.829 2.829z"/><path d="m2.5 21.5 1.4-1.4"/><path d="m20.1 3.9 1.4-1.4"/><path d="M5.343 21.485a2 2 0 1 0 2.829-2.828l1.767 1.768a2 2 0 1 0 2.829-2.829l-6.364-6.364a2 2 0 1 0-2.829 2.829l1.768 1.767a2 2 0 0 0-2.828 2.829z"/><path d="m9.6 14.4 4.8-4.8"/></svg></span>';
+    var SKILL_FORMULA_ATTR_CHA_ICON =
+      '<span class="attr-icon" style="color:#c2185b;vertical-align:-2px">' +
+      '<svg class="attr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span>';
+
+    /** 与 .skill-calc-str 等一致，用于公式悬停里属性名的代表色 */
+    var SKILL_FORMULA_LABEL_COLOR = {
+      Str: '#d32f2f',
+      Agi: '#2e7d32',
+      Int: '#1565c0',
+      Sta: '#e65100',
+      Def: '#5d4037',
+      Atk: '#c62828',
+      Cha: '#c2185b',
+      level: '#6a1b9a',
+    };
+
+    function skillFormulaColoredLabelHtml(text, colorHex) {
+      return (
+        '<span style="color:' +
+        colorHex +
+        ';font-weight:600">' +
+        text +
+        '</span>'
+      );
+    }
+
+    /** 技能公式悬停：Str×0.9 → 力量(红字)+力量图标+x0.9；多项用 + 连接。无法解析时返回 null，沿用纯文本。 */
+    function buildSkillCalcFormulaTooltipHtml(formula) {
+      if (!formula || /^__CANG_FORMULA__/.test(formula)) return null;
+      var parts = String(formula).split(/\s*\+\s*/);
+      var out = [];
+      for (var pi = 0; pi < parts.length; pi++) {
+        var seg = parts[pi].trim();
+        var m = /^(Str|Agi|Int|Sta|Def|Atk|Cha)\s*[×x]\s*([\d.]+)$/i.exec(seg);
+        if (m) {
+          var canon = m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase();
+          var label = '';
+          var icon = '';
+          var col = '';
+          switch (canon) {
+            case 'Str':
+              label = '力量';
+              icon = SKILL_FORMULA_ATTR_STR_ICON;
+              col = SKILL_FORMULA_LABEL_COLOR.Str;
+              break;
+            case 'Agi':
+              label = '敏捷';
+              icon = SKILL_FORMULA_ATTR_AGI_ICON;
+              col = SKILL_FORMULA_LABEL_COLOR.Agi;
+              break;
+            case 'Int':
+              label = '智力';
+              icon = SKILL_FORMULA_ATTR_INT_ICON;
+              col = SKILL_FORMULA_LABEL_COLOR.Int;
+              break;
+            case 'Sta':
+              label = '耐力';
+              icon = SKILL_FORMULA_ATTR_STA_ICON;
+              col = SKILL_FORMULA_LABEL_COLOR.Sta;
+              break;
+            case 'Def':
+              label = '防御';
+              icon = SKILL_FORMULA_ATTR_DEF_ICON;
+              col = SKILL_FORMULA_LABEL_COLOR.Def;
+              break;
+            case 'Atk':
+              label = '攻击';
+              icon = SKILL_FORMULA_ATTR_ATK_ICON;
+              col = SKILL_FORMULA_LABEL_COLOR.Atk;
+              break;
+            case 'Cha':
+              label = '魅力';
+              icon = SKILL_FORMULA_ATTR_CHA_ICON;
+              col = SKILL_FORMULA_LABEL_COLOR.Cha;
+              break;
+            default:
+              return null;
+          }
+          out.push(skillFormulaColoredLabelHtml(label, col) + icon + 'x' + m[2]);
+          continue;
+        }
+        m = /^Lv\s*[×x]\s*([\d.]+)$/i.exec(seg);
+        if (m) {
+          out.push(
+            skillFormulaColoredLabelHtml('等级', SKILL_FORMULA_LABEL_COLOR.level) +
+              '×' +
+              m[1],
+          );
+          continue;
+        }
+        return null;
+      }
+      return out.join(' + ');
+    }
+
     /** 将描述中的【buff名】转为蓝色可悬停/点击的 span；将计算占位符转为加粗、按属性着色的 span（悬停/点击显示公式），并做 HTML 转义 */
     function wrapBuffRefs(text) {
       if (!text) return '';
@@ -733,12 +840,20 @@
         if (cangCoef) {
           formulaIsHtml = true;
           formulaForAttr =
-            '（力量' +
+            '（' +
+            skillFormulaColoredLabelHtml('力量', SKILL_FORMULA_LABEL_COLOR.Str) +
             SKILL_FORMULA_ATTR_STR_ICON +
-            '+敏捷' +
+            '+' +
+            skillFormulaColoredLabelHtml('敏捷', SKILL_FORMULA_LABEL_COLOR.Agi) +
             SKILL_FORMULA_ATTR_AGI_ICON +
             '）x剑势x' +
             cangCoef[1];
+        } else {
+          var tipHtml = buildSkillCalcFormulaTooltipHtml(formula);
+          if (tipHtml) {
+            formulaIsHtml = true;
+            formulaForAttr = tipHtml;
+          }
         }
         var formulaEsc = formulaIsHtml
           ? formulaForAttr.replace(/&/g, '&amp;').replace(/"/g, '&quot;')
@@ -3170,6 +3285,13 @@
     var SKILL_MANGMOUZHIGUANG_SVG = svg.SKILL_MANGMOUZHIGUANG_SVG || '';
     var SKILL_JISHU_SVG = svg.SKILL_JISHU_SVG || '';
     var SKILL_SHENGHUOJINGSHI_SVG = svg.SKILL_SHENGHUOJINGSHI_SVG || '';
+    var SKILL_XINGYUZHUDAO_SVG = svg.SKILL_XINGYUZHUDAO_SVG || '';
+    var SKILL_HUIJINBIZHANG_SVG = svg.SKILL_HUIJINBIZHANG_SVG || '';
+    var SKILL_XINGHAITIAOHE_SVG = svg.SKILL_XINGHAITIAOHE_SVG || '';
+    var SKILL_TIANQIONGSONGE_SVG = svg.SKILL_TIANQIONGSONGE_SVG || '';
+    var SKILL_XINGCHENDINGMAO_SVG = svg.SKILL_XINGCHENDINGMAO_SVG || '';
+    var SKILL_XINGCHENJIASU_SVG = svg.SKILL_XINGCHENJIASU_SVG || '';
+    var SKILL_XINGMINGNIZHUAN_SVG = svg.SKILL_XINGMINGNIZHUAN_SVG || '';
     /** 每升一级获得的自由点数（用于五维属性分配） */
     var FREE_POINTS_PER_LEVEL = 10;
     /** 每升一级获得的自由技能点（用于升级技能或解锁新技能，与属性点分开） */
@@ -3884,21 +4006,26 @@
         : function (s) {
             return s && s.tags != null ? String(s.tags) : '';
           };
-    /** 丝伊德·白被动：场上每存活 1 个女儿单位（daughterUnit: true）耐力 +3 */
-    function countDaughterUnitsAliveOnField() {
-      var n = 0;
+    /** 场上存活女儿单位名称列表（daughterUnit 且 HP>0），顺序：己方队伍再敌方 */
+    function getAliveDaughterUnitNames() {
+      var names = [];
       try {
         var party = typeof getParty === 'function' ? getParty() : null;
         var enemies = typeof getEnemyParty === 'function' ? getEnemyParty() : null;
-        function countOne(u) {
+        function pushOne(u) {
           if (!u || u.daughterUnit !== true) return;
           var hp = u.hp != null ? parseInt(u.hp, 10) : 1;
-          if (hp > 0) n++;
+          if (hp <= 0) return;
+          names.push(String(u.name || '女儿').trim() || '女儿');
         }
-        if (party && party.length) for (var i = 0; i < party.length; i++) countOne(party[i]);
-        if (enemies && enemies.length) for (var j = 0; j < enemies.length; j++) countOne(enemies[j]);
+        if (party && party.length) for (var i = 0; i < party.length; i++) pushOne(party[i]);
+        if (enemies && enemies.length) for (var j = 0; j < enemies.length; j++) pushOne(enemies[j]);
       } catch (e) {}
-      return n;
+      return names;
+    }
+    /** 丝伊德·白被动：场上每存活 1 个女儿单位（daughterUnit: true）耐力 +3 */
+    function countDaughterUnitsAliveOnField() {
+      return getAliveDaughterUnitNames().length;
     }
     function hasAliveQingliInParty() {
       try {
@@ -3954,6 +4081,20 @@
       if (ch.name === '丝伊德·白' && key === 'sta') {
         base += countDaughterUnitsAliveOnField() * 3;
       }
+      if (ch.name === '凌遥仙') {
+        var 诗章层 = 0;
+        if (ch.buffs && ch.buffs.length) {
+          for (var szIx = 0; szIx < ch.buffs.length; szIx++) {
+            var bSz = ch.buffs[szIx];
+            if ((bSz.id || bSz.name) === '诗章') {
+              诗章层 = Math.max(0, parseInt(bSz.layers, 10) || 0);
+              break;
+            }
+          }
+        }
+        if (key === 'int') base += 诗章层;
+        if (key === 'sta' && 诗章层 >= 10) base += 5;
+      }
       if ((key === 'str' || key === 'agi' || key === 'int' || key === 'def') && ch.buffs && ch.buffs.length) {
         for (var i = 0; i < ch.buffs.length; i++) {
           var b = ch.buffs[i];
@@ -3967,6 +4108,7 @@
           if (id === '敏捷强化' && key === 'agi') base += layers * 3;
           if (id === '智力强化' && key === 'int') base += layers * 3;
           if (id === '防御强化' && key === 'def') base += layers * 3;
+          if (id === '愉悦' && key === 'int') base += layers * 2;
         }
       }
       if (ch.name === '丝伊德·白') {
@@ -4052,6 +4194,51 @@
         var passiveVal = Math.floor((getDisplayStat(ch, 'int') || 0) * 0.25);
         return { total: total, base: baseOnly, passive: { value: passiveVal, name: '神恩之躯' } };
       }
+      if (ch.name === '丝伊德·白' && key === 'sta') {
+        var dNames = getAliveDaughterUnitNames();
+        if (dNames.length > 0) {
+          var staCardOnly = parseInt(ch.sta, 10) || 0;
+          staCardOnly += parseInt(ch.bonusSta, 10) || 0;
+          var dBonusSta = dNames.length * 3;
+          var srcD =
+            staCardOnly +
+            '+' +
+            dNames
+              .map(function (nm) {
+                return nm + '(+3)';
+              })
+              .join('+');
+          return {
+            total: total,
+            base: staCardOnly,
+            passive: { value: dBonusSta, name: dNames.join('、') },
+            sourceText: srcD,
+          };
+        }
+      }
+      if (ch.name === '凌遥仙' && key === 'sta') {
+        var szStaLay = 0;
+        if (ch.buffs && ch.buffs.length) {
+          for (var sst = 0; sst < ch.buffs.length; sst++) {
+            var bbst = ch.buffs[sst];
+            if ((bbst.id || bbst.name) === '诗章') {
+              szStaLay = Math.max(0, parseInt(bbst.layers, 10) || 0);
+              break;
+            }
+          }
+        }
+        var baseStaOnly = parseInt(ch.sta, 10) || 0;
+        baseStaOnly += parseInt(ch.bonusSta, 10) || 0;
+        if (szStaLay >= 10) {
+          return {
+            total: total,
+            base: baseStaOnly,
+            passive: { value: 5, name: '诗章≥10层' },
+            sourceText: baseStaOnly + '+5（诗章≥10层）',
+          };
+        }
+        return { total: total, base: baseStaOnly, passive: null };
+      }
       if ((key === 'str' || key === 'agi' || key === 'int' || key === 'def') && ch.buffs && ch.buffs.length) {
         var baseOnly = parseInt(ch[key], 10) || 0;
         if (BONUS_KEYS[key] != null) baseOnly += parseInt(ch[BONUS_KEYS[key]], 10) || 0;
@@ -4069,6 +4256,8 @@
           if (id === '敏捷强化' && key === 'agi' && layers > 0) parts.push({ val: layers * 3, name: '敏捷强化' });
           if (id === '智力强化' && key === 'int' && layers > 0) parts.push({ val: layers * 3, name: '智力强化' });
           if (id === '防御强化' && key === 'def' && layers > 0) parts.push({ val: layers * 3, name: '防御强化' });
+          if (id === '愉悦' && key === 'int' && layers > 0) parts.push({ val: layers * 2, name: '愉悦' });
+          if (id === '诗章' && key === 'int' && layers > 0) parts.push({ val: layers, name: '诗章' });
         }
         if (parts.length > 0) {
           var bonusSum = 0;
@@ -4240,6 +4429,13 @@
           SKILL_MANGMOUZHIGUANG_SVG: SKILL_MANGMOUZHIGUANG_SVG,
           SKILL_JISHU_SVG: SKILL_JISHU_SVG,
           SKILL_SHENGHUOJINGSHI_SVG: SKILL_SHENGHUOJINGSHI_SVG,
+          SKILL_XINGYUZHUDAO_SVG: SKILL_XINGYUZHUDAO_SVG,
+          SKILL_HUIJINBIZHANG_SVG: SKILL_HUIJINBIZHANG_SVG,
+          SKILL_XINGHAITIAOHE_SVG: SKILL_XINGHAITIAOHE_SVG,
+          SKILL_TIANQIONGSONGE_SVG: SKILL_TIANQIONGSONGE_SVG,
+          SKILL_XINGCHENDINGMAO_SVG: SKILL_XINGCHENDINGMAO_SVG,
+          SKILL_XINGCHENJIASU_SVG: SKILL_XINGCHENJIASU_SVG,
+          SKILL_XINGMINGNIZHUAN_SVG: SKILL_XINGMINGNIZHUAN_SVG,
         });
       }
       console.info('[色色地牢] 战斗界面已加载');
