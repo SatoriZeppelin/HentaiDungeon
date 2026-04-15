@@ -1064,11 +1064,14 @@
   var LUK_HIT_PER = 5;
   var BASE_MONSTER_DODGE = 0;
   var BASE_MONSTER_HIT = 90;
-  var AGI_DODGE_PER = 2;
+  /** 闪避=敏捷×1；闪避上限 80%（等价：怪物命中率下限 20%） */
+  var AGI_DODGE_PER = 1;
+  var MAX_DODGE_RATE = 80;
   var BASE_PLAYER_CRIT = 20;
   var PLAYER_CRIT_PER_AGI = 1;
   var BASE_MONSTER_CRIT = 25;
   var CRIT_MULT = 2;
+  var MAX_SEMEN_ML = 100;
 
   function roll1To100() {
     return Math.floor(Math.random() * 100) + 1;
@@ -1128,7 +1131,9 @@
       });
       rate = Math.max(0, rate - 灵巧L * 10);
     }
-    return rate;
+    // 闪避上限 80% => 命中下限 20%
+    var minHit = Math.max(0, 100 - MAX_DODGE_RATE);
+    return Math.max(minHit, rate);
   }
   function getPlayerCritRate(attacker) {
     var agi = num(attacker.agi);
@@ -1909,6 +1914,39 @@
     var SKILL_XINGCHENJIASU_SVG = options.SKILL_XINGCHENJIASU_SVG || '';
     var SKILL_XINGMINGNIZHUAN_SVG = options.SKILL_XINGMINGNIZHUAN_SVG || '';
 
+    function hasBuffName(unit, buffId) {
+      if (!unit || !unit.buffs || !unit.buffs.length) return false;
+      for (var bi = 0; bi < unit.buffs.length; bi++) {
+        var b = unit.buffs[bi];
+        if ((b.id || b.name) !== buffId) continue;
+        if ((parseInt(b.layers, 10) || 0) > 0) return true;
+      }
+      return false;
+    }
+    function getPortraitUrlForClothingDamage(baseUrl, unit) {
+      var src = baseUrl != null ? String(baseUrl) : '';
+      if (!src) return '';
+      var damagePart = '完好';
+      if (hasBuffName(unit, '严重破损')) damagePart = '大破';
+      else if (hasBuffName(unit, '中度破损')) damagePart = '中破';
+      else if (hasBuffName(unit, '轻微破损')) damagePart = '小破';
+      var semen = unit && unit.semenVolumeMl != null ? parseFloat(unit.semenVolumeMl) : 0;
+      if (isNaN(semen)) semen = 0;
+      semen = Math.max(0, Math.min(MAX_SEMEN_ML, semen));
+      var semenSuffix = '';
+      if (semen >= 66) semenSuffix = '-重度精浴';
+      else if (semen >= 33) semenSuffix = '-轻度精浴';
+      var filename = semenSuffix ? damagePart + semenSuffix + '.png' : damagePart + '-正常状态.png';
+      // 优先替换常见命名
+      if (/(完好|小破|中破|大破)(?:-(?:正常状态|轻度精浴|重度精浴))?\.png$/i.test(src)) {
+        return src.replace(/(完好|小破|中破|大破)(?:-(?:正常状态|轻度精浴|重度精浴))?\.png$/i, filename);
+      }
+      // 兜底：替换最后一个路径段
+      var idx = src.lastIndexOf('/');
+      if (idx === -1) return filename;
+      return src.slice(0, idx + 1) + filename;
+    }
+
     function renderAllySlots(optionalParty) {
       var party = optionalParty != null && Array.isArray(optionalParty) ? optionalParty : getParty();
       for (var i = 1; i <= 6; i++) {
@@ -2052,6 +2090,7 @@
         var hasVoid = (ch.buffs || []).some(function (b) {
           return (b.id === '虚无' || b.name === '虚无') && (b.layers || 0) > 0;
         });
+        var portraitSrc = getPortraitUrlForClothingDamage(ch.avatar || '', ch);
         var renderKey =
           (ch.name || '') +
           '|' +
@@ -2072,6 +2111,8 @@
           maxExp +
           '|' +
           shieldNum +
+          '|' +
+          portraitSrc +
           '|' +
           (ch.buffs || [])
             .map(function (b) {
@@ -2125,7 +2166,7 @@
               SWAP_SVG +
               '</button>') +
           '<div class="slot-char-portrait"><img src="' +
-          (ch.avatar || '') +
+          portraitSrc +
           '" alt="' +
           (ch.name || '') +
           '"/></div>' +
@@ -3588,7 +3629,7 @@
       if (lewdAlly) {
         var prevMl = parseFloat(lewdAlly.semenVolumeMl);
         if (isNaN(prevMl)) prevMl = 0;
-        lewdAlly.semenVolumeMl = prevMl + mlAdd;
+        lewdAlly.semenVolumeMl = Math.min(MAX_SEMEN_ML, prevMl + mlAdd);
       }
       appendCombatLog(
         name +
@@ -3659,7 +3700,7 @@
           : 0;
       var prev = parseFloat(ally.semenVolumeMl);
       if (isNaN(prev)) prev = 0;
-      ally.semenVolumeMl = prev + ml1 + ml2;
+      ally.semenVolumeMl = Math.min(MAX_SEMEN_ML, prev + ml1 + ml2);
       appendCombatLog(
         name +
           ' 「强制侵犯」对 ' +
@@ -4716,6 +4757,9 @@
       var lv = unit.level != null ? unit.level : 1;
       var m = getApByLevel(lv);
       if ((unit.name || '') === '丝伊德·白' && getUnitBuffLayers(unit, '姬骑') > 0) m = Math.max(1, m - 2);
+      // 服装：泳装/舞娘 AP+1
+      var outfit = (unit && (unit._portraitOutfit || unit.outfitTag || unit.outfit)) || '';
+      if (outfit === '泳装' || outfit === '舞娘') m += 1;
       return m;
     }
     function hasAnyNegativeDebuffFor异种外壳(unit) {

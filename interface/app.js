@@ -36,6 +36,22 @@
       '.slot-char:has(.slot-char-portrait){align-items:stretch;justify-content:flex-start;padding:10px 10px 10px 10px;text-align:left}',
       '.slot-char .slot-char-portrait{width:50%;flex:0 0 50%;min-width:0;aspect-ratio:1;overflow:hidden;border-radius:8px;border:2px solid #5c4a3a;background:#b8ab9a;display:flex;align-items:center;justify-content:center}',
       '.slot-char .slot-char-portrait img{width:100%;height:100%;object-fit:cover;display:block}',
+      // 立绘区域：为按钮预留边距，避免被外层 overflow 裁切
+      '.char-detail-grid .portrait-wrap{position:relative;padding:10px 10px 0 0}',
+      // 差分服装按钮：放在预留边距区域，视觉上贴着立绘边框右上角
+      '.char-detail-grid .detail-portrait-variant-btn{position:absolute;top:0;right:0;width:34px;height:34px;padding:0;border:2px solid var(--gold-border);border-radius:50%;background:rgba(255,255,255,.92);color:#6b5a3d;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:5;transition:background .2s,box-shadow .2s,border-color .2s,transform .15s}',
+      '.char-detail-grid .detail-portrait-variant-btn:hover{background:#fff;border-color:var(--ornate-gold);box-shadow:0 2px 12px rgba(201,162,39,.38)}',
+      '.char-detail-grid .detail-portrait-variant-btn:active{transform:scale(0.92)}',
+      '.char-detail-grid .detail-portrait-variant-btn svg{width:16px;height:16px;stroke:currentColor}',
+      // 换装界面宽度 = 战斗技能列(2) + 属性面板列(3)
+      '.detail-block-wardrobe{grid-column:2 / span 2;grid-row:1 / -1;min-height:0;display:flex;flex-direction:column}',
+      '.wardrobe-title{display:flex;align-items:center;justify-content:flex-start;gap:10px}',
+      // 换装界面：固定可用高度，不允许内部滚动条；每行尽量多塞（自适应列数），共两行。
+      '.wardrobe-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:12px;padding:12px;flex:1;min-height:0;overflow:hidden}',
+      '.wardrobe-item{position:relative;border:2px solid rgba(92,74,58,.55);border-radius:12px;background:#f2ead7;cursor:pointer;overflow:hidden;display:flex;align-items:stretch;justify-content:center;height:100%;box-shadow:0 4px 12px rgba(0,0,0,.12);transition:transform .15s,border-color .2s,box-shadow .2s}',
+      '.wardrobe-item:hover{transform:translateY(-2px);border-color:var(--ornate-gold);box-shadow:0 6px 18px rgba(201,162,39,.25)}',
+      '.wardrobe-item img{width:100%;height:100%;object-fit:cover;object-position:top center;display:block}',
+      '.wardrobe-label{position:absolute;left:8px;right:8px;bottom:8px;padding:6px 10px;border-radius:999px;background:rgba(26,21,14,.78);color:#e4d5b7;font-size:12px;font-weight:bold;text-align:center;letter-spacing:.08em;border:1px solid rgba(201,162,39,.35);text-shadow:0 1px 2px rgba(0,0,0,.6)}',
       '.slot-char .slot-char-info{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:6px 8px 0 8px;gap:6px;position:relative;overflow:hidden}',
       '.slot-char .slot-char-name{font-weight:bold;font-size:14px;color:#1a150e;line-height:1.2;text-align:center;width:100%;font-family:sans-serif}',
       '.slot-char .slot-char-level{font-size:11px;color:#5c4a3a;text-align:center;width:100%;line-height:1.2}',
@@ -268,6 +284,12 @@
       '.char-detail-grid .bar-label{font-size:12px;font-weight:bold;color:#4a3c1a;min-width:28px;text-align:center}',
       '.char-detail-grid .bar-wrap{flex:1;height:22px;background:#111;border-radius:11px;position:relative;overflow:hidden;border:1px solid #000}',
       '.char-detail-grid .bar-fill{height:100%;transition:width .25s ease}.char-detail-grid .bar-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:bold;text-shadow:0 0 1px #000;z-index:1}',
+      // 精液条：左→右白色填充；文字被覆盖部分变黑（两层文字 + 裁切）
+      '.char-detail-grid .bar-wrap.semen-bar{background:#3d2a24;border-color:#2b1e1a}',
+      '.char-detail-grid .bar-fill.semen-fill{background:#ffffff}',
+      '.char-detail-grid .bar-text.semen-text-white{color:#fff;text-shadow:0 0 1px #000}',
+      '.char-detail-grid .semen-text-overlay{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:2}',
+      '.char-detail-grid .bar-text.semen-text-black{color:#1a150e;text-shadow:none}',
       '.char-detail-grid .detail-block{background:rgba(255,255,255,.35);border:1px solid rgba(139,115,32,.25);border-radius:8px;padding:12px 15px;flex-shrink:0}',
       '.char-detail-grid .detail-block-attr{grid-column:3;grid-row:1}.char-detail-grid .detail-block-relic{grid-column:3;grid-row:2}.char-detail-grid .detail-block-skill{grid-column:2;grid-row:1/-1;min-height:0;display:flex;flex-direction:column;overflow:hidden}.char-detail-grid .detail-block-buff{grid-column:3;grid-row:3;min-height:0}',
       '.char-detail-grid .block-title{font-size:14px;font-weight:bold;color:#5c4d10;border-bottom:2px solid rgba(139,115,32,.3);padding-bottom:8px;margin-bottom:12px;display:flex;align-items:center;gap:8px}',
@@ -2317,7 +2339,8 @@
           luk += 3;
         var agi = stats && stats.agi != null ? Number(stats.agi) : ch ? getDisplayStat(ch, 'agi') || 0 : 0;
         var hitRate = ch ? Math.min(100, Math.max(0, 50 + luk * 5)) : 0;
-        var dodgeRate = agi * 2;
+        var dodgeRateRaw = agi * 1;
+        var dodgeRate = Math.min(80, dodgeRateRaw);
         var baseCrit = 20 + agi * 1;
         var 攻势L = 0;
         if (ch && ch.buffs && ch.buffs.length) {
@@ -2361,7 +2384,14 @@
             '%。实际命中 = 此值 − 对方闪避率。'
           : null;
         var sourceDodge = ch
-          ? reportAttrHtml('agi') + '×2 = ' + agi + '×2 = ' + dodgeRate + '%。对方命中率计算时会减去此值。'
+          ? reportAttrHtml('agi') +
+            '×1 = ' +
+            agi +
+            '×1 = ' +
+            dodgeRateRaw +
+            '%，上限 80%' +
+            (dodgeRateRaw > 80 ? ' → 80%' : '') +
+            '。对方命中率计算时会减去此值。'
           : null;
         var sourceCrit = ch
           ? (function () {
@@ -2403,12 +2433,67 @@
           '<div class="block-title detail-buff-panel-title"><span class="detail-buff-title-text">状态效果</span><button type="button" class="detail-buff-swap-btn" title="切换为数据报表" aria-label="切换为数据报表">' +
           SWAP_SVG +
           '</button></div>';
+        var isWardrobe = detailEditState && detailEditState.rightTab === 'wardrobe';
+        var wardrobeHtml = '';
+        if (isWardrobe) {
+          // 服装列表：固定两行；每行尽量多塞。新增：舞娘。
+          // 规则：不展示当前穿着的服装；对应服装 hidden tag 为 false 则不可换装（视为没有该服装）。
+          var allOutfits = ['常服', '泳装', '浴衣', '舞娘', '兔女郎', '旗袍', '花嫁'];
+          var curOutfit = (ch && ch._portraitOutfit) || '常服';
+          var tagsMap =
+            typeof window !== 'undefined' && window.CHARACTER_OUTFIT_HIDDEN_TAGS ? window.CHARACTER_OUTFIT_HIDDEN_TAGS : null;
+          var charTags = tagsMap && ch && ch.name && tagsMap[ch.name] ? tagsMap[ch.name] : null;
+          var prefix = typeof window !== 'undefined' && window.R2_PREFIX ? String(window.R2_PREFIX) : '';
+          var outfits = allOutfits.filter(function (o) {
+            if (o === curOutfit) return false;
+            // 没配该角色时默认不可用（避免误显示不存在的衣服）
+            if (!charTags) return false;
+            return charTags[o] === true;
+          });
+          var items = outfits
+            .map(function (o) {
+              var url = prefix + encodeURI((ch.name || '') + '/' + o + '/完好-正常状态.png');
+              return (
+                '<button type="button" class="wardrobe-item" data-outfit="' +
+                escapeHtml(o) +
+                '" title="' +
+                escapeHtml(o) +
+                '">' +
+                '<img src="' +
+                url +
+                '" alt="' +
+                escapeHtml(o) +
+                '"/>' +
+                '<span class="wardrobe-label">' +
+                escapeHtml(o) +
+                '</span>' +
+                '</button>'
+              );
+            })
+            .join('');
+          if (!items) {
+            items =
+              '<div style="grid-column:1/-1;color:#7a6a52;text-align:center;padding:22px 10px;border:1px dashed rgba(139,115,32,.35);border-radius:12px;background:rgba(255,255,255,.25)">该角色暂无可用换装</div>';
+          }
+          wardrobeHtml =
+            '<div class="detail-block detail-block-wardrobe">' +
+            '<div class="block-title wardrobe-title"><span>换装</span></div>' +
+            '<div class="wardrobe-grid">' +
+            items +
+            '</div>' +
+            '</div>';
+        }
         return (
           '<div class="char-detail-grid">' +
           '<div class="col-base">' +
+          '<div class="portrait-wrap">' +
+          '<button type="button" class="detail-portrait-variant-btn" title="切换差分服装" aria-label="切换差分服装">' +
+          SWAP_SVG +
+          '</button>' +
           (data.src
             ? '<img src="' + data.src + '" alt="" class="portrait-xl">'
             : '<div class="portrait-xl" style="background:#c4b8a8;display:flex;align-items:center;justify-content:center;color:#5c4a3a">无立绘</div>') +
+          '</div>' +
           '<div class="char-name-box">' +
           (data.name || '角色') +
           '</div>' +
@@ -2428,34 +2513,54 @@
           '</div><div class="bar-fill" style="width:' +
           expPct +
           '%;background:#2d8a4e"></div></div></div>' +
-          '<div class="bar-row" title="战斗外仍保留，不因回合或战斗结束而清零"><span class="bar-label">精液</span><div class="bar-wrap" style="background:#3d2a24"><div class="bar-text">' +
-          (ch && ch.semenVolumeMl != null ? Number(ch.semenVolumeMl) || 0 : 0) +
-          ' ml</div></div></div>' +
+          (function () {
+            var sRaw = ch && ch.semenVolumeMl != null ? Number(ch.semenVolumeMl) || 0 : 0;
+            var s = Math.max(0, Math.min(100, sRaw));
+            var sPct = Math.max(0, Math.min(100, s));
+            var txt = s + ' ml';
+            return (
+              '<div class="bar-row" title="战斗外仍保留，不因回合或战斗结束而清零"><span class="bar-label">精液</span><div class="bar-wrap semen-bar">' +
+              '<div class="bar-fill semen-fill" style="width:' +
+              sPct +
+              '%"></div>' +
+              '<div class="bar-text semen-text-white">' +
+              txt +
+              '</div>' +
+              '<div class="semen-text-overlay" style="clip-path:inset(0 ' +
+              (100 - sPct) +
+              '% 0 0)"><div class="bar-text semen-text-black">' +
+              txt +
+              '</div></div>' +
+              '</div></div>'
+            );
+          })() +
           '</div>' +
           (unspentPoints > 0 || hasSkillDeltas || pendingSpecial.length > 0
             ? '<div class="attr-allocate-footer"><button type="button" class="attr-reset-btn">重置</button><button type="button" class="attr-confirm-btn">确定</button></div>'
             : '') +
           '</div>' +
-          '<div class="detail-block detail-block-attr" id="detail-block-attr">' +
-          attrBlockTitle +
-          '<div class="attr-list">' +
-          attrHtml +
-          '</div></div>' +
-          '<div class="detail-block detail-block-relic"><div class="block-title">装备遗物</div><div class="relic-slots">' +
-          relicsHtml +
-          '</div></div>' +
-          '<div class="detail-block detail-block-skill">' +
-          skillBlockTitle +
-          '<div class="skill-slots">' +
-          skillsHtml +
-          '</div></div>' +
-          '<div class="detail-block detail-block-buff" id="detail-block-buff">' +
-          buffBlockTitle +
-          '<div class="buff-panel-body"><div class="buff-container">' +
-          buffsHtml +
-          '</div><div class="data-report-container">' +
-          dataReportHtml +
-          '</div></div></div>' +
+          (isWardrobe
+            ? wardrobeHtml
+            : '<div class="detail-block detail-block-attr" id="detail-block-attr">' +
+              attrBlockTitle +
+              '<div class="attr-list">' +
+              attrHtml +
+              '</div></div>' +
+              '<div class="detail-block detail-block-relic"><div class="block-title">装备遗物</div><div class="relic-slots">' +
+              relicsHtml +
+              '</div></div>' +
+              '<div class="detail-block detail-block-skill">' +
+              skillBlockTitle +
+              '<div class="skill-slots">' +
+              skillsHtml +
+              '</div></div>' +
+              '<div class="detail-block detail-block-buff" id="detail-block-buff">' +
+              buffBlockTitle +
+              '<div class="buff-panel-body"><div class="buff-container">' +
+              buffsHtml +
+              '</div><div class="data-report-container">' +
+              dataReportHtml +
+              '</div></div></div>') +
           '</div>'
         );
       }
@@ -2464,9 +2569,37 @@
         deltas: { str: 0, agi: 0, int: 0, sta: 0, def: 0 },
         skillLevelDeltas: {},
         pendingSpecialUnlocks: [],
+        rightTab: 'default', // 'default' | 'wardrobe'
       };
       function bindDetailActions(content, avatarIndex, ch, data) {
         if (!content || !ch) return;
+        var portraitBtn = content.querySelector('.detail-portrait-variant-btn');
+        if (portraitBtn) {
+          portraitBtn.addEventListener('click', function () {
+            detailEditState.rightTab = detailEditState.rightTab === 'wardrobe' ? 'default' : 'wardrobe';
+            showCharacterDetail(avatarIndex);
+          });
+        }
+        content.querySelectorAll('.wardrobe-item[data-outfit]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var outfit = btn.getAttribute('data-outfit') || '';
+            if (!outfit) return;
+            var prefix = typeof window !== 'undefined' && window.R2_PREFIX ? String(window.R2_PREFIX) : '';
+            var nextUrl = prefix + encodeURI((ch.name || '') + '/' + outfit + '/完好-正常状态.png');
+            ch.avatar = nextUrl;
+            ch._portraitOutfit = outfit;
+            ch.outfitTag = outfit;
+            ch.outfit = outfit;
+            // 先刷新战斗槽位头像，再重建细则（细则数据源会从槽位读取 src）
+            if (window.BattleGrid && typeof window.BattleGrid.refreshBattleView === 'function')
+              window.BattleGrid.refreshBattleView();
+            detailEditState.rightTab = 'default';
+            // 下一帧再重建，确保 battle 槽位 img.src 已更新
+            requestAnimationFrame(function () {
+              showCharacterDetail(avatarIndex);
+            });
+          });
+        });
         var blockBuff = content.querySelector('#detail-block-buff');
         var swapBtn = blockBuff && blockBuff.querySelector('.detail-buff-swap-btn');
         var titleText = blockBuff && blockBuff.querySelector('.detail-buff-title-text');
@@ -3212,6 +3345,45 @@
       if (lv >= 3) return 4;
       return 3;
     }
+    function getOutfitNameForBonus(ch) {
+      if (!ch) return '常服';
+      return (ch._portraitOutfit || ch.outfitTag || ch.outfit || '常服') + '';
+    }
+    function getOutfitBonusForKey(outfit, key) {
+      var o = (outfit || '常服') + '';
+      if (key === 'agi' && o === '旗袍') return { type: 'add', value: 8 };
+      if (key === 'int' && o === '浴衣') return { type: 'add', value: 8 };
+      if (key === 'str' && o === '花嫁') return { type: 'add', value: 8 };
+      if (key === 'luk' && o === '兔女郎') return { type: 'add', value: 3 };
+      if (key === 'cha' && o === '兔女郎') return { type: 'add', value: 3 };
+      if (key === 'def' && (o === '泳装' || o === '舞娘')) return { type: 'mul', value: 0.5 };
+      if (key === 'ap' && (o === '泳装' || o === '舞娘')) return { type: 'add', value: 1 };
+      return null;
+    }
+    function getEffectiveMaxApForChar(ch) {
+      if (!ch) return 3;
+      if (ch.name === '白牙' || ch.daughterUnit === true) return 2;
+      var lv = ch.level != null ? ch.level : 1;
+      var m = getApByLevel(lv);
+      var outfit = getOutfitNameForBonus(ch);
+      var apBonus = getOutfitBonusForKey(outfit, 'ap');
+      if (apBonus && apBonus.type === 'add') m += apBonus.value;
+      // 丝伊德·白 AP 上限：姬骑形态 -2（至少 1）
+      if ((ch.name || '') === '丝伊德·白') {
+        var jq = 0;
+        if (ch.buffs && ch.buffs.length) {
+          for (var jqi = 0; jqi < ch.buffs.length; jqi++) {
+            var bbjq = ch.buffs[jqi];
+            if ((bbjq.id || bbjq.name) === '姬骑') {
+              jq = Math.max(0, parseInt(bbjq.layers, 10) || 0);
+              break;
+            }
+          }
+        }
+        if (jq > 0) m = Math.max(1, m - 2);
+      }
+      return m;
+    }
     /** 升级所需经验：Lv1→2 15，Lv2→3 20，Lv3→4 25，Lv4→5 30 */
     function getMaxExpForLevel(level) {
       var lv = parseInt(level, 10) || 1;
@@ -3378,6 +3550,7 @@
         var base = chars && ch.name && chars[ch.name] ? Object.assign({}, chars[ch.name], ch) : Object.assign({}, ch);
         if (base.semenVolumeMl == null || base.semenVolumeMl === '') base.semenVolumeMl = 0;
         else base.semenVolumeMl = Number(base.semenVolumeMl) || 0;
+        base.semenVolumeMl = Math.min(100, Math.max(0, base.semenVolumeMl));
         return base;
       });
       var portraits = window.CHARACTER_PORTRAITS;
@@ -3450,7 +3623,7 @@
         if (ch.name === '白牙' || ch.daughterUnit === true) {
           ch.currentAp = 2;
         } else {
-          ch.currentAp = getApByLevel(lv);
+          ch.currentAp = getEffectiveMaxApForChar(ch);
         }
         if (ch.见切弹返) ch.见切弹返 = false;
         if (ch.影舞反击) ch.影舞反击 = false;
@@ -4145,12 +4318,39 @@
         if (jqLayersCard > 0 && (key === 'str' || key === 'agi' || key === 'int' || key === 'sta' || key === 'def'))
           base = Math.floor(base * 1.5);
       }
+      // 服装加成（属性面板与战斗数值同步）
+      var outfit = getOutfitNameForBonus(ch);
+      var ob = getOutfitBonusForKey(outfit, key);
+      if (ob && ob.type === 'add') base += ob.value;
+      if (ob && ob.type === 'mul') base = Math.floor(base * ob.value);
       return base;
     }
     /** 达芙妮力量/防御的被动加成（狼族血脉 Lv×2；防御另有全副武装 Str×0.25）；或任意角色力量/敏捷来自【攻势】/【守势】的加成，用于属性行展示 breakdown */
     function getDisplayStatBreakdown(ch, key) {
       var total = getDisplayStat(ch, key);
       if (!ch) return { total: total, base: total, passive: null };
+      // 服装加成：用下划线来源展示（优先保证能看到服装差分）
+      var outfit = getOutfitNameForBonus(ch);
+      var ob = getOutfitBonusForKey(outfit, key);
+      if (ob && ob.type === 'add' && ob.value) {
+        var baseOnlyOutfit = total - ob.value;
+        return {
+          total: total,
+          base: baseOnlyOutfit,
+          passive: { value: ob.value, name: '服装：' + outfit },
+          sourceText: baseOnlyOutfit + '+' + ob.value + '（服装：' + outfit + '）',
+        };
+      }
+      if (ob && ob.type === 'mul' && ob.value === 0.5) {
+        var pre = total * 2;
+        var delta = total - pre;
+        return {
+          total: total,
+          base: pre,
+          passive: { value: delta, name: '服装：' + outfit + '（防御-50%）' },
+          sourceText: pre + (delta >= 0 ? '+' : '') + delta + '（服装：' + outfit + ' 防御-50%）',
+        };
+      }
       if (key === 'luk' && hasAliveQingliInParty()) {
         var baseOnly = parseInt(ch[key], 10) || 0;
         if (BONUS_KEYS[key] != null) baseOnly += parseInt(ch[BONUS_KEYS[key]], 10) || 0;
