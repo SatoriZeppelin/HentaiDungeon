@@ -224,8 +224,8 @@
     {
       id: '坚韧',
       name: '坚韧',
-      desc: '受到的所有伤害-10%',
-      tooltip: '受到的所有伤害-10%。回合结束阶段-1层。上限5层。',
+      desc: '受到的所有伤害-5%（每层）',
+      tooltip: '每层使受到的所有伤害-5%。施加时生效，回合结束阶段-1层。上限5层。',
       maxLayers: 5,
     },
     {
@@ -302,30 +302,30 @@
     {
       id: '虚弱',
       name: '虚弱',
-      desc: '造成伤害-20%',
-      tooltip: '造成的所有伤害-20%。上限3层。',
-      maxLayers: 3,
+      desc: '造成的所有伤害-5%（每层）',
+      tooltip: '每层使造成的所有伤害-5%。施加时生效，回合结束阶段-1层。上限5层。',
+      maxLayers: 5,
     },
     {
       id: '脆弱',
       name: '脆弱',
-      desc: '受到伤害+20%',
-      tooltip: '受到的所有伤害+20%。上限3层。',
-      maxLayers: 3,
+      desc: '受到的所有伤害+5%（每层）',
+      tooltip: '每层使受到的所有伤害+5%。施加时生效，回合结束阶段-1层。上限5层。',
+      maxLayers: 5,
     },
     {
       id: '破甲',
       name: '破甲',
-      desc: '物理受伤+20%',
-      tooltip: '受到的物理伤害+20%。上限3层。',
-      maxLayers: 3,
+      desc: '受到的物理伤害+5%（每层）',
+      tooltip: '每层使受到的物理伤害+5%。施加时生效，回合结束阶段-1层。上限5层。',
+      maxLayers: 5,
     },
     {
       id: '碎魔',
       name: '碎魔',
-      desc: '魔法受伤+20%',
-      tooltip: '受到的魔法伤害+20%。上限3层。',
-      maxLayers: 3,
+      desc: '受到的魔法伤害+5%（每层）',
+      tooltip: '每层使受到的魔法伤害+5%。施加时生效，回合结束阶段-1层。上限5层。',
+      maxLayers: 5,
     },
     {
       id: '燃烧',
@@ -411,22 +411,29 @@
     {
       id: '迟缓',
       name: '迟缓',
-      desc: '闪避-10%',
-      tooltip: '闪避-10%。回合结束阶段-1层。上限5层。',
+      desc: '闪避-5%（每层）',
+      tooltip: '每层闪避-5%。施加时生效，回合结束阶段-1层。上限5层。',
       maxLayers: 5,
     },
     {
       id: '迟钝',
       name: '迟钝',
-      desc: '暴击-10%',
-      tooltip: '暴击-10%。回合结束阶段-1层。上限5层。',
+      desc: '暴击-5%（每层）',
+      tooltip: '每层暴击-5%。施加时生效，回合结束阶段-1层。上限5层。',
       maxLayers: 5,
     },
     {
       id: '恍惚',
       name: '恍惚',
-      desc: '命中-10%',
-      tooltip: '命中-10%。回合结束阶段-1层。上限5层。',
+      desc: '命中-5%（每层）',
+      tooltip: '每层命中-5%。施加时生效，回合结束阶段-1层。上限5层。',
+      maxLayers: 5,
+    },
+    {
+      id: '乏力',
+      name: '乏力',
+      desc: '爆伤-10%（每层）',
+      tooltip: '每层暴击伤害-10%（仅暴击时生效）。施加时生效，回合结束阶段-1层。上限5层。',
       maxLayers: 5,
     },
     // ---------- ③ 色情类减益 ----------
@@ -465,26 +472,33 @@
     {
       id: '灵巧',
       name: '灵巧',
-      desc: '闪避+10%',
-      tooltip: '闪避+10%。回合结束阶段-1层。持续回合数由施加技能指定。上限5层。',
+      desc: '闪避+5%（每层）',
+      tooltip: '每层闪避+5%。施加时生效，回合结束阶段-1层。上限5层。',
       maxLayers: 5,
       characterExclusive: '黯 / 岚',
     },
     {
       id: '专注',
       name: '专注',
-      desc: '命中+10%',
-      tooltip: '命中+10%。回合结束阶段-1层。持续回合数由施加技能指定。上限5层。',
+      desc: '命中+5%（每层）',
+      tooltip: '每层命中+5%。施加时生效，回合结束阶段-1层。上限5层。',
       maxLayers: 5,
       characterExclusive: '岚',
     },
     {
       id: '精准',
       name: '精准',
-      desc: '暴击+10%',
-      tooltip: '暴击+10%。回合结束阶段-1层。持续回合数由施加技能指定。上限5层。',
+      desc: '暴击+5%（每层）',
+      tooltip: '每层暴击+5%。施加时生效，回合结束阶段-1层。上限5层。',
       maxLayers: 5,
       characterExclusive: '岚',
+    },
+    {
+      id: '残暴',
+      name: '残暴',
+      desc: '爆伤+10%（每层）',
+      tooltip: '每层暴击伤害+10%（仅暴击时生效）。施加时生效，回合结束阶段-1层。上限5层。',
+      maxLayers: 5,
     },
     {
       id: '心满意足',
@@ -497,24 +511,24 @@
     {
       id: '激励',
       name: '激励',
-      desc: '造成的所有伤害+10%',
-      tooltip: '造成的所有伤害+10%。回合结束阶段-1层。持续回合数由施加技能指定。上限5层。',
+      desc: '造成的所有伤害+5%（每层）',
+      tooltip: '每层使造成的所有伤害+5%。施加时生效，回合结束阶段-1层。上限5层。',
       maxLayers: 5,
       characterExclusive: '预留（当前无技能叠加，仅结算公式读取）',
     },
     {
       id: '格挡',
       name: '格挡',
-      desc: '受到的物理伤害-10%',
-      tooltip: '受到的物理伤害-10%。回合结束阶段-1层。持续回合数由施加技能指定。上限5层。',
+      desc: '受到的物理伤害-5%（每层）',
+      tooltip: '每层使受到的物理伤害-5%。施加时生效，回合结束阶段-1层。上限5层。',
       maxLayers: 5,
       characterExclusive: '预留（当前无技能叠加，仅结算公式读取）',
     },
     {
       id: '扰魔',
       name: '扰魔',
-      desc: '受到的魔法伤害-10%',
-      tooltip: '受到的魔法伤害-10%。回合结束阶段-1层。持续回合数由施加技能指定。上限5层。',
+      desc: '受到的魔法伤害-5%（每层）',
+      tooltip: '每层使受到的魔法伤害-5%。施加时生效，回合结束阶段-1层。上限5层。',
       maxLayers: 5,
       characterExclusive: '预留（当前无技能叠加，仅结算公式读取）',
     },
@@ -643,6 +657,7 @@
     '灵巧',
     '专注',
     '精准',
+    '残暴',
     '心满意足',
     '激励',
     '格挡',
@@ -679,6 +694,7 @@
     '恍惚',
     '迟钝',
     '迟缓',
+    '乏力',
     '力量削弱',
     '敏捷削弱',
     '智力削弱',
@@ -752,6 +768,7 @@
     迟缓: { fill: 'rgba(158,158,158,0.5)', border: '#616161', color: '#424242' },
     迟钝: { fill: 'rgba(96,125,139,0.5)', border: '#546e7a', color: '#37474f' },
     恍惚: { fill: 'rgba(158,158,158,0.5)', border: '#757575', color: '#424242' },
+    乏力: { fill: 'rgba(121,85,72,0.5)', border: '#6d4c41', color: '#4e342e' },
     // --- ③ 色情类减益 ---
     发情: { fill: 'rgba(233,30,99,0.4)', border: '#e91e63', color: '#e91e63' },
     羞耻: { fill: 'rgba(233,30,99,0.4)', border: '#e91e63', color: '#e91e63' },
@@ -764,6 +781,7 @@
     灵巧: { fill: 'rgba(76,175,80,0.5)', border: '#43a047', color: '#2e7d32' },
     专注: { fill: 'rgba(255,193,7,0.5)', border: '#ffc107', color: '#f57f17' },
     精准: { fill: 'rgba(233,30,99,0.45)', border: '#e91e63', color: '#ad1457' },
+    残暴: { fill: 'rgba(183,28,28,0.45)', border: '#b71c1c', color: '#b71c1c' },
     心满意足: { fill: 'rgba(255,193,7,0.45)', border: '#ffa000', color: '#f57c00' },
     激励: { fill: 'rgba(255,152,0,0.5)', border: '#ff9800', color: '#e65100' },
     格挡: { fill: 'rgba(96,125,139,0.5)', border: '#607d8b', color: '#455a64' },
@@ -1071,7 +1089,10 @@
   var PLAYER_CRIT_PER_AGI = 1;
   var BASE_MONSTER_CRIT = 25;
   var CRIT_MULT = 2;
-  var MAX_SEMEN_ML = 100;
+  var MAX_SEMEN_ML =
+    typeof window !== 'undefined' && window.HENTAI_DUNGEON_MAX_SEMEN_ML != null
+      ? Number(window.HENTAI_DUNGEON_MAX_SEMEN_ML) || 100
+      : 100;
 
   function roll1To100() {
     return Math.floor(Math.random() * 100) + 1;
@@ -1083,97 +1104,105 @@
   function getPlayerHitRate(attacker, defender) {
     if (attacker.一闪必中 || attacker.无拍子必中) return 100;
     var luk = num(attacker.luk);
-    var dodge = defender && (defender.dodgeRate != null ? num(defender.dodgeRate) : BASE_MONSTER_DODGE);
-    var rate = Math.min(100, Math.max(0, BASE_PLAYER_HIT + luk * LUK_HIT_PER - dodge));
+    // 命中判定改为：攻击方命中率 × (1 - 敌方闪避率)
+    // 因此此处只计算“攻击方命中率”，不再在这里减去对方闪避
+    var rate = Math.min(100, Math.max(0, BASE_PLAYER_HIT + luk * LUK_HIT_PER));
     var 专注L = 0;
     if (attacker && attacker.buffs) {
       attacker.buffs.forEach(function (b) {
         if ((b.id || b.name) === '专注') 专注L = Math.min(5, parseInt(b.layers, 10) || 0);
       });
-      rate = Math.min(100, Math.max(0, rate + 专注L * 10));
+      rate = Math.min(100, Math.max(0, rate + 专注L * 5));
     }
     var 迟缓L = 0;
     if (defender && defender.buffs) {
       defender.buffs.forEach(function (b) {
         if ((b.id || b.name) === '迟缓') 迟缓L = Math.min(5, parseInt(b.layers, 10) || 0);
       });
-      rate = Math.min(100, Math.max(0, rate + 迟缓L * 10));
+      rate = Math.min(100, Math.max(0, rate + 迟缓L * 5));
     }
     var 恍惚L = 0;
     if (defender && defender.buffs) {
       defender.buffs.forEach(function (b) {
         if ((b.id || b.name) === '恍惚') 恍惚L = Math.min(5, parseInt(b.layers, 10) || 0);
       });
-      rate = Math.max(0, rate - 恍惚L * 10);
+      rate = Math.max(0, rate - 恍惚L * 5);
     }
     return rate;
   }
   function getMonsterHitRate(attacker, defender) {
+    // 需求：若怪物在战斗中没有命中率字段，则按 50% 默认处理
+    var baseHit =
+      attacker && attacker.baseHitRate != null
+        ? num(attacker.baseHitRate)
+        : attacker && attacker.hitRate != null
+          ? num(attacker.hitRate)
+          : 50;
     var hitBuff = attacker && (attacker.hitRateBuff != null ? num(attacker.hitRateBuff) : 0);
-    var agi = defender ? num(defender.agi) : 0;
-    var rate = Math.min(100, Math.max(0, BASE_MONSTER_HIT + hitBuff - agi * AGI_DODGE_PER));
-    if (
-      defender &&
-      defender.name === '昼墨' &&
-      defender.specialSkillsUnlocked &&
-      defender.specialSkillsUnlocked.indexOf('心眼') !== -1
-    ) {
-      var 守势L = 0;
-      (defender.buffs || []).forEach(function (b) {
-        if ((b.id || b.name) === '守势') 守势L = parseInt(b.layers, 10) || 0;
-      });
-      rate = Math.max(0, rate - 守势L * 5);
-    }
+    // 命中判定改为：攻击方命中率 × (1 - 敌方闪避率)
+    // 因此此处只计算“攻击方命中率”，不再在这里减去对方闪避/心眼/灵巧等闪避因素
+    var rate = Math.min(100, Math.max(0, baseHit + hitBuff));
+    return rate;
+  }
+
+  /**
+   * 防守方闪避率（0~MAX_DODGE_RATE）。
+   * - 怪物：优先读 dodgeRate（捕获时生成 0~50%）；缺省为 0
+   * - 角色：Agi×1，叠 灵巧(+5%/层)、迟缓(-5%/层)，并做上限
+   */
+  function getUnitDodgeRate(unit) {
+    if (!unit) return 0;
+    if (unit.dodgeRate != null) return Math.max(0, Math.min(MAX_DODGE_RATE, num(unit.dodgeRate)));
+    var agi = num(unit.agi);
+    var base = agi * AGI_DODGE_PER;
     var 灵巧L = 0;
-    if (defender && defender.buffs) {
-      defender.buffs.forEach(function (b) {
-        if ((b.id || b.name) === '灵巧') 灵巧L = Math.min(5, parseInt(b.layers, 10) || 0);
+    var 迟缓L = 0;
+    if (unit.buffs && unit.buffs.length) {
+      unit.buffs.forEach(function (b) {
+        var id = (b.id || b.name || '').trim();
+        var layers = Math.max(0, parseInt(b.layers, 10) || 0);
+        if (id === '灵巧') 灵巧L = Math.min(5, layers);
+        if (id === '迟缓') 迟缓L = Math.min(5, layers);
       });
-      rate = Math.max(0, rate - 灵巧L * 10);
     }
-    // 闪避上限 80% => 命中下限 20%
-    var minHit = Math.max(0, 100 - MAX_DODGE_RATE);
-    return Math.max(minHit, rate);
+    var rate = base + 灵巧L * 5 - 迟缓L * 5;
+    return Math.max(0, Math.min(MAX_DODGE_RATE, rate));
   }
   function getPlayerCritRate(attacker) {
-    var agi = num(attacker.agi);
-    var rate = Math.min(100, Math.max(0, BASE_PLAYER_CRIT + agi * PLAYER_CRIT_PER_AGI));
-    // 清漓·福泽：每 1 点幸运(Luk) 额外获得 3% 暴击率（仅清漓自身）
-    if (attacker && attacker.name === '清漓') {
-      // 必须用 getDisplayStat：确保包含福泽等显示属性加成
-      var luk0 = typeof getDisplayStat === 'function' ? num(getDisplayStat(attacker, 'luk')) : num(attacker.luk);
-      rate = Math.min(100, Math.max(0, rate + luk0 * 3));
-    }
-    if (
-      attacker.name === '昼墨' &&
-      attacker.specialSkillsUnlocked &&
-      attacker.specialSkillsUnlocked.indexOf('心眼') !== -1
-    ) {
-      var 攻势L = 0;
-      (attacker.buffs || []).forEach(function (b) {
-        if ((b.id || b.name) === '攻势') 攻势L = parseInt(b.layers, 10) || 0;
-      });
-      rate = Math.min(100, rate + 攻势L * 5);
-    }
+    // 需求：暴击率范围 0~100%，角色基础 0%，增加=精准(+5%/层)，减少=迟钝(-5%/层)
+    var rate = 0;
     var 精准L = 0;
+    var 迟钝L = 0;
     if (attacker && attacker.buffs) {
       attacker.buffs.forEach(function (b) {
         if ((b.id || b.name) === '精准') 精准L = Math.min(5, parseInt(b.layers, 10) || 0);
+        if ((b.id || b.name) === '迟钝') 迟钝L = Math.min(5, parseInt(b.layers, 10) || 0);
       });
-      rate = Math.min(100, Math.max(0, rate + 精准L * 10));
     }
+    rate = rate + 精准L * 5 - 迟钝L * 5;
+    rate = Math.max(0, Math.min(100, rate));
     return rate;
   }
   function getMonsterCritRate(attacker) {
+    // 需求：怪物基础暴击率 0~100%（生成 baseCritRate）；缺省为 0
+    var base =
+      attacker && attacker.baseCritRate != null
+        ? num(attacker.baseCritRate)
+        : attacker && attacker.critRate != null
+          ? num(attacker.critRate)
+          : 0;
     var buff = attacker && (attacker.critRateBuff != null ? num(attacker.critRateBuff) : 0);
-    var rate = Math.min(100, Math.max(0, BASE_MONSTER_CRIT + buff));
+    var rate = Math.min(100, Math.max(0, base + buff));
+    var 精准L = 0;
     var 迟钝L = 0;
     if (attacker && attacker.buffs) {
       attacker.buffs.forEach(function (b) {
         if ((b.id || b.name) === '迟钝') 迟钝L = Math.min(5, parseInt(b.layers, 10) || 0);
+        if ((b.id || b.name) === '精准') 精准L = Math.min(5, parseInt(b.layers, 10) || 0);
       });
-      rate = Math.max(0, rate - 迟钝L * 10);
     }
+    rate = rate + 精准L * 5 - 迟钝L * 5;
+    rate = Math.max(0, Math.min(100, rate));
     return rate;
   }
 
@@ -1418,7 +1447,10 @@
     function resolveAttack(attacker, defender, baseDamage, isPlayerAttacker, opts) {
       var magicOnly = opts && opts.magicOnly === true;
       var rollHit = roll1To100();
-      var hitRate = isPlayerAttacker ? getPlayerHitRate(attacker, defender) : getMonsterHitRate(attacker, defender);
+      var attackerHitRate = isPlayerAttacker ? getPlayerHitRate(attacker, defender) : getMonsterHitRate(attacker, defender);
+      var defenderDodgeRate = getUnitDodgeRate(defender);
+      // 命中判定：攻击方命中率 × (1 - 敌方闪避率)
+      var hitRate = Math.max(0, Math.min(100, attackerHitRate * (1 - defenderDodgeRate / 100)));
       var hit = opts && opts.forceHit === true ? true : rollHit <= hitRate;
       if (!hit) {
         try月见遥观测者的愉悦OnAttackResult(attacker, false);
@@ -1430,6 +1462,8 @@
           rollCrit: 0,
           hitRate: hitRate,
           critRate: 0,
+          attackerHitRate: attackerHitRate,
+          defenderDodgeRate: defenderDodgeRate,
           finalDamage: 0,
           shadowDamage: 0,
           message: '未命中',
@@ -1439,20 +1473,38 @@
       var critRate = isPlayerAttacker ? getPlayerCritRate(attacker) : getMonsterCritRate(attacker);
       var crit = opts && opts.forceCrit === true ? true : rollCrit <= critRate;
       var critMult = opts && opts.critMult != null && opts.critMult > 0 ? opts.critMult : CRIT_MULT;
+      var 残暴L = 0;
+      var 乏力L = 0;
+      if (crit && attacker && attacker.buffs && attacker.buffs.length) {
+        attacker.buffs.forEach(function (b) {
+          if ((b.id || b.name) === '残暴') 残暴L = Math.min(5, parseInt(b.layers, 10) || 0);
+          if ((b.id || b.name) === '乏力') 乏力L = Math.min(5, parseInt(b.layers, 10) || 0);
+        });
+        if (残暴L > 0) critMult = critMult * (1 + 残暴L * 0.1);
+        if (乏力L > 0) critMult = Math.max(0.1, critMult * (1 - 乏力L * 0.1));
+      }
       var rawDamage = crit ? baseDamage * critMult : baseDamage;
+      var 虚弱L = 0;
       var 激励L = 0;
       if (attacker && attacker.buffs) {
         attacker.buffs.forEach(function (b) {
+          if ((b.id || b.name) === '虚弱') 虚弱L = Math.min(5, parseInt(b.layers, 10) || 0);
           if ((b.id || b.name) === '激励') 激励L = Math.min(5, parseInt(b.layers, 10) || 0);
         });
       }
-      if (激励L > 0) rawDamage = rawDamage * (1 + 激励L * 0.1);
+      // 增伤以 100% 为基础：100% + 激励 - 虚弱；下限为 50%
+      var dmgUpMult = 1 + 激励L * 0.05 - 虚弱L * 0.05;
+      if (dmgUpMult < 0.5) dmgUpMult = 0.5;
+      rawDamage = rawDamage * dmgUpMult;
       var damageMult = 1;
       var 格挡L = 0;
       var 坚韧L = 0;
       var 扰魔L = 0;
       var 破甲L = 0;
       var 脆弱L = 0;
+      var 碎魔L = 0;
+      var baseDamageReduction = defender && defender.baseDamageReduction != null ? num(defender.baseDamageReduction) : 0;
+      if (baseDamageReduction > 50) baseDamageReduction = 50;
       var 魔力渴求Bonus = false;
       if (defender && defender.buffs && defender.buffs.length) {
         for (var i = 0; i < defender.buffs.length; i++) {
@@ -1460,12 +1512,15 @@
           var bid = (b.id || b.name || '').trim();
           var layers = Math.max(0, parseInt(b.layers, 10) || 0);
           if (!magicOnly && bid === '破甲') {
-            damageMult += layers * 0.2;
+            damageMult += layers * 0.05;
             破甲L = Math.min(5, layers);
           }
           if (bid === '脆弱') {
-            damageMult += layers * 0.2;
             脆弱L = Math.min(5, layers);
+          }
+          if (magicOnly && bid === '碎魔') {
+            damageMult += layers * 0.05;
+            碎魔L = Math.min(5, layers);
           }
           if (bid === '魅惑' || bid === '混乱' || bid === '眩晕') 魔力渴求Bonus = true;
           if (!magicOnly && bid === '格挡') 格挡L = Math.min(5, layers);
@@ -1497,9 +1552,18 @@
         if (defMaxHp > 0 && defHp / defMaxHp < 0.3) damageMult += 0.25;
       }
       if (opts && opts.isRanged && attacker && attacker.name === '岚' && attacker.弹跳踩踏) damageMult += 0.3;
+      // 敌人减伤（0~50%）：基础(baseDamageReduction) + 坚韧 +（物理：格挡 / 魔法：扰魔） - 脆弱
+      // 与面板「受到伤害减少」一致，并按公式：基础伤害×增伤×(1-敌人减伤)
+      var enemyDamageReductionPct =
+        baseDamageReduction +
+        坚韧L * 5 +
+        (magicOnly ? 扰魔L * 5 : 格挡L * 5) -
+        脆弱L * 5;
+      if (enemyDamageReductionPct < 0) enemyDamageReductionPct = 0;
+      if (enemyDamageReductionPct > 50) enemyDamageReductionPct = 50;
       var finalDamage;
       if (magicOnly) {
-        var magicPart = rawDamage * damageMult * (1 - 扰魔L * 0.1) * (1 - 坚韧L * 0.1);
+        var magicPart = rawDamage * damageMult * (1 - enemyDamageReductionPct * 0.01);
         finalDamage = Math.max(1, Math.floor(magicPart));
         var shadowAdded = 0;
         if (isPlayerAttacker && attacker && attacker.name === '黯') {
@@ -1512,7 +1576,7 @@
             }
             if (anShiL > 0) anShadow = Math.max(0, Math.floor(anShadow * (1 + anShiL * 0.1)));
           }
-          anShadow = anShadow * (1 - 扰魔L * 0.1) * (1 - 坚韧L * 0.1);
+          anShadow = anShadow * (1 - enemyDamageReductionPct * 0.01);
           shadowAdded = Math.max(0, Math.floor(anShadow));
           finalDamage += shadowAdded;
         }
@@ -1524,9 +1588,13 @@
         var increaseReasons = [];
         if (defender && defender.trait柔软躯体 === true) increaseReasons.push('柔软躯体+20%魔法承伤');
         if (crit) increaseReasons.push('暴击+' + Math.round((critMult - 1) * 100) + '%');
-        if (激励L > 0) increaseReasons.push('激励+' + 激励L * 10 + '%');
-        if (破甲L > 0) increaseReasons.push('破甲+' + 破甲L * 20 + '%');
-        if (脆弱L > 0) increaseReasons.push('脆弱+' + 脆弱L * 20 + '%');
+        if (乏力L > 0 && crit) increaseReasons.push('乏力-' + 乏力L * 10 + '%爆伤');
+        if (残暴L > 0 && crit) increaseReasons.push('残暴+' + 残暴L * 10 + '%爆伤');
+        if (虚弱L > 0) increaseReasons.push('虚弱-' + 虚弱L * 5 + '%');
+        if (激励L > 0) increaseReasons.push('激励+' + 激励L * 5 + '%');
+        if (碎魔L > 0) increaseReasons.push('碎魔+' + 碎魔L * 5 + '%');
+        if (破甲L > 0) increaseReasons.push('破甲+' + 破甲L * 5 + '%');
+        if (脆弱L > 0) increaseReasons.push('脆弱-' + 脆弱L * 5 + '%减伤');
         if (isPlayerAttacker && attacker && attacker.name === '夜露' && 魔力渴求Bonus)
           increaseReasons.push('魔力渴求+20%');
         if (opts && opts.isRanged && 岚锁定L > 0) increaseReasons.push('锁定+20%');
@@ -1580,13 +1648,15 @@
           rollCrit: rollCrit,
           hitRate: hitRate,
           critRate: critRate,
+          attackerHitRate: attackerHitRate,
+          defenderDodgeRate: defenderDodgeRate,
           finalDamage: finalDamage,
           shadowDamage: shadowAdded,
           damageIncreaseReasons: damageIncreaseReasons,
           message: message,
         };
       } else {
-        var physicalPart = rawDamage * damageMult * (1 - 格挡L * 0.1) * (1 - 坚韧L * 0.1);
+        var physicalPart = rawDamage * damageMult * (1 - enemyDamageReductionPct * 0.01);
         finalDamage = Math.max(1, Math.floor(physicalPart));
         var shadowAdded = 0;
         if (isPlayerAttacker && attacker && attacker.name === '黯') {
@@ -1599,7 +1669,7 @@
             }
             if (anShiL > 0) anShadow = Math.max(0, Math.floor(anShadow * (1 + anShiL * 0.1)));
           }
-          anShadow = anShadow * (1 - 扰魔L * 0.1) * (1 - 坚韧L * 0.1);
+          anShadow = anShadow * (1 - enemyDamageReductionPct * 0.01);
           shadowAdded = Math.max(0, Math.floor(anShadow));
           finalDamage += shadowAdded;
         }
@@ -1611,9 +1681,12 @@
         var increaseReasons = [];
         if (defender && defender.trait柔软躯体 === true) increaseReasons.push('柔软躯体-30%物理承伤');
         if (crit) increaseReasons.push('暴击+' + Math.round((critMult - 1) * 100) + '%');
-        if (激励L > 0) increaseReasons.push('激励+' + 激励L * 10 + '%');
-        if (破甲L > 0) increaseReasons.push('破甲+' + 破甲L * 20 + '%');
-        if (脆弱L > 0) increaseReasons.push('脆弱+' + 脆弱L * 20 + '%');
+        if (乏力L > 0 && crit) increaseReasons.push('乏力-' + 乏力L * 10 + '%爆伤');
+        if (残暴L > 0 && crit) increaseReasons.push('残暴+' + 残暴L * 10 + '%爆伤');
+        if (虚弱L > 0) increaseReasons.push('虚弱-' + 虚弱L * 5 + '%');
+        if (激励L > 0) increaseReasons.push('激励+' + 激励L * 5 + '%');
+        if (破甲L > 0) increaseReasons.push('破甲+' + 破甲L * 5 + '%');
+        if (脆弱L > 0) increaseReasons.push('脆弱-' + 脆弱L * 5 + '%减伤');
         if (isPlayerAttacker && attacker && attacker.name === '夜露' && 魔力渴求Bonus)
           increaseReasons.push('魔力渴求+20%');
         if (opts && opts.isRanged && 岚锁定L > 0) increaseReasons.push('锁定+20%');
@@ -1667,6 +1740,8 @@
           rollCrit: rollCrit,
           hitRate: hitRate,
           critRate: critRate,
+        attackerHitRate: attackerHitRate,
+        defenderDodgeRate: defenderDodgeRate,
           finalDamage: finalDamage,
           shadowDamage: shadowAdded,
           damageIncreaseReasons: damageIncreaseReasons,
@@ -1923,30 +1998,6 @@
       }
       return false;
     }
-    function getPortraitUrlForClothingDamage(baseUrl, unit) {
-      var src = baseUrl != null ? String(baseUrl) : '';
-      if (!src) return '';
-      var damagePart = '完好';
-      if (hasBuffName(unit, '严重破损')) damagePart = '大破';
-      else if (hasBuffName(unit, '中度破损')) damagePart = '中破';
-      else if (hasBuffName(unit, '轻微破损')) damagePart = '小破';
-      var semen = unit && unit.semenVolumeMl != null ? parseFloat(unit.semenVolumeMl) : 0;
-      if (isNaN(semen)) semen = 0;
-      semen = Math.max(0, Math.min(MAX_SEMEN_ML, semen));
-      var semenSuffix = '';
-      if (semen >= 66) semenSuffix = '-重度精浴';
-      else if (semen >= 33) semenSuffix = '-轻度精浴';
-      var filename = semenSuffix ? damagePart + semenSuffix + '.png' : damagePart + '-正常状态.png';
-      // 优先替换常见命名
-      if (/(完好|小破|中破|大破)(?:-(?:正常状态|轻度精浴|重度精浴))?\.png$/i.test(src)) {
-        return src.replace(/(完好|小破|中破|大破)(?:-(?:正常状态|轻度精浴|重度精浴))?\.png$/i, filename);
-      }
-      // 兜底：替换最后一个路径段
-      var idx = src.lastIndexOf('/');
-      if (idx === -1) return filename;
-      return src.slice(0, idx + 1) + filename;
-    }
-
     function renderAllySlots(optionalParty) {
       var party = optionalParty != null && Array.isArray(optionalParty) ? optionalParty : getParty();
       for (var i = 1; i <= 6; i++) {
@@ -2090,7 +2141,10 @@
         var hasVoid = (ch.buffs || []).some(function (b) {
           return (b.id === '虚无' || b.name === '虚无') && (b.layers || 0) > 0;
         });
-        var portraitSrc = getPortraitUrlForClothingDamage(ch.avatar || '', ch);
+        var portraitSrc =
+          typeof window !== 'undefined' && typeof window.buildHentaiDungeonPortraitUrl === 'function'
+            ? window.buildHentaiDungeonPortraitUrl(ch, ch.avatar || '')
+            : ch.avatar || '';
         var renderKey =
           (ch.name || '') +
           '|' +
@@ -2620,6 +2674,7 @@
       damageCalcStr,
     ) {
       var hitStr = result.hit ? '命中' : '未命中';
+      var hitDenom = result.attackerHitRate != null && result.defenderDodgeRate != null ? '（命中' + result.attackerHitRate + '×(1-' + result.defenderDodgeRate + '%)）' : '';
       var line =
         attackerName +
         '使用' +
@@ -2631,6 +2686,7 @@
         result.rollHit +
         '/' +
         result.hitRate +
+        hitDenom +
         '(' +
         hitStr +
         ')；';
@@ -2912,11 +2968,16 @@
                 id === '灵巧' ||
                 id === '专注' ||
                 id === '精准' ||
+                id === '残暴' ||
                 id === '激励' ||
                 id === '坚韧' ||
                 id === '格挡' ||
                 id === '扰魔' ||
-                id === '虚弱'
+                id === '虚弱' ||
+                id === '脆弱' ||
+                id === '破甲' ||
+                id === '碎魔' ||
+                id === '乏力'
               ) {
                 buff.layers = Math.max(0, layers - 1);
               } else if (
@@ -4150,11 +4211,16 @@
                   id === '灵巧' ||
                   id === '专注' ||
                   id === '精准' ||
+                  id === '残暴' ||
                   id === '激励' ||
                   id === '坚韧' ||
                   id === '格挡' ||
                   id === '扰魔' ||
-                  id === '虚弱'
+                  id === '虚弱' ||
+                  id === '脆弱' ||
+                  id === '破甲' ||
+                  id === '碎魔' ||
+                  id === '乏力'
                 ) {
                   buff.layers = layersAfter;
                   console.info('[战斗] 敌方结算 ' + slot + '号位 【' + id + '】减1层 剩余' + layersAfter + '层');
@@ -13095,6 +13161,20 @@
               } catch (eV) {
                 console.warn('[色色地牢] 色色地牢_onBattleVictoryUi', eV);
               }
+            }
+            // 首领战斗：交由 app 的统一处理（进入下一层 / 第三层结算）
+            try {
+              var intent = typeof window !== 'undefined' ? window._色色地牢_lastBattleIntent : null;
+              if (
+                intent &&
+                intent.nodeType === '首领战斗' &&
+                typeof window.色色地牢_onBossVictoryContinue === 'function'
+              ) {
+                window.色色地牢_onBossVictoryContinue();
+                return;
+              }
+            } catch (eBoss) {
+              console.warn('[色色地牢] 首领胜利继续流程失败', eBoss);
             }
             if (typeof window.色色地牢_commitPendingMapPosAfterBattle === 'function')
               window.色色地牢_commitPendingMapPosAfterBattle();

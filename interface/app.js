@@ -311,7 +311,7 @@
       '.char-detail-grid .relic-slots{display:flex;flex-direction:column;gap:8px}',
       '.char-detail-grid .relic-card{background:linear-gradient(135deg,#fff,#fdf5e6);border:2px solid var(--gold-border);padding:10px;border-radius:6px}',
       '.char-detail-grid .relic-name{font-weight:bold;font-size:13px;color:#8b4513;margin-bottom:4px}.char-detail-grid .relic-effect{font-size:11px;color:#555}',
-      '.char-detail-grid .detail-block-buff{flex:1;display:flex;flex-direction:column;min-height:0}.char-detail-grid .detail-block-buff .block-title{position:relative;padding-right:36px}.char-detail-grid .detail-buff-swap-btn{position:absolute;top:0;right:0;width:26px;height:26px;padding:0;border:2px solid var(--gold-border);border-radius:50%;background:rgba(255,255,255,.92);color:#6b5a3d;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}.char-detail-grid .detail-buff-swap-btn:hover{background:#fff;border-color:var(--ornate-gold)}.char-detail-grid .detail-buff-swap-btn svg{width:14px;height:14px;fill:currentColor}.char-detail-grid .buff-panel-body{flex:1;min-height:0;display:flex;flex-direction:column}.char-detail-grid .detail-block-buff.show-data-report .buff-container{display:none}.char-detail-grid .data-report-container{display:none;flex:1;min-height:120px;background:rgba(0,0,0,.03);border:1px solid var(--gold-border);padding:10px;border-radius:8px;flex-direction:column;gap:4px;overflow-y:auto;font-size:12px}.char-detail-grid .detail-block-buff.show-data-report .data-report-container{display:flex}.char-detail-grid .data-report-row{display:flex;justify-content:space-between;align-items:center;padding:4px 8px;background:rgba(255,255,255,.5);border-radius:4px}.char-detail-grid .data-report-label{color:#5c4a3a;font-weight:bold}.char-detail-grid .data-report-value{color:#1a150e}.char-detail-grid .data-report-value-breakdown{cursor:help;text-decoration:underline;color:#1a150e}.char-detail-grid .buff-container{flex:1;min-height:120px;background:rgba(0,0,0,.03);border:1px solid var(--gold-border);padding:10px;border-radius:8px;display:flex;flex-direction:column;gap:6px;overflow-y:auto}',
+      '.char-detail-grid .detail-block-buff{flex:1;display:flex;flex-direction:column;min-height:0}.char-detail-grid .detail-block-buff .block-title{position:relative;padding-right:36px}.char-detail-grid .detail-buff-swap-btn{position:absolute;top:0;right:0;width:26px;height:26px;padding:0;border:2px solid var(--gold-border);border-radius:50%;background:rgba(255,255,255,.92);color:#6b5a3d;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}.char-detail-grid .detail-buff-swap-btn:hover{background:#fff;border-color:var(--ornate-gold)}.char-detail-grid .detail-buff-swap-btn svg{width:14px;height:14px;fill:currentColor}.char-detail-grid .buff-panel-body{flex:1;min-height:0;display:flex;flex-direction:column}.char-detail-grid .detail-block-buff.show-data-report .buff-container{display:none}.char-detail-grid .data-report-container{display:none;flex:1;min-height:120px;background:rgba(0,0,0,.03);border:1px solid var(--gold-border);padding:10px;border-radius:8px;flex-direction:column;gap:6px;overflow-y:auto;font-size:12px}.char-detail-grid .detail-block-buff.show-data-report .data-report-container{display:flex}.char-detail-grid .data-report-row{background:rgba(255,255,255,.5);border-radius:8px;overflow:visible;cursor:pointer;user-select:none;border:1px solid rgba(139,115,32,.18)}.char-detail-grid .data-report-row:hover{background:rgba(255,255,255,.62)}.char-detail-grid .data-report-row-main{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-radius:8px}.char-detail-grid .data-report-row.expanded .data-report-row-main{border-radius:8px 8px 0 0}.char-detail-grid .data-report-label{color:#5c4a3a;font-weight:bold}.char-detail-grid .data-report-value{color:#1a150e}.char-detail-grid .data-report-expand{background:#f3ead3;border-top:0 solid rgba(139,115,32,.22);border-radius:0 0 8px 8px;color:#1a150e;line-height:1.5;height:auto;overflow:hidden;max-height:0;opacity:0;transform:translateY(-6px);transition:max-height .22s ease,opacity .18s ease,transform .22s ease,border-top-width .18s ease,padding .22s ease;pointer-events:none;padding:0 12px}.char-detail-grid .data-report-row.expanded .data-report-expand{max-height:520px;opacity:1;transform:translateY(0);border-top-width:1px;pointer-events:auto;padding:10px 12px 12px}.char-detail-grid .data-report-expand-grid{display:flex;flex-direction:column;gap:8px}.char-detail-grid .data-report-expand-line{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:2px 4px;border-radius:6px}.char-detail-grid .data-report-expand-left{display:flex;align-items:center;gap:6px;font-weight:bold;color:#3d2b1f}.char-detail-grid .data-report-expand-right{font-weight:bold;color:#1a150e;white-space:nowrap}.char-detail-grid .data-report-expand-line.buff-pos{background:rgba(46,125,50,.08);color:#2e7d32}.char-detail-grid .data-report-expand-line.buff-pos .data-report-expand-left,.char-detail-grid .data-report-expand-line.buff-pos .data-report-expand-right{color:#2e7d32}.char-detail-grid .data-report-expand-line.buff-neg{background:rgba(179,36,36,.08);color:#b32424}.char-detail-grid .data-report-expand-line.buff-neg .data-report-expand-left,.char-detail-grid .data-report-expand-line.buff-neg .data-report-expand-right{color:#b32424}.char-detail-grid .data-report-expand-left svg{width:14px;height:14px;stroke:currentColor;vertical-align:-2px}.char-detail-grid .buff-container{flex:1;min-height:120px;background:rgba(0,0,0,.03);border:1px solid var(--gold-border);padding:10px;border-radius:8px;display:flex;flex-direction:column;gap:6px;overflow-y:auto}',
       '.char-detail-grid .buff-item{background:linear-gradient(to right,#fff,#fafaf5);border-left:4px solid #2d5a27;padding:6px 10px;border-radius:0 6px 6px 0;font-size:11px}.char-detail-grid .buff-container .slot-char-buffs{display:flex;flex-wrap:wrap;gap:6px;align-items:flex-start}.char-detail-grid .buff-container .slot-buff-pill{border-radius:6px;border:1.5px dashed;padding:4px 8px;font-size:11px;font-weight:bold;color:#1a150e;display:inline-flex;align-items:center;gap:6px;flex-shrink:0;cursor:help}.char-detail-grid .buff-container .slot-buff-layers{flex-shrink:0}.char-detail-grid .buff-container .slot-buff-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
       '.char-detail-grid .buff-name{font-weight:bold;color:#2d5a27;margin-bottom:2px}',
       '@media (max-width:640px){.game-frame.ornate-frame{margin:6px;padding:8px}.game-inner{flex-direction:column}.sidebar{width:100%;min-width:unset;flex-direction:row;justify-content:center;border:none;border-right:none;border-bottom:2px solid var(--ornate-dark)}.sidebar-list{flex-direction:row;gap:10px}.sidebar-btn{width:56px;height:56px;border-radius:10px}.sidebar-btn-icon svg{width:22px;height:22px}.sidebar-btn-label{font-size:10px}.character-avatars{width:56px;gap:10px}.character-avatar-slot{width:56px;height:56px;flex:0 0 56px;border-radius:10px}.misc-panel-inner{min-width:56px}.misc-sub-btn{width:56px}.dungeon-floor-hud{margin:0 10px 0 0;padding:6px 8px 8px;max-width:72px;flex-shrink:0}.dungeon-floor-hud-major{font-size:22px}.dungeon-floor-hud-floor{font-size:11px}.sidebar-gold-hud{margin-top:0;padding:4px 6px;max-width:64px}.sidebar-gold-icon{width:28px;height:28px}.sidebar-gold-value{font-size:13px}.battle-area{flex-direction:column}.side{max-width:none}.slots-grid{min-height:100px}.slot{min-height:60px;font-size:12px}.corner-ornament{width:28px;height:28px}.edge-top,.edge-bottom{left:32px;right:32px}.edge-left,.edge-right{top:32px;bottom:32px}.view-story{padding:12px}.story-box{min-height:300px}.view-settings{padding:12px}.settings-box{min-height:300px}.story-side-btn{height:28px;padding:0 8px;font-size:10px}}',
@@ -1302,6 +1302,96 @@
           renderMapContent({});
         }, 0);
       }
+
+      /**
+       * 首领战斗胜利后点击「继续前进」时调用：
+       * - 自动提交本次 boss 格（commitPendingMapPosAfterBattle）
+       * - 若当前为第 3 大层（区域序号=2）的 boss：调用结算界面接口（由你后续实现）
+       * - 否则：切到下一层（下一张区域地图），并展示新地图
+       */
+      function onBossVictoryContinue() {
+        commitPendingMapPosAfterBattle();
+        var AREA_ORDER = ['艾尔瑟斯森林', '格里莫瓦王国旧都', '拉文斯庄园', '地狱边缘'];
+        var m = getMapData();
+        var curArea = m && m.area ? String(m.area) : '';
+        var idx = AREA_ORDER.indexOf(curArea);
+        var nextArea = idx >= 0 && idx + 1 < AREA_ORDER.length ? AREA_ORDER[idx + 1] : '';
+
+        // 第三层 boss：进入结算界面（留接口）
+        if (idx === 2) {
+          if (typeof window !== 'undefined' && typeof window.色色地牢_showSettlementScreen === 'function') {
+            try {
+              window.色色地牢_showSettlementScreen({
+                clearedArea: curArea,
+                clearedAreaIndex: idx,
+                party: getParty(),
+                gold: getChatGold(),
+              });
+            } catch (eSettle) {
+              console.warn('[色色地牢] 结算界面接口 色色地牢_showSettlementScreen 调用失败', eSettle);
+              if (typeof toastr !== 'undefined') toastr.warning('结算界面接口调用失败（请查看控制台）');
+            }
+          } else {
+            console.info('[色色地牢] 已击败第三层首领：等待实现结算界面接口 window.色色地牢_showSettlementScreen');
+            if (typeof toastr !== 'undefined') toastr.info('已击败第三层首领（结算界面待实现）');
+          }
+          return;
+        }
+
+        // 非第三层 boss：进入下一层
+        if (!nextArea) {
+          console.info('[色色地牢] 已击败首领，但未找到下一层区域：curArea=' + curArea);
+          if (typeof toastr !== 'undefined') toastr.info('已击败首领（下一层区域未配置）');
+          if (typeof window.色色地牢_showMapDrawer === 'function') window.色色地牢_showMapDrawer({});
+          return;
+        }
+
+        var v = null;
+        try {
+          if (typeof getVariables === 'function') v = getVariables({ type: 'chat' });
+        } catch (eV) {}
+        if (!v) v = {};
+        var keepInv = m && Array.isArray(m.inv) ? m.inv.slice() : [];
+        var rng = createNewGameMapRng(nextArea, {
+          diffUid: v.diffUid != null ? v.diffUid : null,
+          difficulty: v.difficulty != null ? v.difficulty : null,
+          characters: [],
+          blessing: '',
+        });
+        var genMap = generateProceduralMapNodes(rng);
+        var newMap = {
+          area: nextArea,
+          pos: '0-0',
+          nodes: genMap.nodes,
+          inv: keepInv,
+        };
+        if (genMap.revealOrder) newMap.revealOrder = genMap.revealOrder;
+
+        v.map = newMap;
+        v.nodeStates = {};
+        v.battleFloorTitle = '';
+        v.enemyParty = [null, null, null, null, null, null];
+        mergePreserveChatGold(v);
+        if (typeof replaceVariables === 'function') replaceVariables(v, { type: 'chat' });
+        try {
+          _lastKnownMap = JSON.parse(JSON.stringify(newMap));
+        } catch (eMap2) {
+          _lastKnownMap = {
+            area: newMap.area,
+            pos: newMap.pos,
+            nodes: newMap.nodes.slice(),
+            inv: keepInv.slice(),
+            revealOrder: newMap.revealOrder ? newMap.revealOrder.slice() : undefined,
+          };
+        }
+        // 清空地图 UI 待选节点，避免沿用上一层的 pending
+        _mapUIPendingNodeId = null;
+        _mapUIPendingAnchorPos = '0-0';
+
+        if (typeof window.BattleGrid !== 'undefined' && typeof window.BattleGrid.refreshBattleView === 'function')
+          window.BattleGrid.refreshBattleView();
+        if (typeof window.色色地牢_showMapDrawer === 'function') window.色色地牢_showMapDrawer({ animateGen: true });
+      }
       function renderMapContent(opts) {
         opts = opts || {};
         var m = getMapData();
@@ -1520,6 +1610,7 @@
           }, 0);
         };
         window.色色地牢_commitPendingMapPosAfterBattle = commitPendingMapPosAfterBattle;
+        window.色色地牢_onBossVictoryContinue = onBossVictoryContinue;
         window.色色地牢_lookupMapNodeType = lookupMapNodeTypeById;
       }
       function showMapDrawer(opts) {
@@ -2338,22 +2429,13 @@
         if (ch && stats && stats.luk != null && typeof hasAliveQingliInParty === 'function' && hasAliveQingliInParty())
           luk += 3;
         var agi = stats && stats.agi != null ? Number(stats.agi) : ch ? getDisplayStat(ch, 'agi') || 0 : 0;
-        var hitRate = ch ? Math.min(100, Math.max(0, 50 + luk * 5)) : 0;
+        var hitBase = ch ? Math.min(100, Math.max(0, 50 + luk * 5)) : 0;
         var dodgeRateRaw = agi * 1;
-        var dodgeRate = Math.min(80, dodgeRateRaw);
-        var baseCrit = 20 + agi * 1;
-        var 攻势L = 0;
-        if (ch && ch.buffs && ch.buffs.length) {
-          ch.buffs.forEach(function (b) {
-            if ((b.id || b.name) === '攻势') 攻势L = Math.max(0, parseInt(b.layers, 10) || 0);
-          });
-        }
-        var has心眼 =
-          ch && ch.name === '昼墨' && ch.specialSkillsUnlocked && ch.specialSkillsUnlocked.indexOf('心眼') !== -1;
-        var qingliExtraCrit = ch && ch.name === '清漓' ? luk * 3 : 0;
-        var critRate = ch
-          ? Math.min(100, Math.max(0, baseCrit + (has心眼 ? 攻势L * 5 : 0) + qingliExtraCrit))
-          : 0;
+        // 暴击率：范围 0%~100%，角色基础 0%，增加=精准(+5%/层)，减少=迟钝(-5%/层)
+        var 精准L = ch ? Math.min(5, getBuffLayersByName(ch, '精准')) : 0;
+        var 迟钝L = ch ? Math.min(5, getBuffLayersByName(ch, '迟钝')) : 0;
+        var baseCrit = 0;
+        var critRate = ch ? Math.min(100, Math.max(0, baseCrit + 精准L * 5 - 迟钝L * 5)) : 0;
         function reportAttrHtml(attrKey) {
           if (attrKey === '攻势') {
             return '<span class="report-attr-name" style="color:#1a1a1a">攻势</span>';
@@ -2374,57 +2456,208 @@
             '</span>'
           );
         }
+        function getBuffLayersByName(unit, buffName) {
+          if (!unit || !unit.buffs || !buffName) return 0;
+          var out = 0;
+          unit.buffs.forEach(function (b) {
+            if ((b.id || b.name) === buffName) out = Math.max(out, parseInt(b.layers, 10) || 0);
+          });
+          return Math.max(0, out);
+        }
+
+        var 专注L = ch ? Math.min(5, getBuffLayersByName(ch, '专注')) : 0;
+        var 灵巧L = ch ? Math.min(5, getBuffLayersByName(ch, '灵巧')) : 0;
+        var 精准L = ch ? Math.min(5, getBuffLayersByName(ch, '精准')) : 0;
+        var 恍惚L = ch ? Math.min(5, getBuffLayersByName(ch, '恍惚')) : 0;
+        var 迟缓L = ch ? Math.min(5, getBuffLayersByName(ch, '迟缓')) : 0;
+        var 激励L = ch ? Math.min(5, getBuffLayersByName(ch, '激励')) : 0;
+        var 虚弱L = ch ? Math.min(5, getBuffLayersByName(ch, '虚弱')) : 0;
+        var 坚韧L = ch ? Math.min(5, getBuffLayersByName(ch, '坚韧')) : 0;
+        var 脆弱L = ch ? Math.min(5, getBuffLayersByName(ch, '脆弱')) : 0;
+        var 残暴L = ch ? Math.min(5, getBuffLayersByName(ch, '残暴')) : 0;
+        var 乏力L = ch ? Math.min(5, getBuffLayersByName(ch, '乏力')) : 0;
+
+        function buildExpandGrid(lines) {
+          return (
+            '<div class="data-report-expand-grid">' +
+            lines
+              .map(function (ln) {
+                var cls = ln.kind === 'pos' ? ' buff-pos' : ln.kind === 'neg' ? ' buff-neg' : '';
+                return (
+                  '<div class="data-report-expand-line' +
+                  cls +
+                  '">' +
+                  '<div class="data-report-expand-left">' +
+                  (ln.left || '') +
+                  '</div>' +
+                  '<div class="data-report-expand-right">' +
+                  escapeHtml(String(ln.right == null ? '' : ln.right)) +
+                  '</div>' +
+                  '</div>'
+                );
+              })
+              .join('') +
+            '</div>'
+          );
+        }
+
+        var hitRate = ch ? Math.min(100, Math.max(0, hitBase + 专注L * 5 - 恍惚L * 5)) : 0;
         var sourceHit = ch
-          ? '50 + ' +
-            reportAttrHtml('luk') +
-            '×5 = 50 + ' +
-            luk +
-            '×5 = ' +
-            hitRate +
-            '%。实际命中 = 此值 − 对方闪避率。'
+          ? (function () {
+              var lukIcon = '';
+              var lukColor = '#c2185b';
+              try {
+                var a = ATTR_KEYS.find(function (x) {
+                  return x.key === 'luk';
+                });
+                if (a && a.color) lukColor = a.color;
+                if (a && a.icon && ATTR_ICONS && ATTR_ICONS[a.icon]) lukIcon = ATTR_ICONS[a.icon];
+              } catch (eL) {}
+              var lukMul = Math.max(0, Math.round((Number(luk) || 0) * 5 * 10) / 10);
+              var lines = [
+                {
+                  left: '基础',
+                  right: '50%',
+                  kind: 'neutral',
+                },
+                {
+                  left:
+                    '幸运' +
+                    (lukIcon
+                      ? '<span class="report-attr-icon" style="color:' + escapeHtml(lukColor) + '">' + lukIcon + '</span>'
+                      : ''),
+                  right: '+' + lukMul + '%',
+                  kind: 'pos',
+                },
+                {
+                  left: '专注',
+                  right: 专注L > 0 ? '+' + 专注L * 5 + '%' : '0%',
+                  kind: 'pos',
+                },
+                {
+                  left: '恍惚',
+                  right: 恍惚L > 0 ? '-' + 恍惚L * 5 + '%' : '0%',
+                  kind: 'neg',
+                },
+              ];
+              // 只展示“有的项目”：例如 0% 的专注/恍惚不显示
+              lines = lines.filter(function (ln) {
+                if (ln.left === '基础') return true;
+                if (String(ln.left).indexOf('幸运') === 0) return true;
+                return String(ln.right) !== '0%';
+              });
+              // 右侧按需求：增益/减益显示 +/-
+              lines = lines.map(function (ln) {
+                if (ln.kind === 'pos') {
+                  var r = String(ln.right);
+                  return Object.assign({}, ln, { right: r.indexOf('+') === 0 ? r : '+' + r });
+                }
+                if (ln.kind === 'neg') {
+                  var r2 = String(ln.right);
+                  return Object.assign({}, ln, { right: r2.indexOf('-') === 0 ? r2 : '-' + r2 });
+                }
+                return ln;
+              });
+              return buildExpandGrid(lines);
+            })()
           : null;
+        // 闪避率（数据报表）：按需求范围 0%~50%，基础为 0%，增益=灵巧(每层+5%)，减益=迟缓(每层-5%)
+        var dodgeRate = ch ? Math.min(50, Math.max(0, 0 + 灵巧L * 5 - 迟缓L * 5)) : 0;
         var sourceDodge = ch
-          ? reportAttrHtml('agi') +
-            '×1 = ' +
-            agi +
-            '×1 = ' +
-            dodgeRateRaw +
-            '%，上限 80%' +
-            (dodgeRateRaw > 80 ? ' → 80%' : '') +
-            '。对方命中率计算时会减去此值。'
+          ? (function () {
+              var lines = [
+                { left: '基础', right: '0%', kind: 'neutral' },
+                { left: '灵巧', right: 灵巧L > 0 ? '+' + 灵巧L * 5 + '%' : '0%', kind: 'pos' },
+                { left: '迟缓', right: 迟缓L > 0 ? '-' + 迟缓L * 5 + '%' : '0%', kind: 'neg' },
+              ];
+              // 只展示“有的项目”：基础保留，其余 0% 不显示
+              lines = lines.filter(function (ln) {
+                if (ln.left === '基础') return true;
+                return String(ln.right) !== '0%';
+              });
+              return buildExpandGrid(lines);
+            })()
           : null;
         var sourceCrit = ch
           ? (function () {
-              var parts = [];
-              parts.push('20 + ' + reportAttrHtml('agi') + '×1 = 20 + ' + agi + ' = ' + baseCrit + '%');
-              if (has心眼 && 攻势L > 0)
-                parts.push('+' + reportAttrHtml('攻势') + '×5 = +' + 攻势L + '×5 = +' + 攻势L * 5 + '%');
-              if (ch && ch.name === '清漓')
-                parts.push('+' + reportAttrHtml('luk') + '×3 = +' + luk + '×3 = +' + qingliExtraCrit + '%（福泽）');
-              return parts.join(' ') + '，合计 ' + critRate + '%。' + (has心眼 ? '（心眼：攻势×5%）' : '');
+              var lines = [{ left: '基础', right: '0%', kind: 'neutral' }];
+              if (精准L > 0) lines.push({ left: '精准', right: '+' + 精准L * 5 + '%', kind: 'pos' });
+              if (迟钝L > 0) lines.push({ left: '迟钝', right: '-' + 迟钝L * 5 + '%', kind: 'neg' });
+              return buildExpandGrid(lines);
             })()
           : null;
-        var sourceCritDmg = ch ? '基础暴击伤害 200%（暴击时最终伤害为普通伤害的 200%）。' : null;
+
+        // 增伤以 100% 为基础倍率显示：100% + 激励 - 虚弱；下限为 50%（即 -50%）
+        var dmgUp = Math.max(50, Math.round((100 + 激励L * 5 - 虚弱L * 5) * 10) / 10);
+        var baseDmgDown = ch && ch.baseDamageReduction != null ? Math.max(0, Math.min(50, Number(ch.baseDamageReduction) || 0)) : 0;
+        var dmgDown = Math.max(0, Math.min(50, Math.round((baseDmgDown + 坚韧L * 5 - 脆弱L * 5) * 10) / 10));
+        var critDmgMult = 2;
+        if (残暴L > 0) critDmgMult = critDmgMult * (1 + 残暴L * 0.1);
+        if (乏力L > 0) critDmgMult = Math.max(0.1, critDmgMult * (1 - 乏力L * 0.1));
+        var critDmgPct = Math.round(critDmgMult * 1000) / 10; // 1 位小数
+
+        var sourceDmgUp = ch
+          ? (function () {
+              var lines = [];
+              lines.push({ left: '基础', right: '100%', kind: 'neutral' });
+              if (激励L > 0) lines.push({ left: '激励', right: '+' + 激励L * 5 + '%', kind: 'pos' });
+              if (虚弱L > 0) lines.push({ left: '虚弱', right: '-' + 虚弱L * 5 + '%', kind: 'neg' });
+              return buildExpandGrid(lines);
+            })()
+          : null;
+        var sourceDmgDown = ch
+          ? (function () {
+              var lines = [];
+              // 基础：角色为 0%；怪物在生成时随机 0%~50%（写入 baseDamageReduction）
+              lines.push({ left: '基础', right: String(baseDmgDown) + '%', kind: 'neutral' });
+              if (坚韧L > 0) lines.push({ left: '坚韧', right: '+' + 坚韧L * 5 + '%', kind: 'pos' });
+              if (脆弱L > 0) lines.push({ left: '脆弱', right: '-' + 脆弱L * 5 + '%', kind: 'neg' });
+              return buildExpandGrid(lines);
+            })()
+          : null;
+        var sourceCritDmg = ch
+          ? (function () {
+              var lines = [{ left: '基础', right: '200%', kind: 'neutral' }];
+              if (残暴L > 0) lines.push({ left: '残暴', right: '+' + 残暴L * 10 + '%', kind: 'pos' });
+              if (乏力L > 0) lines.push({ left: '乏力', right: '-' + 乏力L * 10 + '%', kind: 'neg' });
+              return buildExpandGrid(lines);
+            })()
+          : null;
+        var tenacity =
+          ch && (ch.tenacity != null || ch.韧性 != null)
+            ? Number(ch.tenacity != null ? ch.tenacity : ch.韧性) || 0
+            : 0;
+        var sourceTenacity = ch ? '未定义来源时默认 0；后续可接入韧性字段/公式。' : null;
+
+        function fmtPercentNoPlus(n) {
+          var v = Number(n) || 0;
+          if (v === 0) return '0%';
+          // 正数不加 +，负数保留 -
+          return String(v) + '%';
+        }
         var reportRows = [
-          { label: '命中概率', value: (ch ? hitRate : '—') + (ch ? '%' : ''), source: sourceHit },
-          { label: '闪避概率', value: (ch ? dodgeRate : '—') + (ch ? '%' : ''), source: sourceDodge },
-          { label: '暴击概率', value: (ch ? critRate : '—') + (ch ? '%' : ''), source: sourceCrit },
-          { label: '暴击伤害', value: ch ? '200%' : '—', source: sourceCritDmg },
+          { label: '命中率', value: (ch ? Math.round(hitRate * 10) / 10 : 0) + '%', source: sourceHit },
+          { label: '闪避率', value: (ch ? Math.round(dodgeRate * 10) / 10 : 0) + '%', source: sourceDodge },
+          { label: '造成伤害增加', value: String(dmgUp) + '%', source: sourceDmgUp },
+          { label: '受到伤害减少', value: dmgDown + '%', source: sourceDmgDown },
+          { label: '暴击率', value: (ch ? Math.round(critRate * 10) / 10 : 0) + '%', source: sourceCrit },
+          { label: '暴击伤害', value: critDmgPct + '%', source: sourceCritDmg },
+          { label: '韧性', value: String(tenacity), source: sourceTenacity },
         ];
         var dataReportHtml = reportRows
           .map(function (r) {
-            var valueHtml = r.source
-              ? '<span class="data-report-value-breakdown" data-source="' +
-                escapeHtml(r.source) +
-                '" title="悬停或点击查看数值来源">' +
-                escapeHtml(String(r.value)) +
-                '</span>'
-              : '<span class="data-report-value">' + escapeHtml(String(r.value)) + '</span>';
+            var valueHtml = '<span class="data-report-value">' + escapeHtml(String(r.value)) + '</span>';
+            var expandHtml =
+              '<div class="data-report-expand">' +
+              (r.source ? r.source : '<span style="color:#6b5a3d">暂无详细信息</span>') +
+              '</div>';
             return (
-              '<div class="data-report-row"><span class="data-report-label">' +
+              '<div class="data-report-row"><div class="data-report-row-main"><span class="data-report-label">' +
               escapeHtml(String(r.label)) +
               '</span>' +
               valueHtml +
+              '</div>' +
+              expandHtml +
               '</div>'
             );
           })
@@ -2438,12 +2671,14 @@
         if (isWardrobe) {
           // 服装列表：固定两行；每行尽量多塞。新增：舞娘。
           // 规则：不展示当前穿着的服装；对应服装 hidden tag 为 false 则不可换装（视为没有该服装）。
-          var allOutfits = ['常服', '泳装', '浴衣', '舞娘', '兔女郎', '旗袍', '花嫁'];
+          var allOutfits =
+            typeof window !== 'undefined' && window.HENTAI_DUNGEON_OUTFITS && window.HENTAI_DUNGEON_OUTFITS.length
+              ? window.HENTAI_DUNGEON_OUTFITS.slice()
+              : ['常服', '泳装', '浴衣', '舞娘', '兔女郎', '旗袍', '花嫁'];
           var curOutfit = (ch && ch._portraitOutfit) || '常服';
           var tagsMap =
             typeof window !== 'undefined' && window.CHARACTER_OUTFIT_HIDDEN_TAGS ? window.CHARACTER_OUTFIT_HIDDEN_TAGS : null;
           var charTags = tagsMap && ch && ch.name && tagsMap[ch.name] ? tagsMap[ch.name] : null;
-          var prefix = typeof window !== 'undefined' && window.R2_PREFIX ? String(window.R2_PREFIX) : '';
           var outfits = allOutfits.filter(function (o) {
             if (o === curOutfit) return false;
             // 没配该角色时默认不可用（避免误显示不存在的衣服）
@@ -2452,7 +2687,19 @@
           });
           var items = outfits
             .map(function (o) {
-              var url = prefix + encodeURI((ch.name || '') + '/' + o + '/完好-正常状态.png');
+              var url =
+                typeof window !== 'undefined' && typeof window.buildHentaiDungeonOutfitThumbnailUrl === 'function'
+                  ? window.buildHentaiDungeonOutfitThumbnailUrl(ch.name || '', o)
+                  : '';
+              if (
+                !url &&
+                typeof window !== 'undefined' &&
+                window.R2_PREFIX &&
+                ch &&
+                ch.name
+              ) {
+                url = String(window.R2_PREFIX) + encodeURI(ch.name + '/' + o + '/完好-正常状态.png');
+              }
               return (
                 '<button type="button" class="wardrobe-item" data-outfit="' +
                 escapeHtml(o) +
@@ -2514,9 +2761,13 @@
           expPct +
           '%;background:#2d8a4e"></div></div></div>' +
           (function () {
+            var sMax =
+              typeof window !== 'undefined' && window.HENTAI_DUNGEON_MAX_SEMEN_ML != null
+                ? Number(window.HENTAI_DUNGEON_MAX_SEMEN_ML) || 100
+                : 100;
             var sRaw = ch && ch.semenVolumeMl != null ? Number(ch.semenVolumeMl) || 0 : 0;
-            var s = Math.max(0, Math.min(100, sRaw));
-            var sPct = Math.max(0, Math.min(100, s));
+            var s = Math.max(0, Math.min(sMax, sRaw));
+            var sPct = sMax > 0 ? Math.max(0, Math.min(100, (s / sMax) * 100)) : 0;
             var txt = s + ' ml';
             return (
               '<div class="bar-row" title="战斗外仍保留，不因回合或战斗结束而清零"><span class="bar-label">精液</span><div class="bar-wrap semen-bar">' +
@@ -2584,8 +2835,19 @@
           btn.addEventListener('click', function () {
             var outfit = btn.getAttribute('data-outfit') || '';
             if (!outfit) return;
-            var prefix = typeof window !== 'undefined' && window.R2_PREFIX ? String(window.R2_PREFIX) : '';
-            var nextUrl = prefix + encodeURI((ch.name || '') + '/' + outfit + '/完好-正常状态.png');
+            var nextUrl =
+              typeof window !== 'undefined' && typeof window.buildHentaiDungeonOutfitThumbnailUrl === 'function'
+                ? window.buildHentaiDungeonOutfitThumbnailUrl(ch.name || '', outfit)
+                : '';
+            if (
+              !nextUrl &&
+              typeof window !== 'undefined' &&
+              window.R2_PREFIX &&
+              ch &&
+              ch.name
+            ) {
+              nextUrl = String(window.R2_PREFIX) + encodeURI(ch.name + '/' + outfit + '/完好-正常状态.png');
+            }
             ch.avatar = nextUrl;
             ch._portraitOutfit = outfit;
             ch.outfitTag = outfit;
@@ -3550,12 +3812,28 @@
         var base = chars && ch.name && chars[ch.name] ? Object.assign({}, chars[ch.name], ch) : Object.assign({}, ch);
         if (base.semenVolumeMl == null || base.semenVolumeMl === '') base.semenVolumeMl = 0;
         else base.semenVolumeMl = Number(base.semenVolumeMl) || 0;
-        base.semenVolumeMl = Math.min(100, Math.max(0, base.semenVolumeMl));
+        var semenCap =
+          typeof window !== 'undefined' && window.HENTAI_DUNGEON_MAX_SEMEN_ML != null
+            ? Number(window.HENTAI_DUNGEON_MAX_SEMEN_ML) || 100
+            : 100;
+        base.semenVolumeMl = Math.min(semenCap, Math.max(0, base.semenVolumeMl));
         return base;
       });
       var portraits = window.CHARACTER_PORTRAITS;
       result.forEach(function (ch) {
         if (ch && !ch.avatar && portraits && portraits[ch.name]) ch.avatar = portraits[ch.name];
+        if (ch && ch.name && typeof window.getDefaultOutfitForCharacterName === 'function') {
+          var hasOutfitField =
+            (ch._portraitOutfit != null && String(ch._portraitOutfit).trim() !== '') ||
+            (ch.outfitTag != null && String(ch.outfitTag).trim() !== '') ||
+            (ch.outfit != null && String(ch.outfit).trim() !== '');
+          if (!hasOutfitField) {
+            var defOutfit = window.getDefaultOutfitForCharacterName(ch.name);
+            ch._portraitOutfit = defOutfit;
+            ch.outfitTag = defOutfit;
+            ch.outfit = defOutfit;
+          }
+        }
       });
       if (typeof window !== 'undefined' && window.BattleGrid && typeof window.BattleGrid.capUnitBuffs === 'function') {
         result.forEach(function (ch) {
@@ -3992,17 +4270,57 @@
         if (el.parentNode) el.parentNode.removeChild(el);
       }, 1300);
     }
+    /** 与 getApByLevel 一致：角色等级上限 */
+    var BATTLE_VICTORY_PARTY_LEVEL_CAP = 5;
+    /** 战斗胜利全队经验：普通 2 / 精英 5 / 首领 12 */
+    function battleVictoryXpFromNodeType(nodeType) {
+      var t = (nodeType || '').toString();
+      if (t === '精英战斗') return 5;
+      if (t === '首领战斗') return 12;
+      return 2;
+    }
+    /** 给队伍中每名非召唤物角色增加经验，按 getMaxExpForLevel 升级至 Lv.5 封顶 */
+    function applyBattleVictoryXpToParty(party, addXp) {
+      if (!party || !party.length || !addXp || addXp <= 0) return;
+      var cap = BATTLE_VICTORY_PARTY_LEVEL_CAP;
+      for (var i = 0; i < party.length; i++) {
+        var ch = party[i];
+        if (!ch || isFieldSummonNoCharacterRoster(ch)) continue;
+        var lv = Math.max(1, Math.min(cap, parseInt(ch.level, 10) || 1));
+        if (lv >= cap) continue;
+        var exp = ch.exp != null ? parseInt(ch.exp, 10) || 0 : 0;
+        exp += addXp;
+        while (lv < cap) {
+          var need = getMaxExpForLevel(lv);
+          if (exp < need) break;
+          exp -= need;
+          lv++;
+        }
+        if (lv >= cap) {
+          lv = cap;
+          exp = 0;
+        }
+        ch.level = lv;
+        ch.exp = exp;
+      }
+    }
     function onBattleVictoryGold() {
       if (typeof window !== 'undefined' && window._色色地牢_battleVictoryGoldGranted) return;
-      var gd = typeof window !== 'undefined' ? window.色色地牢_goldDrop : null;
-      if (!gd || typeof gd.rollBattleGold !== 'function') return;
       var intent = typeof window !== 'undefined' ? window._色色地牢_lastBattleIntent : null;
       var m = typeof getMapData === 'function' ? getMapData() : null;
-      var area = (intent && intent.area) || (m && m.area) || '';
       var nodeType = (intent && intent.nodeType) || '普通战斗';
+      var xpGain = battleVictoryXpFromNodeType(nodeType);
+      applyBattleVictoryXpToParty(getParty(), xpGain);
+      saveBattleData(getParty(), getEnemyParty());
+      if (typeof window.BattleGrid !== 'undefined' && typeof window.BattleGrid.refreshBattleView === 'function')
+        window.BattleGrid.refreshBattleView();
+      if (typeof window !== 'undefined') window._色色地牢_battleVictoryGoldGranted = true;
+      console.info('[色色地牢] 战斗胜利全队经验 +' + xpGain + '（' + nodeType + '）');
+      var gd = typeof window !== 'undefined' ? window.色色地牢_goldDrop : null;
+      if (!gd || typeof gd.rollBattleGold !== 'function') return;
+      var area = (intent && intent.area) || (m && m.area) || '';
       var n = gd.rollBattleGold(area, nodeType);
       if (n <= 0) return;
-      if (typeof window !== 'undefined') window._色色地牢_battleVictoryGoldGranted = true;
       var startGold = getChatGold();
       var endGold = startGold + n;
       showGoldGainFloatNearHud(n);
@@ -4711,24 +5029,7 @@
           popup.style.top = top + 'px';
         });
       }
-      function showDataReportBreakdownAt(x, y, sourceText) {
-        if (!sourceText) return;
-        popup.innerHTML = sourceText;
-        popup.classList.add('show');
-        var pad = 12;
-        requestAnimationFrame(function () {
-          var w = popup.offsetWidth || 200;
-          var h = popup.offsetHeight || 60;
-          var left = x + pad;
-          var top = y + pad;
-          if (left + w > window.innerWidth) left = x - w - pad;
-          if (top + h > window.innerHeight) top = y - h - pad;
-          if (left < pad) left = pad;
-          if (top < pad) top = pad;
-          popup.style.left = left + 'px';
-          popup.style.top = top + 'px';
-        });
-      }
+      // 已移除「数据报表数值来源弹窗」：数据报表数值不再带下划线与 hover/click 交互。
       function showAttrBreakdownAt(x, y, el) {
         if (!el) return;
         var sourceText = el.getAttribute('data-source');
@@ -4859,29 +5160,6 @@
             showAttrBreakdownAt(e.clientX, e.clientY, el);
           }
         });
-        $(document).on('mouseenter', '.data-report-value-breakdown', function (e) {
-          if (!buffTooltipOpenByClick) {
-            var el = e.target.closest('.data-report-value-breakdown');
-            if (el) {
-              var src = el.getAttribute('data-source');
-              if (src) showDataReportBreakdownAt(e.clientX, e.clientY, src);
-            }
-          }
-        });
-        $(document).on('mouseleave', '.data-report-value-breakdown', function () {
-          if (!buffTooltipOpenByClick) hide();
-        });
-        $(document).on('click', '.data-report-value-breakdown', function (e) {
-          e.preventDefault();
-          var el = e.target.closest('.data-report-value-breakdown');
-          if (el) {
-            var src = el.getAttribute('data-source');
-            if (src) {
-              buffTooltipOpenByClick = true;
-              showDataReportBreakdownAt(e.clientX, e.clientY, src);
-            }
-          }
-        });
         $(document).on('click', function (e) {
           if (
             buffTooltipOpenByClick &&
@@ -4889,12 +5167,27 @@
             !e.target.closest('.slot-buff-pill') &&
             !e.target.closest('.skill-calc') &&
             !e.target.closest('.attr-val-breakdown') &&
-            !e.target.closest('.data-report-value-breakdown') &&
             !e.target.closest('#buff-tooltip-popup')
           ) {
             buffTooltipOpenByClick = false;
             hide();
           }
+        });
+
+        // 数据报表：点击行展开/收起（下方紧贴米黄色说明框，上直角下圆角）
+        $(document).on('click', '.data-report-row', function (e) {
+          // 点击展开内容区域也视为切换（按需求“再次点击大圆角块可收回”）
+          var row = e.currentTarget;
+          if (!row) return;
+          // 仅在数据报表区域生效
+          if (!row.closest('.data-report-container')) return;
+          var isOpen = row.classList.contains('expanded');
+          // 默认只允许同时展开一行（避免滚动区内过长）
+          document.querySelectorAll('.data-report-row.expanded').forEach(function (el) {
+            if (el !== row) el.classList.remove('expanded');
+          });
+          if (isOpen) row.classList.remove('expanded');
+          else row.classList.add('expanded');
         });
       }
     }

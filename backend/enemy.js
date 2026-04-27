@@ -450,6 +450,22 @@
     if (!plan || !Array.isArray(plan.units)) return null;
     var arr = [null, null, null, null, null, null];
     var placed = 0;
+    function rollBaseHitRate() {
+      // 需求：捕获到怪物时生成基础命中率，范围 50%~100%
+      return Math.floor(50 + Math.random() * 51);
+    }
+    function rollBaseDodgeRate() {
+      // 需求：怪物基础闪避率，范围 0%~50%
+      return Math.floor(Math.random() * 51);
+    }
+    function rollBaseDamageReduction() {
+      // 需求：怪物基础减伤率，范围 0%~50%
+      return Math.floor(Math.random() * 51);
+    }
+    function rollBaseCritRate() {
+      // 需求：怪物基础暴击率，范围 0%~100%
+      return Math.floor(Math.random() * 101);
+    }
     for (var i = 0; i < plan.units.length; i++) {
       var u = plan.units[i];
       var slot = u.enemySlot | 0;
@@ -467,6 +483,10 @@
         maxHp: st.maxHp,
         atk: st.atk,
         def: st.def,
+        baseHitRate: rollBaseHitRate(),
+        dodgeRate: rollBaseDodgeRate(),
+        baseDamageReduction: rollBaseDamageReduction(),
+        baseCritRate: rollBaseCritRate(),
         buffs: [],
         intents: u.intents || [],
         intentSummary: u.intentSummary,
