@@ -45,8 +45,12 @@
     }
   }
 
-  /** 是否允许调用 requestFullscreen（iframe 内通常被 Permissions Policy 禁止） */
+  /** 是否允许调用 requestFullscreen（iframe / 嵌入文档一律禁止，避免 Permissions policy violation） */
   function isNativeFullscreenAllowed() {
+    if (isInIframe()) return false;
+    try {
+      if (window.frameElement) return false;
+    } catch (e) {}
     try {
       if (document.permissionsPolicy && typeof document.permissionsPolicy.allowsFeature === 'function') {
         return document.permissionsPolicy.allowsFeature('fullscreen');
@@ -55,7 +59,7 @@
         return document.featurePolicy.allowsFeature('fullscreen');
       }
     } catch (e) {}
-    return !isInIframe();
+    return true;
   }
 
   function getFullscreenElement() {

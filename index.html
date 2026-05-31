@@ -6,8 +6,11 @@
     <title>HentaiDungeon</title>
   </head>
   <body>
-    <!-- 开局界面：最先加载，载入时显示 HentaiDungeon/色色地牢 与左下角协议，点击后进入主界面 -->
-    <script src="interface/begining.js"></script>
+    <!-- 开局界面：主链接失败时同步回退到 GitHub Pages 分支（须与底部 loader 分支一致） -->
+    <script
+      src="interface/begining.js"
+      onerror="this.onerror=null;this.src='https://satorizeppelin.github.io/HentaiDungeon/interface/begining.js'"
+    ></script>
     <!-- 样式与侧边栏/战斗逻辑由 界面/app.js 注入；文本由 界面/story.js 提供；jQuery 由 CDN 或酒馆环境提供 -->
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
     <div class="game-frame ornate-frame">
