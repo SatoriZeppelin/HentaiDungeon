@@ -466,6 +466,12 @@
       // 需求：怪物基础暴击率，范围 0%~100%
       return Math.floor(Math.random() * 101);
     }
+    function baseTenacityFromRank(rank) {
+      var k = (rank || '').toString().toLowerCase().trim();
+      if (k === 'boss') return 40;
+      if (k === 'strong' || k === 'elite') return 20;
+      return 0;
+    }
     for (var i = 0; i < plan.units.length; i++) {
       var u = plan.units[i];
       var slot = u.enemySlot | 0;
@@ -487,6 +493,8 @@
         dodgeRate: rollBaseDodgeRate(),
         baseDamageReduction: rollBaseDamageReduction(),
         baseCritRate: rollBaseCritRate(),
+        baseTenacity: baseTenacityFromRank(u.rank),
+        tenacity: baseTenacityFromRank(u.rank),
         buffs: [],
         intents: u.intents || [],
         intentSummary: u.intentSummary,

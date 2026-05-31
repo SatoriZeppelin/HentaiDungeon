@@ -1002,7 +1002,19 @@
             var img = slot ? slot.querySelector('.slot-char-portrait img') : null;
             var nameEl = slot ? slot.querySelector('.slot-char-name') : null;
             var name = nameEl ? nameEl.textContent.trim() : '';
-            panelSlot.style.backgroundImage = img && img.src ? 'url(' + img.src + ')' : '';
+            var bgUrl = '';
+            if (img) {
+              var vis = img.src || '';
+              var pCanon = img.getAttribute('data-hd-portrait') || '';
+              var pixel =
+                typeof window !== 'undefined' && window.HENTAI_DUNGEON_TRANSPARENT_PIXEL_GIF
+                  ? window.HENTAI_DUNGEON_TRANSPARENT_PIXEL_GIF
+                  : '';
+              if (vis.indexOf('blob:') === 0) bgUrl = vis;
+              else if (pCanon) bgUrl = pCanon;
+              else if (vis && vis !== pixel) bgUrl = vis;
+            }
+            panelSlot.style.backgroundImage = bgUrl ? 'url(' + JSON.stringify(bgUrl) + ')' : '';
             panelSlot.title = name || '角色' + allySlot;
             panelSlot.classList.remove('empty');
             var dot = panelSlot.querySelector('.badge-dot');
@@ -1957,7 +1969,27 @@
         var hpText = hpBar ? hpBar.textContent.trim() : '0/100';
         var expText = expBar ? expBar.textContent.trim() : '0/100';
         var apText = apEl ? apEl.textContent.trim() : '0';
-        var src = portrait && portrait.src ? portrait.src : '';
+        var canon =
+          portrait && portrait.getAttribute ? portrait.getAttribute('data-hd-portrait') || '' : '';
+        var rawSrc = portrait && portrait.src ? portrait.src : '';
+        var src = canon;
+        if (
+          !src &&
+          rawSrc &&
+          rawSrc.indexOf('blob:') !== 0 &&
+          rawSrc.indexOf('data:') !== 0
+        ) {
+          src = rawSrc;
+        }
+        if (!src) {
+          var partyForPortrait = getParty();
+          var chP = partyForPortrait[avatarIndex - 1];
+          if (chP && typeof window.buildHentaiDungeonPortraitUrl === 'function') {
+            src = window.buildHentaiDungeonPortraitUrl(chP, chP.avatar || '') || chP.avatar || '';
+          } else if (chP && chP.avatar) {
+            src = chP.avatar;
+          }
+        }
         var hpParts = hpText.split('/');
         var expParts = expText.split('/');
         var hp = parseInt(hpParts[0], 10) || 0;
@@ -2591,9 +2623,8 @@
         var dmgUp = Math.max(50, Math.round((100 + 激励L * 5 - 虚弱L * 5) * 10) / 10);
         var baseDmgDown = ch && ch.baseDamageReduction != null ? Math.max(0, Math.min(50, Number(ch.baseDamageReduction) || 0)) : 0;
         var dmgDown = Math.max(0, Math.min(50, Math.round((baseDmgDown + 坚韧L * 5 - 脆弱L * 5) * 10) / 10));
-        var critDmgMult = 2;
-        if (残暴L > 0) critDmgMult = critDmgMult * (1 + 残暴L * 0.1);
-        if (乏力L > 0) critDmgMult = Math.max(0.1, critDmgMult * (1 - 乏力L * 0.1));
+        // 爆伤：基础 200%，残暴 +10%/层，乏力 -10%/层；下限 100%（倍率 ≥1）
+        var critDmgMult = Math.max(1, 2 + 残暴L * 0.1 - 乏力L * 0.1);
         var critDmgPct = Math.round(critDmgMult * 1000) / 10; // 1 位小数
 
         var sourceDmgUp = ch
@@ -2623,11 +2654,43 @@
               return buildExpandGrid(lines);
             })()
           : null;
-        var tenacity =
-          ch && (ch.tenacity != null || ch.韧性 != null)
-            ? Number(ch.tenacity != null ? ch.tenacity : ch.韧性) || 0
-            : 0;
-        var sourceTenacity = ch ? '未定义来源时默认 0；后续可接入韧性字段/公式。' : null;
+        function getDisplayBaseTenacityForReport(unit) {
+          if (!unit) return 0;
+          if (unit.baseTenacity != null) return Math.max(0, Math.min(100, Number(unit.baseTenacity) || 0));
+          var rk = (unit.rank || '').toString().toLowerCase().trim();
+          if (rk === 'boss') return 40;
+          if (rk === 'strong' || rk === 'elite') return 20;
+          if (rk === 'fodder' || rk === 'normal') return 0;
+          return 20;
+        }
+        var baseTenacityReport = ch ? getDisplayBaseTenacityForReport(ch) : 0;
+        var tenacity = ch
+          ? Math.max(
+              0,
+              Math.min(
+                100,
+                ch.tenacity != null
+                  ? Number(ch.tenacity) || 0
+                  : ch.韧性 != null
+                    ? Number(ch.韧性) || 0
+                    : baseTenacityReport,
+              ),
+            )
+          : 0;
+        var sourceTenacity = ch
+          ? (function () {
+              var deltaCtrl = Math.max(0, Math.round((tenacity - baseTenacityReport) * 10) / 10);
+              var lines = [
+                { left: '基础', right: baseTenacityReport + '%', kind: 'neutral' },
+                {
+                  left: '本回合受到控制技能影响',
+                  right: (deltaCtrl > 0 ? '+' : '') + deltaCtrl + '%',
+                  kind: deltaCtrl > 0 ? 'pos' : 'neutral',
+                },
+              ];
+              return buildExpandGrid(lines);
+            })()
+          : null;
 
         function fmtPercentNoPlus(n) {
           var v = Number(n) || 0;
@@ -2642,7 +2705,7 @@
           { label: '受到伤害减少', value: dmgDown + '%', source: sourceDmgDown },
           { label: '暴击率', value: (ch ? Math.round(critRate * 10) / 10 : 0) + '%', source: sourceCrit },
           { label: '暴击伤害', value: critDmgPct + '%', source: sourceCritDmg },
-          { label: '韧性', value: String(tenacity), source: sourceTenacity },
+          { label: '韧性', value: tenacity + '%', source: sourceTenacity },
         ];
         var dataReportHtml = reportRows
           .map(function (r) {
@@ -2700,6 +2763,10 @@
               ) {
                 url = String(window.R2_PREFIX) + encodeURI(ch.name + '/' + o + '/完好-正常状态.png');
               }
+              var wPixel =
+                typeof window !== 'undefined' && window.HENTAI_DUNGEON_TRANSPARENT_PIXEL_GIF
+                  ? window.HENTAI_DUNGEON_TRANSPARENT_PIXEL_GIF
+                  : 'data:image/gif;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA=';
               return (
                 '<button type="button" class="wardrobe-item" data-outfit="' +
                 escapeHtml(o) +
@@ -2707,7 +2774,9 @@
                 escapeHtml(o) +
                 '">' +
                 '<img src="' +
-                url +
+                wPixel +
+                '" data-hd-portrait="' +
+                escapeHtml(url) +
                 '" alt="' +
                 escapeHtml(o) +
                 '"/>' +
@@ -2730,6 +2799,17 @@
             '</div>' +
             '</div>';
         }
+        var portraitPixel =
+          typeof window !== 'undefined' && window.HENTAI_DUNGEON_TRANSPARENT_PIXEL_GIF
+            ? window.HENTAI_DUNGEON_TRANSPARENT_PIXEL_GIF
+            : 'data:image/gif;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA=';
+        var portraitXlHtml = data.src
+          ? '<img src="' +
+            portraitPixel +
+            '" data-hd-portrait="' +
+            escapeHtml(data.src) +
+            '" alt="" class="portrait-xl">'
+          : '<div class="portrait-xl" style="background:#c4b8a8;display:flex;align-items:center;justify-content:center;color:#5c4a3a">无立绘</div>';
         return (
           '<div class="char-detail-grid">' +
           '<div class="col-base">' +
@@ -2737,9 +2817,7 @@
           '<button type="button" class="detail-portrait-variant-btn" title="切换差分服装" aria-label="切换差分服装">' +
           SWAP_SVG +
           '</button>' +
-          (data.src
-            ? '<img src="' + data.src + '" alt="" class="portrait-xl">'
-            : '<div class="portrait-xl" style="background:#c4b8a8;display:flex;align-items:center;justify-content:center;color:#5c4a3a">无立绘</div>') +
+          portraitXlHtml +
           '</div>' +
           '<div class="char-name-box">' +
           (data.name || '角色') +
@@ -2824,6 +2902,9 @@
       };
       function bindDetailActions(content, avatarIndex, ch, data) {
         if (!content || !ch) return;
+        if (typeof window.bindHentaiDungeonCachedPortraitsInRoot === 'function') {
+          window.bindHentaiDungeonCachedPortraitsInRoot(content);
+        }
         var portraitBtn = content.querySelector('.detail-portrait-variant-btn');
         if (portraitBtn) {
           portraitBtn.addEventListener('click', function () {

@@ -107,6 +107,36 @@
     return out;
   }
 
+  /** 存活且带【嘲讽】、且非【虚无】的敌方槽位（无嘲讽池时我方选敌不限于此集合） */
+  function collectEnemyTauntSlotIndicesForPlayer(slots) {
+    if (!slots || slots.length < SLOT_COUNT) return [];
+    var tauntSlots = [];
+    for (var i = 1; i <= SLOT_COUNT; i++) {
+      var u = slots[i - 1];
+      if (!u) continue;
+      var hp = u.hp != null ? parseInt(u.hp, 10) : 1;
+      if (hp <= 0) continue;
+      var hasVoid = (u.buffs || []).some(function (b) {
+        return (b.id === '虚无' || b.name === '虚无') && (b.layers || 0) > 0;
+      });
+      if (hasVoid) continue;
+      var hasTaunt = (u.buffs || []).some(function (b) {
+        return (b.id === '嘲讽' || b.name === '嘲讽') && (b.layers || 0) > 0;
+      });
+      if (hasTaunt) tauntSlots.push(i);
+    }
+    return tauntSlots;
+  }
+
+  /**
+   * 我方选择敌方单体目标：若场上存在存活且带【嘲讽】的敌人（虚无除外），仅能选择这些槽位（与 getTargetableAllySlotsForEnemy 对称，嘲讽优先于占位）；否则同 getTargetableEnemySlotIndices。
+   */
+  function getTargetableEnemySlotIndicesForPlayer(slots) {
+    var tauntSlots = collectEnemyTauntSlotIndicesForPlayer(slots);
+    if (tauntSlots.length > 0) return tauntSlots;
+    return getTargetableEnemySlotIndices(slots);
+  }
+
   /**
    * 判断某槽位在当前敌方槽位状态下是否可作为攻击目标（敌方前排=1,3,5）
    * 仅当该槽位有存活单位时才算可目标；后排仅当前排无存活单位时可选。
@@ -536,8 +566,7 @@
       id: '嘲讽',
       name: '嘲讽',
       desc: '被视为优先攻击的对象',
-      tooltip: '被视为优先攻击的对象。上限2层。',
-      maxLayers: 2,
+      tooltip: '被视为优先攻击的对象。无上限。',
       characterExclusive: '达芙妮 / 艾丽卡；敌方意图可自施',
     },
     {
@@ -710,6 +739,8 @@
    * 与【眩晕】【魅惑】【沉默】【缴械】【混乱】一致。
    */
   var 镜花水月_CONTROL_DEBUFF_IDS = ['眩晕', '魅惑', '沉默', '缴械', '混乱'];
+  /** 韧性系统：视为「控制类」、施加时做韧性判定（含冻结、嘲讽） */
+  var TENACITY_CONTROL_BUFF_IDS = ['眩晕', '魅惑', '沉默', '缴械', '混乱', '冻结', '嘲讽'];
   /** 取 buff 的层数上限，无则返回 null（表示不封顶） */
   function getBuffMaxLayers(buffId) {
     var def = BUFF_DEFINITIONS.filter(function (x) {
@@ -884,7 +915,7 @@
     if (!enemySlots || !Array.isArray(enemySlots) || typeof onTargetSelected !== 'function') return;
     exitSkillTargetMode();
     injectTargetableStyle();
-    var targetable = getTargetableEnemySlotIndices(enemySlots);
+    var targetable = getTargetableEnemySlotIndicesForPlayer(enemySlots);
     for (var i = 0; i < targetable.length; i++) {
       var slotIndex = targetable[i];
       if (enemySlots[slotIndex - 1] != null) {
@@ -994,14 +1025,40 @@
     exitSkillTargetMode();
     injectTargetableStyle();
     var rowLeftSlots = [1, 3, 5];
+    var tauntMode = collectEnemyTauntSlotIndicesForPlayer(enemySlots).length > 0;
+    function rowEnemyAlive(u) {
+      if (!u) return false;
+      var hp = u.hp != null ? parseInt(u.hp, 10) : 1;
+      return hp > 0;
+    }
+    function rowEnemyTaunt(u) {
+      if (!rowEnemyAlive(u)) return false;
+      if (
+        (u.buffs || []).some(function (b) {
+          return (b.id === '虚无' || b.name === '虚无') && (b.layers || 0) > 0;
+        })
+      )
+        return false;
+      return (u.buffs || []).some(function (b) {
+        return (b.id === '嘲讽' || b.name === '嘲讽') && (b.layers || 0) > 0;
+      });
+    }
     for (var i = 0; i < rowLeftSlots.length; i++) {
       var left = rowLeftSlots[i];
-      var unit = enemySlots[left - 1];
-      if (unit == null) continue;
-      var hp = unit.hp != null ? parseInt(unit.hp, 10) : 1;
-      if (hp <= 0) continue;
-      var el = document.querySelector('.slot[data-slot="enemy-' + left + '"]');
-      if (el) el.classList.add('skill-targetable');
+      var right = left + 1;
+      var uL = enemySlots[left - 1];
+      var uR = enemySlots[right - 1];
+      var rowAlive = rowEnemyAlive(uL) || rowEnemyAlive(uR);
+      if (!rowAlive) continue;
+      if (tauntMode && !rowEnemyTaunt(uL) && !rowEnemyTaunt(uR)) continue;
+      if (rowEnemyAlive(uL)) {
+        var elL = document.querySelector('.slot[data-slot="enemy-' + left + '"]');
+        if (elL) elL.classList.add('skill-targetable');
+      }
+      if (rowEnemyAlive(uR)) {
+        var elR = document.querySelector('.slot[data-slot="enemy-' + right + '"]');
+        if (elR) elR.classList.add('skill-targetable');
+      }
     }
     skillTargetState.active = true;
     skillTargetState.callback = onRowLeftSelected;
@@ -1010,7 +1067,8 @@
       var slot = e.target.closest && e.target.closest('.slot.skill-targetable[data-slot^="enemy-"]');
       if (slot) {
         var slotNum = parseInt(slot.getAttribute('data-slot').replace('enemy-', ''), 10);
-        if (skillTargetState.callback) skillTargetState.callback(slotNum);
+        var rowLeft = slotNum % 2 === 1 ? slotNum : slotNum - 1;
+        if (skillTargetState.callback) skillTargetState.callback(rowLeft);
         exitSkillTargetMode();
       } else {
         exitSkillTargetMode();
@@ -1022,20 +1080,24 @@
 
   // ---------- 回合阶段（大回合内四个子回合）----------
   var BATTLE_PHASE = {
+    PLAYER_START: 'player_start', // 玩家开始回合（行动前）
     PLAYER_ACTION: 'player_action', // 玩家行动回合
     PLAYER_RESOLUTION: 'player_resolution', // 玩家结算回合
+    ENEMY_START: 'enemy_start', // 敌方开始回合（行动前）
     ENEMY_ACTION: 'enemy_action', // 敌方行动回合
     ENEMY_RESOLUTION: 'enemy_resolution', // 敌方结算回合
   };
   var phaseOrder = [
+    BATTLE_PHASE.PLAYER_START,
     BATTLE_PHASE.PLAYER_ACTION,
     BATTLE_PHASE.PLAYER_RESOLUTION,
+    BATTLE_PHASE.ENEMY_START,
     BATTLE_PHASE.ENEMY_ACTION,
     BATTLE_PHASE.ENEMY_RESOLUTION,
   ];
   var battleState = {
     bigRound: 1,
-    phase: BATTLE_PHASE.PLAYER_ACTION,
+    phase: BATTLE_PHASE.PLAYER_START,
     erika奉献TriggeredThisRound: false,
     currentActingAllySlot: null,
     /** 凌遥仙：星辰定锚 / 星命逆转 / 命仪精准 每场各仅能使用一次，用后记入 id */
@@ -1073,7 +1135,7 @@
       idx = 0;
     }
     battleState.phase = phaseOrder[idx];
-    if (battleState.phase === BATTLE_PHASE.PLAYER_ACTION) battleState.erika奉献TriggeredThisRound = false;
+    if (battleState.phase === BATTLE_PHASE.PLAYER_START) battleState.erika奉献TriggeredThisRound = false;
     return battleState.phase;
   }
 
@@ -1472,7 +1534,9 @@
       var rollCrit = roll1To100();
       var critRate = isPlayerAttacker ? getPlayerCritRate(attacker) : getMonsterCritRate(attacker);
       var crit = opts && opts.forceCrit === true ? true : rollCrit <= critRate;
-      var critMult = opts && opts.critMult != null && opts.critMult > 0 ? opts.critMult : CRIT_MULT;
+      // 爆伤判定：基础伤害 × (200% + 爆伤buff)；200% 为倍率 2.0，残暴/乏力各 ±10%/层 直接加减在倍率上
+      var baseCritMult = opts && opts.critMult != null && opts.critMult > 0 ? opts.critMult : CRIT_MULT;
+      var critMult = baseCritMult;
       var 残暴L = 0;
       var 乏力L = 0;
       if (crit && attacker && attacker.buffs && attacker.buffs.length) {
@@ -1480,8 +1544,8 @@
           if ((b.id || b.name) === '残暴') 残暴L = Math.min(5, parseInt(b.layers, 10) || 0);
           if ((b.id || b.name) === '乏力') 乏力L = Math.min(5, parseInt(b.layers, 10) || 0);
         });
-        if (残暴L > 0) critMult = critMult * (1 + 残暴L * 0.1);
-        if (乏力L > 0) critMult = Math.max(0.1, critMult * (1 - 乏力L * 0.1));
+        critMult = baseCritMult + 残暴L * 0.1 - 乏力L * 0.1;
+        if (critMult < 1) critMult = 1;
       }
       var rawDamage = crit ? baseDamage * critMult : baseDamage;
       var 虚弱L = 0;
@@ -2145,6 +2209,13 @@
           typeof window !== 'undefined' && typeof window.buildHentaiDungeonPortraitUrl === 'function'
             ? window.buildHentaiDungeonPortraitUrl(ch, ch.avatar || '')
             : ch.avatar || '';
+        var portraitPixel =
+          typeof window !== 'undefined' && window.HENTAI_DUNGEON_TRANSPARENT_PIXEL_GIF
+            ? window.HENTAI_DUNGEON_TRANSPARENT_PIXEL_GIF
+            : 'data:image/gif;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA=';
+        var portraitDataAttr = String(portraitSrc || '')
+          .replace(/&/g, '&amp;')
+          .replace(/"/g, '&quot;');
         var renderKey =
           (ch.name || '') +
           '|' +
@@ -2181,6 +2252,25 @@
           else slotEl.classList.remove('slot-void');
           if (hp <= 0) slotEl.classList.add('slot-defeated');
           else slotEl.classList.remove('slot-defeated', 'slot-defeated-shake');
+          if (
+            portraitSrc &&
+            typeof window.bindHentaiDungeonCachedPortrait === 'function'
+          ) {
+            var pImgKeep = slotEl.querySelector('.slot-char-portrait img');
+            var pixelKeep =
+              typeof window.HENTAI_DUNGEON_TRANSPARENT_PIXEL_GIF !== 'undefined'
+                ? window.HENTAI_DUNGEON_TRANSPARENT_PIXEL_GIF
+                : '';
+            if (
+              pImgKeep &&
+              (!pImgKeep.src ||
+                pImgKeep.src === pixelKeep ||
+                pImgKeep.src.indexOf('data:image/gif') === 0) &&
+              (!pImgKeep.src || pImgKeep.src.indexOf('blob:') !== 0)
+            ) {
+              window.bindHentaiDungeonCachedPortrait(pImgKeep, portraitSrc);
+            }
+          }
           continue;
         }
         slotEl.setAttribute('data-ally-render-key', renderKey);
@@ -2220,7 +2310,9 @@
               SWAP_SVG +
               '</button>') +
           '<div class="slot-char-portrait"><img src="' +
-          portraitSrc +
+          portraitPixel +
+          '" data-hd-portrait="' +
+          portraitDataAttr +
           '" alt="' +
           (ch.name || '') +
           '"/></div>' +
@@ -2273,6 +2365,12 @@
         }
         if (hasVoid) slotEl.classList.add('slot-void');
         else slotEl.classList.remove('slot-void');
+        var bindCached =
+          typeof window !== 'undefined' && typeof window.bindHentaiDungeonCachedPortrait === 'function';
+        if (bindCached && portraitSrc) {
+          var pImg = slotEl.querySelector('.slot-char-portrait img');
+          if (pImg) window.bindHentaiDungeonCachedPortrait(pImg, portraitSrc);
+        }
       }
     }
     function hasAnyLivingEnemy(enemies) {
@@ -2474,14 +2572,18 @@
       fly.textContent = '+' + amount;
       showFlyOverSlot(slotEl, fly, 920);
     }
+    /** APNG/Slash 等资源加载超时(ms)：超时则跳过动画并在后台继续加载，避免 onComplete 永不触发导致战斗流程卡死 */
+    var APNG_LOAD_TIMEOUT_MS = 600;
     /** 在目标槽位上播放 Slash 动画：命中时卡片不动，未命中时卡片颤抖一次。结束后调用 onComplete */
     function playSlashOnSlot(slotEl, hit, onComplete) {
-      if (!slotEl || typeof onComplete !== 'function') {
-        onComplete();
+      if (!slotEl) {
+        if (typeof onComplete === 'function') onComplete();
         return;
       }
+      if (typeof onComplete !== 'function') return;
       var slashUrl = (window.ANIMATIONS && window.ANIMATIONS.Slash) || '';
       var durationMs = (window.ANIMATION_DURATIONS && window.ANIMATION_DURATIONS.Slash) || 520;
+      if (!(durationMs > 0) || durationMs !== durationMs) durationMs = 520;
       var overlay = document.createElement('div');
       overlay.className = 'slot-animation-overlay';
       if (slashUrl) {
@@ -2507,17 +2609,32 @@
       }
       if (slashUrl && overlay.querySelector('img')) {
         var imgEl = overlay.querySelector('img');
-        if (imgEl.complete) startDurationTimer();
-        else {
-          imgEl.onload = startDurationTimer;
-          imgEl.onerror = startDurationTimer;
+        var loadTimeout = setTimeout(function () {
+          if (!done && imgEl && !imgEl.complete) {
+            if (slashUrl) {
+              var bg = new Image();
+              bg.src = slashUrl;
+            }
+            finish();
+          }
+        }, APNG_LOAD_TIMEOUT_MS);
+        if (imgEl.complete) {
+          clearTimeout(loadTimeout);
+          startDurationTimer();
+        } else {
+          imgEl.onload = function () {
+            clearTimeout(loadTimeout);
+            startDurationTimer();
+          };
+          imgEl.onerror = function () {
+            clearTimeout(loadTimeout);
+            startDurationTimer();
+          };
         }
       } else {
         setTimeout(finish, durationMs);
       }
     }
-    /** APNG 加载超时(ms)：超时则跳过动画并在后台继续加载。技能动画（如狼群围猎 ClawSpecial2）给足时间避免未加载即被跳过 */
-    var APNG_LOAD_TIMEOUT_MS = 600;
     /** 在目标槽位上播放指定动画（如 Recovery4 护盾），播完后调用 onComplete。APNG 最多等 100ms，超时则跳过并在后台预加载。 */
     function playAnimationOnSlot(slotEl, animationKey, onComplete) {
       if (!slotEl) {
@@ -2766,10 +2883,14 @@
       el.scrollTop = el.scrollHeight;
     }
     function getPhaseLabel(phase) {
-      return phase === 'player_action'
+      return phase === 'player_start'
+        ? '玩家开始回合'
+        : phase === 'player_action'
         ? '玩家行动回合'
         : phase === 'player_resolution'
           ? '玩家结算回合'
+          : phase === 'enemy_start'
+            ? '敌方开始回合'
           : phase === 'enemy_action'
             ? '敌方行动回合'
             : phase === 'enemy_resolution'
@@ -2799,6 +2920,91 @@
       wrap.style.display = t ? '' : 'none';
     }
     var PLAYER_BUFF_RESOLVE_MS = 100;
+    function clearUnitShield(unit) {
+      if (!unit) return;
+      unit.currentShield = 0;
+      if (unit.buffs && unit.buffs.length)
+        unit.buffs = unit.buffs.filter(function (b) {
+          return (b.id || b.name) !== '护盾';
+        });
+      if (unit._虚妄护盾一击) unit._虚妄护盾一击 = false;
+      if (unit._虚妄护盾镜面反射) unit._虚妄护盾镜面反射 = false;
+    }
+    function tickTauntAtStart(unit) {
+      if (!unit || !unit.buffs || !unit.buffs.length) return;
+      for (var i = 0; i < unit.buffs.length; i++) {
+        var b = unit.buffs[i];
+        var id = (b.id || b.name || '').trim();
+        if (id !== '嘲讽') continue;
+        var layers = Math.max(0, parseInt(b.layers, 10) || 0);
+        if (layers <= 0) continue;
+        b.layers = Math.max(0, layers - 1);
+      }
+      unit.buffs = unit.buffs.filter(function (x) {
+        return (x.layers != null ? parseInt(x.layers, 10) || 0 : 0) > 0;
+      });
+      capUnitBuffs(unit);
+    }
+
+    /** 玩家开始回合：清除己方护盾、嘲讽衰减，随后刷新 UI */
+    function resolvePlayerStart(onDone) {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      run虚无放逐Return();
+      run暗夜帷幕ATick();
+      resetAllTenacityToBase(party, enemies);
+      for (var i = 0; i < (party && party.length) ? party.length : 0; i++) {
+        var ch = party[i];
+        if (!ch) continue;
+        clearUnitShield(ch);
+        tickTauntAtStart(ch);
+        var maxAp = getEffectiveMaxApForAlly(ch);
+        ch.currentAp = maxAp;
+        if (ch.见切弹返) ch.见切弹返 = false;
+        if (ch.影舞反击) ch.影舞反击 = false;
+      }
+      // 原逻辑：玩家回合开始处理（昼墨心眼、清漓、丝伊德等）
+      if (party && party.length) {
+        for (var r = 0; r < party.length; r++) {
+          var uR = party[r];
+          if (
+            uR &&
+            uR.name === '昼墨' &&
+            uR.specialSkillsUnlocked &&
+            uR.specialSkillsUnlocked.indexOf('心眼') !== -1
+          ) {
+            addBuffLayers(uR, '攻势', '攻势', 2);
+            addBuffLayers(uR, '守势', '守势', 2);
+          }
+        }
+      }
+      run清漓玩家回合开始处理();
+      run丝伊德魔物孕育Lv5A玩家回合开始();
+      run丝伊德姬骑自动碧血魔剑玩家回合开始();
+      saveBattleData(party, enemies);
+      renderAllySlots(party);
+      injectEnemyIntentStyle();
+      planEnemyActionsForRound();
+      battleState.showEnemyIntentUI = true;
+      renderEnemySlots(enemies);
+      if (typeof onDone === 'function') onDone();
+    }
+
+    /** 敌方开始回合：清除敌方护盾、嘲讽衰减，随后刷新 UI */
+    function resolveEnemyStart(onDone) {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      for (var i = 0; i < (enemies && enemies.length) ? enemies.length : 0; i++) {
+        var en = enemies[i];
+        if (!en) continue;
+        clearUnitShield(en);
+        tickTauntAtStart(en);
+      }
+      saveBattleData(party, enemies);
+      renderEnemySlots(enemies);
+      if (typeof onDone === 'function') onDone();
+    }
+
     /** 奉献：艾丽卡回合开始时对自身和敌方全体造成 Sta×1.0 神圣伤害。由打开技能弹窗时调用 tryTriggerErika奉献 触发。 */
     function tryTriggerErika奉献(allySlot) {
       var party = getParty();
@@ -2955,8 +3161,6 @@
                 if (id === '重伤') heavyWoundDmg += layers;
                 curHp = Math.max(0, curHp - layers);
                 buff.layers = Math.max(0, layers - 5);
-              } else if (id === '嘲讽') {
-                buff.layers = Math.max(0, layers - 1);
               } else if (
                 id === '麻痹' ||
                 id === '冻结' ||
@@ -3340,13 +3544,7 @@
       var atk = Math.max(0, parseInt(monster.atk, 10) || 0);
       var enemySlotEl = document.querySelector('.slot[data-slot="enemy-' + enemySlotNum + '"]');
       if (isTauntIntentLine(act, eff) && tgt === 'self') {
-        var tl = 2;
-        if (
-          typeof window !== 'undefined' &&
-          window.色色地牢_enemyDesign &&
-          window.色色地牢_enemyDesign.TAUNT_LAYERS_FIXED != null
-        )
-          tl = window.色色地牢_enemyDesign.TAUNT_LAYERS_FIXED;
+        var tl = 1;
         addBuffLayers(monster, '嘲讽', '嘲讽', tl);
         appendCombatLog(name + ' 对自身施加【嘲讽】' + tl + '层');
         function ft() {
@@ -4200,7 +4398,6 @@
                       '层',
                   );
                 } else if (
-                  id === '嘲讽' ||
                   id === '麻痹' ||
                   id === '冻结' ||
                   id === '暗蚀' ||
@@ -6442,7 +6639,7 @@
       }
       var shieldValue = Math.floor(def * 1.2) + Math.floor(def * 0.4) * enemyCount;
       shieldValue = Math.max(0, shieldValue);
-      addBuffLayers(attacker, '嘲讽', '嘲讽', 2);
+      addBuffLayers(attacker, '嘲讽', '嘲讽', 1);
       attacker.currentShield =
         (attacker.currentShield != null ? parseInt(attacker.currentShield, 10) || 0 : 0) + shieldValue;
       if (shieldValue > 0) addBuffLayers(attacker, '护盾', '护盾', shieldValue);
@@ -8703,7 +8900,7 @@
       var adv = skill.advancement;
       var label =
         lv >= 5 && adv === 'A' ? '菌丝摇篮' : lv >= 5 && adv === 'B' ? '金粉帷幕' : '威吓';
-      addBuffLayers(attacker, '嘲讽', '嘲讽', 2);
+      addBuffLayers(attacker, '嘲讽', '嘲讽', 1);
       var shield = Math.max(0, Math.floor((getDisplayStat(attacker, 'def') || 0) * mult));
       attacker.currentShield =
         (attacker.currentShield != null ? parseInt(attacker.currentShield, 10) || 0 : 0) + shield;
@@ -9221,7 +9418,7 @@
       var attackerSlotEl = document.querySelector('.slot[data-slot="ally-' + allySlot + '"]');
       function applyDamageAndLog() {
         attacker.currentAp = Math.max(0, curAp - skillAp);
-        addBuffLayers(attacker, '嘲讽', '嘲讽', 2);
+        addBuffLayers(attacker, '嘲讽', '嘲讽', 1);
         applyDamageToTarget(
           defender,
           result.finalDamage,
@@ -11089,7 +11286,7 @@
       }
       var shieldValue = Math.floor(def * 1.2) + Math.floor(def * 0.4) * enemyCount;
       shieldValue = Math.max(0, shieldValue);
-      addBuffLayers(attacker, '嘲讽', '嘲讽', 2);
+      addBuffLayers(attacker, '嘲讽', '嘲讽', 1);
       attacker.currentShield =
         (attacker.currentShield != null ? parseInt(attacker.currentShield, 10) || 0 : 0) + shieldValue;
       if (shieldValue > 0) addBuffLayers(attacker, '护盾', '护盾', shieldValue);
@@ -11295,8 +11492,44 @@
       appendCombatLog((attacker.name || '岚') + ' 死亡之眼：对目标施加 1 层【迟缓】与 1 次【流血】');
       attacker.死亡之眼目标 = null;
     }
+    /** 敌方 rank → 基础韧性：仆从/普通 0%，强力/精英 20%，首领 40% */
+    function getBaseTenacityForEnemyRank(rank) {
+      var k = (rank || '').toString().toLowerCase().trim();
+      if (k === 'boss') return 40;
+      if (k === 'strong' || k === 'elite') return 20;
+      return 0;
+    }
+    /** 确保 unit.baseTenacity / unit.tenacity 已初始化（己方默认 20%，敌方按 rank） */
+    function ensureUnitBaseTenacity(unit) {
+      if (!unit) return 0;
+      if (unit.baseTenacity == null) {
+        unit.baseTenacity = unit.rank != null && String(unit.rank).length > 0 ? getBaseTenacityForEnemyRank(unit.rank) : 20;
+      }
+      var base = Math.max(0, Math.min(100, num(unit.baseTenacity)));
+      unit.baseTenacity = base;
+      if (unit.tenacity == null) unit.tenacity = base;
+      return base;
+    }
+    /** 每个「玩家行动阶段」开始时：全员韧性恢复至基础值 */
+    function resetAllTenacityToBase(party, enemies) {
+      function one(u) {
+        if (!u) return;
+        var b = ensureUnitBaseTenacity(u);
+        u.tenacity = b;
+      }
+      var i;
+      if (party && party.length) for (i = 0; i < party.length; i++) one(party[i]);
+      if (enemies && enemies.length) for (i = 0; i < enemies.length; i++) one(enemies[i]);
+    }
+    function isTenacityControlBuffId(buffId) {
+      return TENACITY_CONTROL_BUFF_IDS.indexOf((buffId || '').trim()) !== -1;
+    }
+    function isUnitImmuneToControlForTenacity(unit) {
+      return (unit.name || '') === '丝伊德·白' && getUnitBuffLayers(unit, '姬骑') > 0;
+    }
     /** 给单位增加 buff 层数（若无该 buff 则新增）。会按 BUFF_DEFINITIONS 的 maxLayers 封顶；有上限的 buff 施加后也会统一校正。麻痹累计3层时消耗3层并施加1层眩晕。黯被动「暗影渗透」：对有【暗蚀】目标施加【流血】时层数+50%；对有【流血】目标施加【暗蚀】时额外+1层。 */
-    function addBuffLayers(unit, buffId, buffName, layers, fromChar) {
+    function addBuffLayers(unit, buffId, buffName, layers, fromChar, extraOpts) {
+      extraOpts = extraOpts || {};
       if (!unit || layers <= 0) return;
       unit.buffs = unit.buffs || [];
       if (
@@ -11339,6 +11572,19 @@
       var maxL = getBuffMaxLayers(buffId);
       if (maxL != null) layers = Math.min(layers, maxL);
       if (layers <= 0) return;
+      // 韧性：控制成功率 = (1-当前韧性)%；掷骰后再无论成功与否韧性 +20%（上限 100%）；免疫控制时不施加层数但仍 +20%
+      if (extraOpts.skipTenacityCheck !== true && isTenacityControlBuffId(buffId)) {
+        ensureUnitBaseTenacity(unit);
+        var tBefore = Math.max(0, Math.min(100, unit.tenacity != null ? num(unit.tenacity) : num(unit.baseTenacity)));
+        var immuneCtrl = isUnitImmuneToControlForTenacity(unit);
+        var landed = false;
+        if (!immuneCtrl) {
+          var chanceT = Math.max(0, 100 - Math.min(100, tBefore));
+          landed = chanceT > 0 && roll1To100() <= chanceT;
+        }
+        unit.tenacity = Math.min(100, tBefore + 20);
+        if (immuneCtrl || !landed) return;
+      }
       var existing = unit.buffs.find(function (b) {
         return (b.id || b.name) === buffId;
       });
@@ -12102,24 +12348,9 @@
     renderAllySlots();
     renderEnemySlots();
     updateBattlePhaseDisplay();
-    if (getBattlePhase() === BATTLE_PHASE.PLAYER_ACTION && getBigRound() === 1) {
-      var partyR1 = getParty();
-      var enemiesR1 = getEnemyParty();
-      if (partyR1 && partyR1.length) {
-        for (var r = 0; r < partyR1.length; r++) {
-          var uR = partyR1[r];
-          if (uR && uR.name === '昼墨' && uR.specialSkillsUnlocked && uR.specialSkillsUnlocked.indexOf('心眼') !== -1) {
-            addBuffLayers(uR, '攻势', '攻势', 2);
-            addBuffLayers(uR, '守势', '守势', 2);
-          }
-        }
-      }
-      run清漓玩家回合开始处理();
-      run丝伊德魔物孕育Lv5A玩家回合开始();
-      run丝伊德姬骑自动碧血魔剑玩家回合开始();
-      saveBattleData(partyR1, enemiesR1);
-      renderAllySlots(partyR1);
-      renderEnemySlots(enemiesR1);
+    // 初次进入战斗：若当前处于玩家开始回合，则自动执行一次开始回合并推进到玩家行动回合
+    if (getBattlePhase() === BATTLE_PHASE.PLAYER_START && getBigRound() === 1 && window.BattleGrid) {
+      window.BattleGrid.advanceBattlePhase(function () {});
     }
     var battleArea = document.querySelector('.battle-area');
     if (!battleArea) return;
@@ -13115,30 +13346,27 @@
           updateBattlePhaseDisplay();
           if (typeof callback === 'function') callback();
         }
-        if (next === 'player_action') {
-          run虚无放逐Return();
-          run暗夜帷幕ATick();
-          var party = getParty();
-          for (var i = 0; i < (party && party.length) ? party.length : 0; i++) {
-            var ch = party[i];
-            if (!ch) continue;
-            var maxAp = getEffectiveMaxApForAlly(ch);
-            ch.currentAp = maxAp;
-            if (ch.见切弹返) ch.见切弹返 = false;
-            if (ch.影舞反击) ch.影舞反击 = false;
+        function autoAdvanceTo(targetPhase, cb) {
+          if (getBattlePhase() === targetPhase) {
+            if (typeof cb === 'function') cb();
+            return;
           }
-          run清漓玩家回合开始处理();
-          run丝伊德魔物孕育Lv5A玩家回合开始();
-          run丝伊德姬骑自动碧血魔剑玩家回合开始();
-          saveBattleData(party, getEnemyParty());
-          renderAllySlots(party);
-          injectEnemyIntentStyle();
-          planEnemyActionsForRound();
-          battleState.showEnemyIntentUI = true;
-          renderEnemySlots(getEnemyParty());
+          window.BattleGrid.advanceBattlePhase(function () {
+            autoAdvanceTo(targetPhase, cb);
+          });
+        }
+        if (next === 'player_start') {
+          resolvePlayerStart(function () {
+            autoAdvanceTo(BATTLE_PHASE.PLAYER_ACTION, done);
+          });
+        } else if (next === 'player_action') {
           done();
         } else if (next === 'player_resolution') resolvePlayerBuffs(done);
-        else if (next === 'enemy_action')
+        else if (next === 'enemy_start') {
+          resolveEnemyStart(function () {
+            autoAdvanceTo(BATTLE_PHASE.ENEMY_ACTION, done);
+          });
+        } else if (next === 'enemy_action')
           resolveEnemyActions(function () {
             battleState.showEnemyIntentUI = false;
             for (var pi = 0; pi < 6; pi++) battleState.plannedEnemyActions[pi] = null;
@@ -13237,6 +13465,7 @@
       getTargetableSlotIndices: getTargetableSlotIndices,
       getTargetableAllySlotsForEnemy: getTargetableAllySlotsForEnemy,
       getTargetableEnemySlotIndices: getTargetableEnemySlotIndices,
+      getTargetableEnemySlotIndicesForPlayer: getTargetableEnemySlotIndicesForPlayer,
       canTargetSlot: canTargetSlot,
       canTargetEnemySlot: canTargetEnemySlot,
       enterSkillTargetMode: enterSkillTargetMode,

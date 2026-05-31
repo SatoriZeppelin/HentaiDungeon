@@ -1,4 +1,3 @@
-```
 <!doctype html>
 <html lang="zh-CN">
   <head>
@@ -333,19 +332,57 @@
         </div>
       </div>
     </div>
-    <script src="character/character.js"></script>
-    <script src="resource/illustration.js"></script>
-    <script src="resource/svg.js"></script>
-    <script src="resource/animations.js"></script>
-    <script src="interface/story.js"></script>
-    <script src="interface/settings.js"></script>
-    <script src="interface/battle.js"></script>
-    <script src="backend/enemy.js"></script>
-    <script src="backend/encounter.js"></script>
-    <script src="backend/save.js"></script>
-    <script src="backend/skill.js"></script>
-    <script src="backend/golddrop.js"></script>
-    <script src="interface/app.js"></script>
+    <!-- hd-script-loader-start -->
+    <script>
+      (function () {
+        var BRANCH_BASE = 'https://satorizeppelin.github.io/HentaiDungeon/';
+        var HENTAI_DUNGEON_SCRIPT_PATHS = [
+          'character/character.js',
+          'resource/illustration.js',
+          'resource/svg.js',
+          'resource/animations.js',
+          'interface/story.js',
+          'interface/settings.js',
+          'interface/battle.js',
+          'backend/enemy.js',
+          'backend/encounter.js',
+          'backend/save.js',
+          'backend/skill.js',
+          'backend/golddrop.js',
+          'interface/app.js',
+        ];
+        function loadScript(url) {
+          return new Promise(function (resolve, reject) {
+            var el = document.createElement('script');
+            el.src = url;
+            el.onload = function () {
+              resolve();
+            };
+            el.onerror = function () {
+              reject(new Error('load failed: ' + url));
+            };
+            document.head.appendChild(el);
+          });
+        }
+        function loadWithFallback(relPath) {
+          return loadScript(relPath).catch(function () {
+            console.warn('[HentaiDungeon] 主链接加载失败，改用分支: ' + relPath);
+            return loadScript(BRANCH_BASE + relPath);
+          });
+        }
+        var chain = Promise.resolve();
+        for (var i = 0; i < HENTAI_DUNGEON_SCRIPT_PATHS.length; i++) {
+          (function (rel) {
+            chain = chain.then(function () {
+              return loadWithFallback(rel);
+            });
+          })(HENTAI_DUNGEON_SCRIPT_PATHS[i]);
+        }
+        chain.catch(function (err) {
+          console.error('[HentaiDungeon] 脚本加载失败', err);
+        });
+      })();
+    </script>
+    <!-- hd-script-loader-end -->
   </body>
 </html>
-```

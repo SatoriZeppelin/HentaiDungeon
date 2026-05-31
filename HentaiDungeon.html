@@ -1,4 +1,3 @@
-```
 <!doctype html>
 <html lang="zh-CN">
   <head>
@@ -4022,16 +4021,476 @@
 
 /* ========== resource/illustration.js ========== */
 /**
- * 角色立绘资源（R2 集中维护）
- * 路径规则：https://pub-ef9579c191ec47599328a02c30d8e6f8.r2.dev/{角色名}/{服装}/{服装状态-精液状态}.png
+ * 角色立绘资源（Hugging Face 仓库 HentaiDungeonCharacterIllustration 目录）
+ * 路径规则：{PORTRAIT_PREFIX}{角色名}/{服装}/{服装状态-精液状态}.png
  * 服装状态：完好 | 小破 | 中破 | 大破（对应 buff：轻微/中度/严重破损）
  * 精液状态：正常状态 | 轻度精浴 | 重度精浴（由 semenVolumeMl 分段）
  * 键：角色名，值：图片 URL、相对路径（如 达芙妮/常服/完好-正常状态.png），或仅服装目录名简写（如 常服，会展开为 角色名/常服/完好-正常状态.png）
- * 前缀：若值不以 http:// 或 https:// 开头，会自动补 R2_PREFIX
+ * 前缀：若值不以 http:// 或 https:// 开头，会自动补 PORTRAIT_PREFIX
+ *
+ * 立绘缓存：fetch(cache:'force-cache') + Blob URL + 可选 IndexedDB，减少重复下载。
+ * 不限制页面来源，任意宿主（酒馆、本地预览等）均可请求立绘。
  */
 (function () {
-  const R2_PREFIX = 'https://pub-ef9579c191ec47599328a02c30d8e6f8.r2.dev/';
-  window.R2_PREFIX = R2_PREFIX;
+  /** 目录 HentaiDungeonCharacterIllustration；须含 resolve/main 方可被 fetch/img 当作原始文件拉取 */
+  const PORTRAIT_PREFIX =
+    'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonCharacterIllustration/';
+  window.HENTAI_DUNGEON_PORTRAIT_PREFIX = PORTRAIT_PREFIX;
+  /** @deprecated 兼容 app.js 等仍读取 R2_PREFIX 的代码 */
+  window.R2_PREFIX = PORTRAIT_PREFIX;
+
+  function isPortraitNetworkLoadAllowed() {
+    return true;
+  }
+  window.isHentaiDungeonR2PortraitLoadAllowed = isPortraitNetworkLoadAllowed;
+  window.HENTAI_DUNGEON_PORTRAIT_LOAD_ALLOWED_ORIGINS = [];
+
+  /** 占位 1×1 透明图：立绘 img 在 blob 就绪前用，避免先请求 R2 再 fetch 造成双请求 */
+  const TRANSPARENT_PIXEL_GIF = 'data:image/gif;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA=';
+  window.HENTAI_DUNGEON_TRANSPARENT_PIXEL_GIF = TRANSPARENT_PIXEL_GIF;
+  /** 设为 false 时仍使用直连 R2 URL（不调 fetch 缓存） */
+  window.HENTAI_DUNGEON_USE_PORTRAIT_BLOB_CACHE = true;
+  /**
+   * 对托管立绘的 fetch 可追加固定版本参数以绕开旧 HTTP 缓存；持久缓存/内存缓存仍以 canonical（无参数）URL 为 key。
+   */
+  const PORTRAIT_FETCH_CACHE_BUST_VERSION = '20260516hf';
+  window.HENTAI_DUNGEON_PORTRAIT_FETCH_CACHE_BUST_VERSION = PORTRAIT_FETCH_CACHE_BUST_VERSION;
+  /** @deprecated */
+  window.HENTAI_DUNGEON_R2_PORTRAIT_FETCH_CACHE_BUST_VERSION = PORTRAIT_FETCH_CACHE_BUST_VERSION;
+  /** 设为 true 时把立绘像素写入 IndexedDB，刷新/重开仍可复用（用户清理站点数据会丢失） */
+  window.HENTAI_DUNGEON_USE_PORTRAIT_PERSISTENT_CACHE = true;
+  /** 持久缓存容量上限（字节），超出将按 LRU 淘汰 */
+  window.HENTAI_DUNGEON_PORTRAIT_PERSISTENT_CACHE_MAX_BYTES = 200 * 1024 * 1024; // 200MB
+  /** 持久缓存条目上限，超出将按 LRU 淘汰 */
+  window.HENTAI_DUNGEON_PORTRAIT_PERSISTENT_CACHE_MAX_ITEMS = 500;
+
+  var _portraitBlobByUrl = Object.create(null);
+  var _portraitInflight = Object.create(null);
+  var _portraitNotFoundByUrl = Object.create(null);
+  var _idbOpenPromise = null;
+
+  function canUseIndexedDb() {
+    try {
+      return (
+        window.HENTAI_DUNGEON_USE_PORTRAIT_PERSISTENT_CACHE !== false &&
+        typeof indexedDB !== 'undefined' &&
+        indexedDB &&
+        typeof indexedDB.open === 'function'
+      );
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function idbOpen() {
+    if (!canUseIndexedDb()) return Promise.resolve(null);
+    if (_idbOpenPromise) return _idbOpenPromise;
+    _idbOpenPromise = new Promise(function (resolve) {
+      try {
+        var req = indexedDB.open('hentai_dungeon_portrait_cache_v2', 1);
+        req.onupgradeneeded = function () {
+          var db = req.result;
+          if (!db.objectStoreNames.contains('portraits')) {
+            var store = db.createObjectStore('portraits', { keyPath: 'url' });
+            store.createIndex('lastAccess', 'lastAccess', { unique: false });
+          }
+          if (!db.objectStoreNames.contains('meta')) {
+            db.createObjectStore('meta', { keyPath: 'key' });
+          }
+        };
+        req.onsuccess = function () {
+          resolve(req.result);
+        };
+        req.onerror = function () {
+          console.warn('[HentaiDungeon] 打开 IndexedDB 失败，已禁用持久缓存', req.error);
+          resolve(null);
+        };
+      } catch (e) {
+        console.warn('[HentaiDungeon] 打开 IndexedDB 异常，已禁用持久缓存', e);
+        resolve(null);
+      }
+    });
+    return _idbOpenPromise;
+  }
+
+  function idbGetTotalBytes(db) {
+    return new Promise(function (resolve) {
+      try {
+        var tx = db.transaction(['meta'], 'readonly');
+        var st = tx.objectStore('meta');
+        var req = st.get('totalBytes');
+        req.onsuccess = function () {
+          var v = req.result && typeof req.result.value === 'number' ? req.result.value : 0;
+          resolve(v);
+        };
+        req.onerror = function () {
+          resolve(0);
+        };
+      } catch (e) {
+        resolve(0);
+      }
+    });
+  }
+
+  function idbSetTotalBytes(db, next) {
+    return new Promise(function (resolve) {
+      try {
+        var tx = db.transaction(['meta'], 'readwrite');
+        var st = tx.objectStore('meta');
+        st.put({ key: 'totalBytes', value: next });
+        tx.oncomplete = function () {
+          resolve();
+        };
+        tx.onerror = function () {
+          resolve();
+        };
+      } catch (e) {
+        resolve();
+      }
+    });
+  }
+
+  function idbTouchLastAccess(db, url) {
+    try {
+      var tx = db.transaction(['portraits'], 'readwrite');
+      var st = tx.objectStore('portraits');
+      var req = st.get(url);
+      req.onsuccess = function () {
+        var row = req.result;
+        if (!row) return;
+        row.lastAccess = Date.now();
+        st.put(row);
+      };
+    } catch (e) {}
+  }
+
+  function idbGetPortraitRow(db, url) {
+    return new Promise(function (resolve) {
+      try {
+        var tx = db.transaction(['portraits'], 'readonly');
+        var st = tx.objectStore('portraits');
+        var req = st.get(url);
+        req.onsuccess = function () {
+          resolve(req.result || null);
+        };
+        req.onerror = function () {
+          resolve(null);
+        };
+      } catch (e) {
+        resolve(null);
+      }
+    });
+  }
+
+  function idbCount(db) {
+    return new Promise(function (resolve) {
+      try {
+        var tx = db.transaction(['portraits'], 'readonly');
+        var st = tx.objectStore('portraits');
+        var req = st.count();
+        req.onsuccess = function () {
+          resolve(req.result || 0);
+        };
+        req.onerror = function () {
+          resolve(0);
+        };
+      } catch (e) {
+        resolve(0);
+      }
+    });
+  }
+
+  function idbEvictIfNeeded(db) {
+    var maxBytes =
+      typeof window.HENTAI_DUNGEON_PORTRAIT_PERSISTENT_CACHE_MAX_BYTES === 'number'
+        ? window.HENTAI_DUNGEON_PORTRAIT_PERSISTENT_CACHE_MAX_BYTES
+        : 0;
+    var maxItems =
+      typeof window.HENTAI_DUNGEON_PORTRAIT_PERSISTENT_CACHE_MAX_ITEMS === 'number'
+        ? window.HENTAI_DUNGEON_PORTRAIT_PERSISTENT_CACHE_MAX_ITEMS
+        : 0;
+    if (!maxBytes && !maxItems) return Promise.resolve();
+
+    return Promise.all([idbGetTotalBytes(db), idbCount(db)]).then(function (arr) {
+      var totalBytes = arr[0] || 0;
+      var count = arr[1] || 0;
+      if ((maxBytes && totalBytes <= maxBytes) && (maxItems && count <= maxItems)) return;
+      if (!maxBytes && maxItems && count <= maxItems) return;
+      if (!maxItems && maxBytes && totalBytes <= maxBytes) return;
+
+      return new Promise(function (resolve) {
+        try {
+          var tx = db.transaction(['portraits'], 'readwrite');
+          var st = tx.objectStore('portraits');
+          var idx = st.index('lastAccess');
+          var removedBytes = 0;
+          var removedCount = 0;
+          var cursorReq = idx.openCursor();
+          cursorReq.onsuccess = function () {
+            var cursor = cursorReq.result;
+            if (!cursor) return;
+            if ((maxBytes && totalBytes - removedBytes <= maxBytes) && (maxItems && count - removedCount <= maxItems)) {
+              return;
+            }
+            if (!maxBytes && maxItems && count - removedCount <= maxItems) return;
+            if (!maxItems && maxBytes && totalBytes - removedBytes <= maxBytes) return;
+            var row = cursor.value;
+            removedBytes += row && row.sizeBytes ? row.sizeBytes : 0;
+            removedCount += 1;
+            cursor.delete();
+            cursor.continue();
+          };
+          tx.oncomplete = function () {
+            var nextTotal = Math.max(0, totalBytes - removedBytes);
+            idbSetTotalBytes(db, nextTotal).then(resolve);
+          };
+          tx.onerror = function () {
+            resolve();
+          };
+        } catch (e) {
+          resolve();
+        }
+      });
+    });
+  }
+
+  function idbPutBlob(db, url, blob) {
+    return new Promise(function (resolve) {
+      try {
+        var size = blob && blob.size ? blob.size : 0;
+        var now = Date.now();
+        // 先读旧值，更新 totalBytes
+        var tx = db.transaction(['portraits', 'meta'], 'readwrite');
+        var st = tx.objectStore('portraits');
+        var meta = tx.objectStore('meta');
+        var oldReq = st.get(url);
+        oldReq.onsuccess = function () {
+          var old = oldReq.result;
+          var oldSize = old && old.sizeBytes ? old.sizeBytes : 0;
+          st.put({ url: url, blob: blob, sizeBytes: size, lastAccess: now });
+          var tbReq = meta.get('totalBytes');
+          tbReq.onsuccess = function () {
+            var cur = tbReq.result && typeof tbReq.result.value === 'number' ? tbReq.result.value : 0;
+            var next = Math.max(0, cur - oldSize + size);
+            meta.put({ key: 'totalBytes', value: next });
+          };
+          tbReq.onerror = function () {
+            meta.put({ key: 'totalBytes', value: size });
+          };
+        };
+        oldReq.onerror = function () {
+          st.put({ url: url, blob: blob, sizeBytes: size, lastAccess: now });
+        };
+        tx.oncomplete = function () {
+          idbEvictIfNeeded(db).then(resolve);
+        };
+        tx.onerror = function () {
+          resolve();
+        };
+      } catch (e) {
+        resolve();
+      }
+    });
+  }
+
+  function idbPutNotFound(db, url) {
+    return new Promise(function (resolve) {
+      try {
+        var now = Date.now();
+        var tx = db.transaction(['portraits'], 'readwrite');
+        var st = tx.objectStore('portraits');
+        st.put({ url: url, notFound: true, sizeBytes: 0, lastAccess: now });
+        tx.oncomplete = function () {
+          resolve();
+        };
+        tx.onerror = function () {
+          resolve();
+        };
+      } catch (e) {
+        resolve();
+      }
+    });
+  }
+
+  function isManagedPortraitUrl(url) {
+    if (!url || typeof url !== 'string') return false;
+    if (url.indexOf(PORTRAIT_PREFIX) === 0) return true;
+    // 兼容旧存档/缓存中的 R2 直链，仍走 blob 缓存管线
+    return url.indexOf('https://pub-ef9579c191ec47599328a02c30d8e6f8.r2.dev/') === 0;
+  }
+  function isR2ManagedPortraitUrl(url) {
+    return isManagedPortraitUrl(url);
+  }
+
+  function isTransparentPortraitPlaceholder(src) {
+    if (!src) return true;
+    return src === TRANSPARENT_PIXEL_GIF || src.indexOf('data:image/gif') === 0;
+  }
+
+  /** fetch/负缓存失败时仍用直连 URL 显示（与侧栏 background-image 一致，不依赖 CORS fetch） */
+  function portraitDisplayUrlOrDirect(canonicalUrl, displayUrl) {
+    if (
+      isManagedPortraitUrl(canonicalUrl) &&
+      isTransparentPortraitPlaceholder(displayUrl)
+    ) {
+      return canonicalUrl;
+    }
+    return displayUrl;
+  }
+
+  function toPortraitCanonicalUrl(url) {
+    try {
+      var s = String(url || '');
+      if (!s) return '';
+      // 仅做简单裁剪：去掉 ? 与 #；避免同图因参数不同而重复存储
+      var q = s.indexOf('?');
+      var h = s.indexOf('#');
+      var cut = -1;
+      if (q !== -1 && h !== -1) cut = Math.min(q, h);
+      else if (q !== -1) cut = q;
+      else if (h !== -1) cut = h;
+      return cut === -1 ? s : s.slice(0, cut);
+    } catch (e) {
+      return String(url || '');
+    }
+  }
+
+  function withFetchCacheBust(url) {
+    try {
+      var s = String(url || '');
+      if (!s) return s;
+      if (s.indexOf('hdv=') !== -1) return s;
+      var joiner = s.indexOf('?') === -1 ? '?' : '&';
+      return s + joiner + 'hdv=' + encodeURIComponent(PORTRAIT_FETCH_CACHE_BUST_VERSION);
+    } catch (e) {
+      return String(url || '');
+    }
+  }
+
+  function getPortraitDisplayUrlPromise(httpUrl) {
+    if (!isR2ManagedPortraitUrl(httpUrl)) return Promise.resolve(httpUrl);
+    var canonicalUrl = toPortraitCanonicalUrl(httpUrl);
+    if (!isPortraitNetworkLoadAllowed()) return Promise.resolve(TRANSPARENT_PIXEL_GIF);
+    if (window.HENTAI_DUNGEON_USE_PORTRAIT_BLOB_CACHE === false) return Promise.resolve(httpUrl);
+    if (_portraitNotFoundByUrl[canonicalUrl]) {
+      return Promise.resolve(portraitDisplayUrlOrDirect(canonicalUrl, TRANSPARENT_PIXEL_GIF));
+    }
+    if (_portraitBlobByUrl[canonicalUrl]) return Promise.resolve(_portraitBlobByUrl[canonicalUrl]);
+    if (_portraitInflight[canonicalUrl]) return _portraitInflight[canonicalUrl];
+    var p = idbOpen()
+      .then(function (db) {
+        if (!db) return null;
+        return idbGetPortraitRow(db, canonicalUrl).then(function (row) {
+          if (!row) return null;
+          if (row.notFound) {
+            _portraitNotFoundByUrl[canonicalUrl] = 1;
+            idbTouchLastAccess(db, canonicalUrl);
+            return portraitDisplayUrlOrDirect(canonicalUrl, TRANSPARENT_PIXEL_GIF);
+          }
+          if (!row.blob) return null;
+          // 命中持久缓存：更新访问时间、生成 blob URL
+          idbTouchLastAccess(db, canonicalUrl);
+          try {
+            var bUrl = URL.createObjectURL(row.blob);
+            _portraitBlobByUrl[canonicalUrl] = bUrl;
+            return bUrl;
+          } catch (e) {
+            return null;
+          }
+        });
+      })
+      .then(function (maybe) {
+        if (maybe) return maybe;
+        // 未命中：走网络
+        var fetchUrl = withFetchCacheBust(httpUrl);
+        return fetch(fetchUrl, { mode: 'cors', credentials: 'omit', cache: 'force-cache' })
+          .then(function (r) {
+            if (r.status === 404) {
+              var e404 = new Error('HTTP 404');
+              e404.code = 'NOT_FOUND';
+              throw e404;
+            }
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.blob();
+          })
+          .then(function (blob) {
+            var bUrl = URL.createObjectURL(blob);
+            _portraitBlobByUrl[canonicalUrl] = bUrl;
+            // 异步写入持久缓存，不阻塞渲染
+            idbOpen().then(function (db) {
+              if (!db) return;
+              idbPutBlob(db, canonicalUrl, blob);
+            });
+            return bUrl;
+          });
+      })
+      .then(function (displayUrl) {
+        delete _portraitInflight[canonicalUrl];
+        return displayUrl;
+      })
+      .catch(function (e) {
+        delete _portraitInflight[canonicalUrl];
+        if (e && e.code === 'NOT_FOUND') {
+          _portraitNotFoundByUrl[canonicalUrl] = 1;
+          idbOpen().then(function (db) {
+            if (!db) return;
+            idbPutNotFound(db, canonicalUrl);
+          });
+          console.warn('[HentaiDungeon] 立绘 fetch 404，已负缓存；img 将尝试直连', canonicalUrl);
+          return portraitDisplayUrlOrDirect(canonicalUrl, TRANSPARENT_PIXEL_GIF);
+        }
+        console.warn('[HentaiDungeon] 立绘缓存失败，使用直连 URL', httpUrl, e);
+        return portraitDisplayUrlOrDirect(canonicalUrl, httpUrl);
+      });
+    _portraitInflight[canonicalUrl] = p;
+    return p;
+  }
+
+  /**
+   * 将 img 绑定为「先占位、再 blob 显示」；canonical R2 URL 写入 data-hd-portrait（供存档/细则读取，勿用 blob: 写入 ch.avatar）。
+   * @param {HTMLImageElement} imgEl
+   * @param {string} httpUrl buildHentaiDungeonPortraitUrl / CHARACTER_PORTRAITS 等给出的完整 https 地址
+   */
+  window.bindHentaiDungeonCachedPortrait = function (imgEl, httpUrl) {
+    if (!imgEl || !httpUrl) return;
+    httpUrl = String(httpUrl);
+    var canonicalUrl = isR2ManagedPortraitUrl(httpUrl) ? toPortraitCanonicalUrl(httpUrl) : httpUrl;
+    imgEl.setAttribute('data-hd-portrait', canonicalUrl);
+    if (isR2ManagedPortraitUrl(httpUrl) && !isPortraitNetworkLoadAllowed()) {
+      imgEl.src = TRANSPARENT_PIXEL_GIF;
+      return;
+    }
+    if (window.HENTAI_DUNGEON_USE_PORTRAIT_BLOB_CACHE === false || !isR2ManagedPortraitUrl(httpUrl)) {
+      imgEl.src = canonicalUrl;
+      return;
+    }
+    if (
+      imgEl.getAttribute('data-hd-portrait') === canonicalUrl &&
+      imgEl.src &&
+      imgEl.src.indexOf('blob:') === 0 &&
+      _portraitBlobByUrl[canonicalUrl] &&
+      imgEl.src === _portraitBlobByUrl[canonicalUrl]
+    ) {
+      return;
+    }
+    imgEl.src = TRANSPARENT_PIXEL_GIF;
+    getPortraitDisplayUrlPromise(canonicalUrl).then(function (displayUrl) {
+      if (!imgEl.isConnected) return;
+      if (imgEl.getAttribute('data-hd-portrait') !== canonicalUrl) return;
+      imgEl.src = portraitDisplayUrlOrDirect(canonicalUrl, displayUrl);
+    });
+  };
+
+  /** 容器内所有带 data-hd-portrait 的 img 应用缓存绑定 */
+  window.bindHentaiDungeonCachedPortraitsInRoot = function (root) {
+    if (!root || !root.querySelectorAll) return;
+    var list = root.querySelectorAll('img[data-hd-portrait]');
+    for (var i = 0; i < list.length; i++) {
+      var img = list[i];
+      var u = img.getAttribute('data-hd-portrait');
+      if (u) window.bindHentaiDungeonCachedPortrait(img, u);
+    }
+  };
 
   /** 精液量上限（与战斗逻辑一致，供 clamp） */
   const MAX_SEMEN_ML = 100;
@@ -4088,7 +4547,7 @@
   }
 
   /**
-   * 根据角色与状态生成完整立绘 URL（R2）。
+   * 根据角色与状态生成完整立绘 URL（Hugging Face）。
    * 有 unit.name 时始终按「角色名/当前服装/文件名」拼接，不依赖 ch.avatar 路径是否正确。
    * @param {object} unit
    * @param {string} [baseUrl] 无 name 时兜底：在 baseUrl 上替换文件名段
@@ -4100,7 +4559,7 @@
       var outfit = getCurrentOutfitName(unit);
       var file = portraitFilenameFromUnit(unit);
       var rel = name + '/' + outfit + '/' + file;
-      return R2_PREFIX + encodeURI(rel);
+      return PORTRAIT_PREFIX + encodeURI(rel);
     }
     if (!base) return '';
     var filename = portraitFilenameFromUnit(unit || {});
@@ -4120,7 +4579,7 @@
     var o = outfit != null ? String(outfit) : '常服';
     if (!n) return '';
     var rel = n + '/' + o + '/完好-正常状态.png';
-    return R2_PREFIX + encodeURI(rel);
+    return PORTRAIT_PREFIX + encodeURI(rel);
   };
 
   /**
@@ -4152,7 +4611,7 @@
   }
 
   window.CHARACTER_PORTRAITS = {
-    // 约定：可写完整相对路径，或仅写七种服装目录名之一（如 常服）；非 http(s) 会补 R2_PREFIX
+    // 约定：可写完整相对路径，或仅写七种服装目录名之一（如 常服）；非 http(s) 会补 PORTRAIT_PREFIX
     达芙妮: '常服',
     岚: '常服',
     普罗安妲: '常服',
@@ -4218,7 +4677,7 @@
         : null;
     return parseDefaultOutfitFromPortraitRef(ref, characterName);
   };
-  // 资源前缀处理：不以 http 开头的非空字符串补上 R2_PREFIX；仅服装名简写展开为 角色/服装/完好-正常状态.png
+  // 资源前缀处理：不以 http 开头的非空字符串补上 PORTRAIT_PREFIX；仅服装名简写展开为 角色/服装/完好-正常状态.png
   (function () {
     const raw = window.CHARACTER_PORTRAITS;
     for (const name in raw) {
@@ -4229,7 +4688,7 @@
             v.indexOf('/') === -1 && HENTAI_DUNGEON_OUTFITS.indexOf(v) !== -1
               ? name + '/' + v + '/完好-正常状态.png'
               : v;
-          raw[name] = R2_PREFIX + rel;
+          raw[name] = PORTRAIT_PREFIX + rel;
         }
       }
     }
@@ -4241,7 +4700,7 @@
         if (!Array.isArray(arr)) continue;
         for (let i = 0; i < arr.length; i++) {
           const v2 = arr[i];
-          if (v2 && typeof v2 === 'string' && v2.length > 0 && v2.indexOf('http') !== 0) arr[i] = R2_PREFIX + v2;
+          if (v2 && typeof v2 === 'string' && v2.length > 0 && v2.indexOf('http') !== 0) arr[i] = PORTRAIT_PREFIX + v2;
         }
       }
     }
@@ -4603,292 +5062,292 @@
 
 /* ========== resource/animations.js ========== */
 /**
- * 动画资源（APNG，catbox 外链集中维护）
+ * 动画资源（APNG，Hugging Face 仓库 HentaiDungeonAnimations 目录）
  * 格式限定：本目录仅使用 .html / .css / .js
  * 使用注释按 Slash / Recovery / State / Hit 等分组。
  */
 (function () {
   window.ANIMATIONS = {
     // ---------- Slash 组（斩击/挥砍）----------
-    Slash: 'https://files.catbox.moe/c0gbkh.png', //黄色单斩击
-    SlashFire: 'https://files.catbox.moe/hbvi0u.png', //橙色火焰斩击
-    SlashIce: 'https://files.catbox.moe/kogf76.png', //蓝色冰斩击
-    SlashPhoton: 'https://files.catbox.moe/3bbf4m.png', //类似弹幕的黄色打击
-    SlashSpecial1: 'https://files.catbox.moe/ll7gpp.png', //三次斩击然后圆弧斩黄色
-    SlashSpecial2: 'https://files.catbox.moe/n2jd29.png', //V型橙红色斩击
-    SlashSpecial3: 'https://files.catbox.moe/hilznn.png', //紫色斩击加符文
-    SlashThunder: 'https://files.catbox.moe/aulcf6.png', //雷电斩击
-    Slash4: 'https://files.catbox.moe/oljwi2.png', //红色斩击衔接爆炸
-    Slash5: 'https://files.catbox.moe/27e561.png', //蓝色弧形斩击
-    Slash6: 'https://files.catbox.moe/48gr5j.png', //绿色弧形斩击
+    Slash: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Slash.png', //黄色单斩击
+    SlashFire: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/SlashFire.png', //橙色火焰斩击
+    SlashIce: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/SlashIce.png', //蓝色冰斩击
+    SlashPhoton: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/SlashPhoton.png', //类似弹幕的黄色打击
+    SlashSpecial1: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/SlashSpecial1.png', //三次斩击然后圆弧斩黄色
+    SlashSpecial2: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/SlashSpecial2.png', //V型橙红色斩击
+    SlashSpecial3: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/SlashSpecial3.png', //紫色斩击加符文
+    SlashThunder: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/SlashThunder.png', //雷电斩击
+    Slash4: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Slash4.png', //红色斩击衔接爆炸
+    Slash5: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Slash5.png', //蓝色弧形斩击
+    Slash6: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Slash6.png', //绿色弧形斩击
 
     // ---------- Recovery 组（恢复）----------
-    Recovery3: 'https://files.catbox.moe/93lwsw.png', //白色护盾
-    Recovery4: 'https://files.catbox.moe/7rec4w.png', // 获得护盾/传送
-    Recovery5: 'https://files.catbox.moe/whjkry.png', //淡绿色特效
-    Recovery1: 'https://files.catbox.moe/p7ncto.png', //绿色螺旋上升随后类似召唤
-    Recovery2: 'https://files.catbox.moe/zs6zme.png', //治愈
-    Revival1: 'https://files.catbox.moe/bn9b4z.png', //黄色上升随后类似召唤
-    Revival2: 'https://files.catbox.moe/n7srtm.png', //橙黄色类似从上到下降临
+    Recovery3: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Recovery3.png', //白色护盾
+    Recovery4: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Recovery4.png', // 获得护盾/传送
+    Recovery5: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Recovery5.png', //淡绿色特效
+    Recovery1: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Recovery1.png', //绿色螺旋上升随后类似召唤
+    Recovery2: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Recovery2.png', //治愈
+    Revival1: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Revival1.png', //黄色上升随后类似召唤
+    Revival2: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Revival2.png', //橙黄色类似从上到下降临
 
     // ---------- State 组（状态）----------
-    StateSilent: 'https://files.catbox.moe/iv8908.png', //沉默
-    StateUp1: 'https://files.catbox.moe/2k25uo.png', //类似从下往上喷发/召唤
-    StateUp2: 'https://files.catbox.moe/gnyl2h.png', //蓝色令牌召唤
-    StateDeath: 'https://files.catbox.moe/xbmjeq.png', //骷髅和画X
-    StateDown1: 'https://files.catbox.moe/8y60sw.png', //从上往下淡蓝色类似封印
-    StateDown2: 'https://files.catbox.moe/vq2lf2.png', //从下往上类似紫色缠绕
-    StateDown3: 'https://files.catbox.moe/6l1vwo.png', //绘画封印然后破碎
-    StateParalys: 'https://files.catbox.moe/kyadpt.png', //类似黄色闪电？
-    StatePoison: 'https://files.catbox.moe/8icirp.png', //中毒
-    StateSleep: 'https://files.catbox.moe/t05nzx.png', //蓝色聚集涡流效果
-    StateChaos: 'https://files.catbox.moe/1lishy.png', //困惑
-    StateDark: 'https://files.catbox.moe/e7manc.png', //深蓝色漩涡
-    'up-1': 'https://files.catbox.moe/gy30k9.png', //黄色向上喷发
+    StateSilent: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/StateSilent.png', //沉默
+    StateUp1: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/StateUp1.png', //类似从下往上喷发/召唤
+    StateUp2: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/StateUp2.png', //蓝色令牌召唤
+    StateDeath: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/StateDeath.png', //骷髅和画X
+    StateDown1: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/StateDown1.png', //从上往下淡蓝色类似封印
+    StateDown2: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/StateDown2.png', //从下往上类似紫色缠绕
+    StateDown3: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/StateDown3.png', //绘画封印然后破碎
+    StateParalys: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/StateParalys.png', //类似黄色闪电？
+    StatePoison: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/StatePoison.png', //中毒
+    StateSleep: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/StateSleep.png', //蓝色聚集涡流效果
+    StateChaos: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/StateChaos.png', //困惑
+    StateDark: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/StateDark.png', //深蓝色漩涡
+    'up-1': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/up-1.png', //黄色向上喷发
 
     // ---------- Stick 组（棍棒/杖）----------
-    Stick: 'https://files.catbox.moe/2oj7p8.png', //黄色打击
-    StickPhoton: 'https://files.catbox.moe/tvi6jh.png', //类似弹幕的黄色打击
-    StickSpecial1: 'https://files.catbox.moe/umrsse.png', //两次打击
-    StickSpecial2: 'https://files.catbox.moe/zb758o.png', //大打击
-    StickSpecial3: 'https://files.catbox.moe/zz09h4.png', //另一种大爆炸
+    Stick: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Stick.png', //黄色打击
+    StickPhoton: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/StickPhoton.png', //类似弹幕的黄色打击
+    StickSpecial1: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/StickSpecial1.png', //两次打击
+    StickSpecial2: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/StickSpecial2.png', //大打击
+    StickSpecial3: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/StickSpecial3.png', //另一种大爆炸
 
     // ---------- PreSpecial 组（预备特技）----------
-    PreSpecial1: 'https://files.catbox.moe/j234hu.png', //黄色雷电符文+爆炸
-    PreSpecial2: 'https://files.catbox.moe/mn2ves.png', //白色雷电符文+爆炸
-    PreSpecial3: 'https://files.catbox.moe/7b0n3j.png', //紫黑色雷电符文+爆炸
+    PreSpecial1: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/PreSpecial1.png', //黄色雷电符文+爆炸
+    PreSpecial2: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/PreSpecial2.png', //白色雷电符文+爆炸
+    PreSpecial3: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/PreSpecial3.png', //紫黑色雷电符文+爆炸
 
     // ---------- Claw 组（爪击）----------
-    Claw: 'https://files.catbox.moe/a8qolj.png', //深褐色爪击
-    ClawSpecial1: 'https://files.catbox.moe/qqp75m.png', //深红色三次爪击
-    ClawSpecial2: 'https://files.catbox.moe/p5ew2q.png', //深红色大爪击
+    Claw: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Claw.png', //深褐色爪击
+    ClawSpecial1: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/ClawSpecial1.png', //深红色三次爪击
+    ClawSpecial2: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/ClawSpecial2.png', //深红色大爪击
 
     // ---------- Cure 组（治疗）----------
-    Cure2: 'https://files.catbox.moe/g99nvd.png', //淡蓝色圆形+特效
-    Cure3: 'https://files.catbox.moe/vyba15.png', //淡蓝色螺旋上升
-    Cure4: 'https://files.catbox.moe/itjw17.png', //淡蓝色环绕轨道/淡蓝色球形斩击
-    Cure1: 'https://files.catbox.moe/et7yzj.png', //蓝色星星上升
-    Cure5: 'https://files.catbox.moe/poy68z.png', //淡蓝色旋转特效
-    Cure6: 'https://files.catbox.moe/4cg22n.png', //淡蓝色旋转特效（慢）
-    'E-cure1': 'https://files.catbox.moe/ua02um.png', //淡蓝色椭圆
+    Cure2: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Cure2.png', //淡蓝色圆形+特效
+    Cure3: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Cure3.png', //淡蓝色螺旋上升
+    Cure4: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Cure4.png', //淡蓝色环绕轨道/淡蓝色球形斩击
+    Cure1: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Cure1.png', //蓝色星星上升
+    Cure5: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Cure5.png', //淡蓝色旋转特效
+    Cure6: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Cure6.png', //淡蓝色旋转特效（慢）
+    'E-cure1': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-cure1.png', //淡蓝色椭圆
 
     // ---------- Hit 组（受击/命中）----------
-    Hit1: 'https://files.catbox.moe/eufbw3.png', //黄色打击
-    Hit2: 'https://files.catbox.moe/uey48b.png', //橙色打击
-    HitFire: 'https://files.catbox.moe/66c4bc.png', //橙色爆炸
-    HitIce: 'https://files.catbox.moe/x478q5.png', //蓝色冰爆炸
-    HitPhoton: 'https://files.catbox.moe/c2i2sc.png', //类似子弹打击
-    HitSpecial2: 'https://files.catbox.moe/qgx8uq.png', //橙色椭圆爆炸
-    HitSpecial1: 'https://files.catbox.moe/clh62v.png', //黄色打击
-    HitThunder: 'https://files.catbox.moe/a0ls1f.png', //雷电打击
-    Hit3: 'https://files.catbox.moe/3484nt.png', //红色打击
+    Hit1: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Hit1.png', //黄色打击
+    Hit2: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Hit2.png', //橙色打击
+    HitFire: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/HitFire.png', //橙色爆炸
+    HitIce: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/HitIce.png', //蓝色冰爆炸
+    HitPhoton: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/HitPhoton.png', //类似子弹打击
+    HitSpecial2: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/HitSpecial2.png', //橙色椭圆爆炸
+    HitSpecial1: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/HitSpecial1.png', //黄色打击
+    HitThunder: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/HitThunder.png', //雷电打击
+    Hit3: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Hit3.png', //红色打击
 
     // ---------- Fire 组（火焰）----------
-    Fire2: 'https://files.catbox.moe/tyt73c.png', //橙色火焰从下到上
-    Fire3: 'https://files.catbox.moe/aep8yw.png', //大号橙色火焰从下到上
-    Fire1: 'https://files.catbox.moe/w2w61s.png', //小号橙色火焰从下到上
-    efecto_fuego: 'https://files.catbox.moe/8omii5.png', //橙色火焰从左到右
-    'E-fire1': 'https://files.catbox.moe/93g0q2.png', //旋转多色火焰
-    'E-fire2': 'https://files.catbox.moe/3oxg6r.png', //快速橙色火焰爆炸
-    'E-fire3': 'https://files.catbox.moe/6qn84h.png', //圆形火焰（宽）
-    'E-fire4': 'https://files.catbox.moe/4r6nae.png', //圆形火焰（窄）
-    'E-fire5': 'https://files.catbox.moe/yul2j1.png', //圆形火焰（转圈）
-    'E-fire6': 'https://files.catbox.moe/k1bqm4.png', //五个多色火焰
-    'E-fire7': 'https://files.catbox.moe/fn4i56.png', //多重火焰下坠
-    'E-fire8': 'https://files.catbox.moe/hpwc0p.png', //大字爆
-    'E-fire9': 'https://files.catbox.moe/tzbq46.png', //火焰倾倒
-    'E-fire10': 'https://files.catbox.moe/9ffwog.png', //火星打击后爆炸
-    'E-fire11': 'https://files.catbox.moe/ve5q63.png', //火焰子母弹
-    Fire4: 'https://files.catbox.moe/auavtg.png', //火焰召唤并爆炸
-    Fire5: 'https://files.catbox.moe/9v9rse.png', //火焰召唤并爆炸（快速）
+    Fire2: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Fire2.png', //橙色火焰从下到上
+    Fire3: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Fire3.png', //大号橙色火焰从下到上
+    Fire1: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Fire1.png', //小号橙色火焰从下到上
+    efecto_fuego: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/efecto_fuego.png', //橙色火焰从左到右
+    'E-fire1': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-fire1.png', //旋转多色火焰
+    'E-fire2': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-fire2.png', //快速橙色火焰爆炸
+    'E-fire3': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-fire3.png', //圆形火焰（宽）
+    'E-fire4': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-fire4.png', //圆形火焰（窄）
+    'E-fire5': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-fire5.png', //圆形火焰（转圈）
+    'E-fire6': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-fire6.png', //五个多色火焰
+    'E-fire7': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-fire7.png', //多重火焰下坠
+    'E-fire8': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-fire8.png', //大字爆
+    'E-fire9': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-fire9.png', //火焰倾倒
+    'E-fire10': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-fire10.png', //火星打击后爆炸
+    'E-fire11': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-fire11.png', //火焰子母弹
+    Fire4: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Fire4.png', //火焰召唤并爆炸
+    Fire5: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Fire5.png', //火焰召唤并爆炸（快速）
 
     // ---------- Ice 组（冰）----------
-    Ice1: 'https://files.catbox.moe/p12vk0.png', //多重冰打击
-    Ice2: 'https://files.catbox.moe/pra0i9.png', //冰冻
-    Ice3: 'https://files.catbox.moe/jiv6tv.png', //大冰冻
-    Ice4: 'https://files.catbox.moe/zkaopc.png', //冰雨打击
-    Ice5: 'https://files.catbox.moe/im9lwr.png', //冰砾下落
-    Ice6: 'https://files.catbox.moe/umwvgf.png', //冰冻爆炸
+    Ice1: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Ice1.png', //多重冰打击
+    Ice2: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Ice2.png', //冰冻
+    Ice3: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Ice3.png', //大冰冻
+    Ice4: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Ice4.png', //冰雨打击
+    Ice5: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Ice5.png', //冰砾下落
+    Ice6: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Ice6.png', //冰冻爆炸
 
     // ---------- Thunder 组（雷）----------
-    Thunder2: 'https://files.catbox.moe/whgzo8.png', //黄色/蓝色电击
-    Thunder1: 'https://files.catbox.moe/crdufc.png', //黄色雷击
-    Thunder3: 'https://files.catbox.moe/fwqka3.png', //大号黄色雷击
-    Thunder4: 'https://files.catbox.moe/6vkh3w.png', //强力黄色雷击
-    Thunder5: 'https://files.catbox.moe/wfvzep.png', //紫色雷击
-    'E-thunder1': 'https://files.catbox.moe/jgsmlm.png', //小紫色雷击
-    'E-thunder2': 'https://files.catbox.moe/jp02il.png', //大量蓝色雷电打击
-    'E-thunder3': 'https://files.catbox.moe/w58b8t.png', //快速大紫色雷击
+    Thunder2: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Thunder2.png', //黄色/蓝色电击
+    Thunder1: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Thunder1.png', //黄色雷击
+    Thunder3: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Thunder3.png', //大号黄色雷击
+    Thunder4: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Thunder4.png', //强力黄色雷击
+    Thunder5: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Thunder5.png', //紫色雷击
+    'E-thunder1': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-thunder1.png', //小紫色雷击
+    'E-thunder2': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-thunder2.png', //大量蓝色雷电打击
+    'E-thunder3': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-thunder3.png', //快速大紫色雷击
 
     // ---------- Holy 组（神圣/圣光）----------
-    Holy1: 'https://files.catbox.moe/nfro2e.png', //圣光剑雨打击
-    Holy2: 'https://files.catbox.moe/5bi13a.png', //双蛇圣杖
-    Holy3: 'https://files.catbox.moe/6mvk2n.png', //圆形圣光
-    Holy4: 'https://files.catbox.moe/vctca0.png', //圣十字
-    Holy5: 'https://files.catbox.moe/35660p.png', //天降圣光
+    Holy1: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Holy1.png', //圣光剑雨打击
+    Holy2: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Holy2.png', //双蛇圣杖
+    Holy3: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Holy3.png', //圆形圣光
+    Holy4: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Holy4.png', //圣十字
+    Holy5: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Holy5.png', //天降圣光
 
     // ---------- Water 组（水）----------
-    Water5: 'https://files.catbox.moe/pj4w8s.png', //水龙
-    Water1: 'https://files.catbox.moe/lvyxrk.png', //水泡
-    Water2: 'https://files.catbox.moe/rjxn17.png', //水流
-    Water3: 'https://files.catbox.moe/e3xexx.png', //大水泡
+    Water5: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Water5.png', //水龙
+    Water1: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Water1.png', //水泡
+    Water2: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Water2.png', //水流
+    Water3: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Water3.png', //大水泡
 
     // ---------- Wind 组（风）----------
-    Wind3: 'https://files.catbox.moe/kc4b9p.png', //三重绿色打击
-    Wind2: 'https://files.catbox.moe/65012u.png', //墨绿回旋
-    Wind4: 'https://files.catbox.moe/mukxvo.png', //龙卷风
-    Wind5: 'https://files.catbox.moe/03km6c.png', //多重风刃
-    'E-wind1': 'https://files.catbox.moe/wtt6c6.png', //中心风波
-    'E-wind2': 'https://files.catbox.moe/g77yjb.png', //左右大风
-    'E-wind3': 'https://files.catbox.moe/50tj4y.png', //右风波
+    Wind3: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Wind3.png', //三重绿色打击
+    Wind2: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Wind2.png', //墨绿回旋
+    Wind4: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Wind4.png', //龙卷风
+    Wind5: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Wind5.png', //多重风刃
+    'E-wind1': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-wind1.png', //中心风波
+    'E-wind2': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-wind2.png', //左右大风
+    'E-wind3': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-wind3.png', //右风波
 
     // ---------- Earth 组（地/土）----------
-    Earth3: 'https://files.catbox.moe/o8j88h.png', //大石块
-    Earth4: 'https://files.catbox.moe/i9y9uh.png', //石头从下长出
-    Earth5: 'https://files.catbox.moe/rj5mwh.png', //石头脚踩
-    Earth1: 'https://files.catbox.moe/wz2r1w.png', //石头聚集
-    Earth2: 'https://files.catbox.moe/2z40y2.png', //石头下砸爆炸
+    Earth3: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Earth3.png', //大石块
+    Earth4: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Earth4.png', //石头从下长出
+    Earth5: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Earth5.png', //石头脚踩
+    Earth1: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Earth1.png', //石头聚集
+    Earth2: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Earth2.png', //石头下砸爆炸
 
     // ---------- Darkness 组（暗/黑暗）----------
-    Darkness1: 'https://files.catbox.moe/hvai7o.png', //黑暗螺旋爆炸
-    Darkness2: 'https://files.catbox.moe/rm6aen.png', //黑暗火焰
-    Darkness3: 'https://files.catbox.moe/7jklah.png', //黑暗涡流
-    Darkness4: 'https://files.catbox.moe/domuoc.png', //黑暗圆盘爆炸
-    Darkness5: 'https://files.catbox.moe/rg383u.png', //黑洞
-    Dark1: 'https://files.catbox.moe/ogcmfe.png', //黑暗爆炸
-    'E-dark1': 'https://files.catbox.moe/5p18py.png', //黑暗打击+爆炸
+    Darkness1: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Darkness1.png', //黑暗螺旋爆炸
+    Darkness2: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Darkness2.png', //黑暗火焰
+    Darkness3: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Darkness3.png', //黑暗涡流
+    Darkness4: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Darkness4.png', //黑暗圆盘爆炸
+    Darkness5: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Darkness5.png', //黑洞
+    Dark1: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Dark1.png', //黑暗爆炸
+    'E-dark1': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-dark1.png', //黑暗打击+爆炸
 
     // ---------- Light 组（光）----------
-    Light2: 'https://files.catbox.moe/7g1tfv.png', //下坠光柱
-    Light3: 'https://files.catbox.moe/4fq1y1.png', //光火
-    Light4: 'https://files.catbox.moe/kzscjt.png', //中心大发光
-    Light1: 'https://files.catbox.moe/2n8dmi.png', //上升光柱
-    'E-light1': 'https://files.catbox.moe/3x9120.png', //光子汇集
-    'E-light2': 'https://files.catbox.moe/zz6rol.png', //光火上升
-    'r-light1': 'https://files.catbox.moe/58z2jk.png', //光切割
-    'r-light2': 'https://files.catbox.moe/q5ii6y.png', //蓝色光切割
-    'r-light3': 'https://files.catbox.moe/wln3nt.png', //蓝色光切割2
+    Light2: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Light2.png', //下坠光柱
+    Light3: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Light3.png', //光火
+    Light4: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Light4.png', //中心大发光
+    Light1: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Light1.png', //上升光柱
+    'E-light1': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-light1.png', //光子汇集
+    'E-light2': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-light2.png', //光火上升
+    'r-light1': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/r-light1.png', //光切割
+    'r-light2': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/r-light2.png', //蓝色光切割
+    'r-light3': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/r-light3.png', //蓝色光切割2
 
     // ---------- Mist 组（雾）----------
-    Mist: 'https://files.catbox.moe/3ht08z.png', //白色雾气
-    'Mist-Pink': 'https://files.catbox.moe/epz1tu.png', //紫色雾气
+    Mist: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Mist.png', //白色雾气
+    'Mist-Pink': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Mist-Pink.png', //紫色雾气
 
     // ---------- 其他单条（嚎叫/诅咒/激光/魔法/爆炸/闪光/枪/箭/变身/流星/花粉/歌/音速/特技等）----------
-    Howl: 'https://files.catbox.moe/n125et.png',
-    Curse: 'https://files.catbox.moe/9ozin1.png',
-    Laser1: 'https://files.catbox.moe/4n6p0n.png',
-    Laser2: 'https://files.catbox.moe/vo7ire.png',
-    Magic2: 'https://files.catbox.moe/j0h16m.png',
-    Magic1: 'https://files.catbox.moe/t3jxmz.png',
-    Explosion1: 'https://files.catbox.moe/4lvtfa.png',
-    Explosion2: 'https://files.catbox.moe/kojby7.png',
-    Flash: 'https://files.catbox.moe/1jvrjx.png',
-    Gun1: 'https://files.catbox.moe/t46iyq.png',
-    Gun2: 'https://files.catbox.moe/12b3um.png',
-    Gun3: 'https://files.catbox.moe/hlz0hj.png',
-    ArrowSpecial: 'https://files.catbox.moe/5d29la.png',
-    Monster_Change_Big: 'https://files.catbox.moe/b7ihq8.png',
-    Meteor: 'https://files.catbox.moe/y74rfl.png',
-    Pollen: 'https://files.catbox.moe/ubqyfu.png',
-    Song: 'https://files.catbox.moe/xrtonl.png',
-    Sonic: 'https://files.catbox.moe/vx9ex5.png',
-    Special1: 'https://files.catbox.moe/zp01kr.png',
-    Special2: 'https://files.catbox.moe/c0bjsi.png',
-    Special3: 'https://files.catbox.moe/jlypud.png',
+    Howl: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Howl.png',
+    Curse: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Curse.png',
+    Laser1: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Laser1.png',
+    Laser2: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Laser2.png',
+    Magic2: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Magic2.png',
+    Magic1: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Magic1.png',
+    Explosion1: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Explosion1.png',
+    Explosion2: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Explosion2.png',
+    Flash: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Flash.png',
+    Gun1: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Gun1.png',
+    Gun2: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Gun2.png',
+    Gun3: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Gun3.png',
+    ArrowSpecial: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/ArrowSpecial.png',
+    Monster_Change_Big: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Monster_Change_Big.png',
+    Meteor: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Meteor.png',
+    Pollen: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Pollen.png',
+    Song: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Song.png',
+    Sonic: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Sonic.png',
+    Special1: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Special1.png',
+    Special2: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Special2.png',
+    Special3: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Special3.png',
 
     // ---------- E-sword 组（剑系）----------
-    'E-sword1': 'https://files.catbox.moe/04s21q.png',
-    'E-sword2': 'https://files.catbox.moe/lb64h5.png',
-    'E-sword3': 'https://files.catbox.moe/dg28s2.png',
-    'E-sword4': 'https://files.catbox.moe/m743dx.png',
-    'E-sword5': 'https://files.catbox.moe/37t0j8.png',
-    'E-sword6': 'https://files.catbox.moe/x7yy7b.png',
-    'E-sword7': 'https://files.catbox.moe/hv5jnq.png',
-    'E-sword8': 'https://files.catbox.moe/sehhta.png',
-    'E-sword9': 'https://files.catbox.moe/8gxixx.png',
-    'E-sword10': 'https://files.catbox.moe/yqzu69.png',
+    'E-sword1': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-sword1.png',
+    'E-sword2': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-sword2.png',
+    'E-sword3': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-sword3.png',
+    'E-sword4': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-sword4.png',
+    'E-sword5': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-sword5.png',
+    'E-sword6': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-sword6.png',
+    'E-sword7': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-sword7.png',
+    'E-sword8': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-sword8.png',
+    'E-sword9': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-sword9.png',
+    'E-sword10': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-sword10.png',
 
     // ---------- E-spear 组（枪矛系）----------
-    'E-spear1': 'https://files.catbox.moe/rq6jt0.png',
-    'E-spear2': 'https://files.catbox.moe/hvazo3.png',
-    'E-spear3': 'https://files.catbox.moe/jm6d25.png',
+    'E-spear1': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-spear1.png',
+    'E-spear2': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-spear2.png',
+    'E-spear3': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-spear3.png',
 
     // ---------- E-blow 组（打击/吹飞系）----------
-    'E-blow1': 'https://files.catbox.moe/2jvre5.png',
-    'E-blow3': 'https://files.catbox.moe/wjmr12.png',
-    'E-blow4': 'https://files.catbox.moe/tnj2b5.png',
-    'E-blow5': 'https://files.catbox.moe/dm8ue6.png',
-    'E-blow6': 'https://files.catbox.moe/xc0r8t.png',
-    'E-blow7': 'https://files.catbox.moe/920jio.png',
-    'E-blow8': 'https://files.catbox.moe/9q6pp3.png',
-    'E-blow9': 'https://files.catbox.moe/ehvj6o.png',
-    'E-blow10': 'https://files.catbox.moe/oeg27b.png',
+    'E-blow1': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-blow1.png',
+    'E-blow3': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-blow3.png',
+    'E-blow4': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-blow4.png',
+    'E-blow5': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-blow5.png',
+    'E-blow6': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-blow6.png',
+    'E-blow7': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-blow7.png',
+    'E-blow8': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-blow8.png',
+    'E-blow9': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-blow9.png',
+    'E-blow10': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-blow10.png',
 
     // ---------- E-claw 组（爪系）----------
-    'E-claw1': 'https://files.catbox.moe/wpgipn.png',
-    'E-claw2': 'https://files.catbox.moe/6i0yjm.png',
-    'E-claw3': 'https://files.catbox.moe/5nmayq.png',
+    'E-claw1': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-claw1.png',
+    'E-claw2': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-claw2.png',
+    'E-claw3': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-claw3.png',
 
     // ---------- E-gun 组（枪械系）----------
-    'E-gun1': 'https://files.catbox.moe/ks28xx.png',
-    'E-gun2': 'https://files.catbox.moe/lrfgj1.png',
-    'E-gun3': 'https://files.catbox.moe/jbouhe.png',
+    'E-gun1': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-gun1.png',
+    'E-gun2': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-gun2.png',
+    'E-gun3': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-gun3.png',
 
     // ---------- E-其他（护盾/怪物/先驱/陨石/治疗/羽毛/血等）----------
-    'E-guard1': 'https://files.catbox.moe/mziuxa.png',
-    'E-monster1': 'https://files.catbox.moe/lrk531.png',
-    'E-Herald1': 'https://files.catbox.moe/p35ebv.png',
-    'E-PhantasmMeteor': 'https://files.catbox.moe/hylmxs.png',
-    'E-PhantasmMeteor2': 'https://files.catbox.moe/5rxfbt.png',
-    'E-re1': 'https://files.catbox.moe/2gi4sf.png',
-    'E-FeatherBomb': 'https://files.catbox.moe/vbj670.png',
-    'E-blood1': 'https://files.catbox.moe/i948yl.png',
-    'E-blood2': 'https://files.catbox.moe/orapci.png',
+    'E-guard1': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-guard1.png',
+    'E-monster1': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-monster1.png',
+    'E-Herald1': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-Herald1.png',
+    'E-PhantasmMeteor': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-PhantasmMeteor.png',
+    'E-PhantasmMeteor2': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-PhantasmMeteor2.png',
+    'E-re1': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-re1.png',
+    'E-FeatherBomb': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-FeatherBomb.png',
+    'E-blood1': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-blood1.png',
+    'E-blood2': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/E-blood2.png',
 
     // ---------- pipo 效果图----------
-    'pipo-mapeffect022_192': 'https://files.catbox.moe/53xv4g.png',
-    'pipo-btleffect209_192': 'https://files.catbox.moe/8cqakj.png',
-    'pipo-btleffect210_192': 'https://files.catbox.moe/c3qt57.png',
-    'pipo-btleffect211_192': 'https://files.catbox.moe/79axsm.png',
-    'pipo-btleffect212_192': 'https://files.catbox.moe/hcfj7l.png',
-    'pipo-btleffect213_192': 'https://files.catbox.moe/axf0h6.png',
-    'pipo-btleffect214_192': 'https://files.catbox.moe/ehbabd.png',
+    'pipo-mapeffect022_192': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/pipo-mapeffect022_192.png',
+    'pipo-btleffect209_192': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/pipo-btleffect209_192.png',
+    'pipo-btleffect210_192': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/pipo-btleffect210_192.png',
+    'pipo-btleffect211_192': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/pipo-btleffect211_192.png',
+    'pipo-btleffect212_192': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/pipo-btleffect212_192.png',
+    'pipo-btleffect213_192': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/pipo-btleffect213_192.png',
+    'pipo-btleffect214_192': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/pipo-btleffect214_192.png',
 
     // ---------- 单独分组（咬/黑洞/致盲/吹飞/破盾/施法/劈砍/蚀/以太/星闪/雷电/逻辑炸弹/新星/狂暴/封印/射击/暴风/突刺/病毒/屏障/祝福/吸收等）----------
-    ACQ011_Bite: 'https://files.catbox.moe/iohvjj.png',
-    Blackhole: 'https://files.catbox.moe/614qvn.png',
-    Blind: 'https://files.catbox.moe/if91ke.png',
-    Blow1: 'https://files.catbox.moe/5y7ja8.png',
-    Blow: 'https://files.catbox.moe/rnqnf3.png',
-    Breath: 'https://files.catbox.moe/vljto9.png',
-    ClawPhoton: 'https://files.catbox.moe/h8co9w.png',
-    AC2Q018_Barrier_Break: 'https://files.catbox.moe/xzghtd.png',
-    '-AC2Q017_Barrier': 'https://files.catbox.moe/wgzeik.png',
-    Cast1: 'https://files.catbox.moe/5jjqe8.png',
-    Cast2: 'https://files.catbox.moe/b8ln9r.png',
-    Cast3: 'https://files.catbox.moe/lj3z74.png',
-    Cast4: 'https://files.catbox.moe/9f4xsi.png',
-    Cast5: 'https://files.catbox.moe/9zilxx.png',
-    Cast6: 'https://files.catbox.moe/3ty0bz.png',
-    Cleave: 'https://files.catbox.moe/0zh26z.png',
-    Eclipse: 'https://files.catbox.moe/ho2315.png',
-    Ether: 'https://files.catbox.moe/0fpc7s.png',
-    StarFlare: 'https://files.catbox.moe/1waz71.png',
-    Lightning1: 'https://files.catbox.moe/8ropja.png',
-    Lightning2: 'https://files.catbox.moe/pog5rv.png',
-    LogicBomb: 'https://files.catbox.moe/wq140b.png',
-    Nova: 'https://files.catbox.moe/zf2qr8.png',
-    Rage: 'https://files.catbox.moe/tb1s4t.png',
-    Seal: 'https://files.catbox.moe/fxgv6h.png',
-    Shot: 'https://files.catbox.moe/3m2wsj.png',
-    Tempest: 'https://files.catbox.moe/kj0010.png',
-    ACQ003_Thrust1: 'https://files.catbox.moe/ono3xy.png',
-    Virus1: 'https://files.catbox.moe/5zoi3t.png',
-    Virus2: 'https://files.catbox.moe/tj0dk7.png',
-    StarBurst: 'https://files.catbox.moe/0v35k3.png',
-    Confuse: 'https://files.catbox.moe/7l6uwz.png',
-    Benediction: 'https://files.catbox.moe/ogjym6.png',
-    Absorb: 'https://files.catbox.moe/m9qqd4.png',
+    ACQ011_Bite: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/ACQ011_Bite.png',
+    Blackhole: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Blackhole.png',
+    Blind: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Blind.png',
+    Blow1: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Blow1.png',
+    Blow: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Blow.png',
+    Breath: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Breath.png',
+    ClawPhoton: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/ClawPhoton.png',
+    AC2Q018_Barrier_Break: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/AC2Q018_Barrier_Break.png',
+    '-AC2Q017_Barrier': 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/-AC2Q017_Barrier.png',
+    Cast1: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Cast1.png',
+    Cast2: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Cast2.png',
+    Cast3: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Cast3.png',
+    Cast4: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Cast4.png',
+    Cast5: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Cast5.png',
+    Cast6: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Cast6.png',
+    Cleave: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Cleave.png',
+    Eclipse: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Eclipse.png',
+    Ether: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Ether.png',
+    StarFlare: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/StarFlare.png',
+    Lightning1: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Lightning1.png',
+    Lightning2: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Lightning2.png',
+    LogicBomb: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/LogicBomb.png',
+    Nova: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Nova.png',
+    Rage: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Rage.png',
+    Seal: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Seal.png',
+    Shot: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Shot.png',
+    Tempest: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Tempest.png',
+    ACQ003_Thrust1: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/ACQ003_Thrust1.png',
+    Virus1: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Virus1.png',
+    Virus2: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Virus2.png',
+    StarBurst: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/StarBurst.png',
+    Confuse: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Confuse.png',
+    Benediction: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Benediction.png',
+    Absorb: 'https://huggingface.co/think-denim-frisk/HentaiDungeon/resolve/main/HentaiDungeonAnimations/Absorb.png',
   };
 
   /** 各 APNG 总播放时长（毫秒），用于只播放一遍时设置定时 */
@@ -5381,6 +5840,36 @@ yahei: 'font-yahei',
     return out;
   }
 
+  /** 存活且带【嘲讽】、且非【虚无】的敌方槽位（无嘲讽池时我方选敌不限于此集合） */
+  function collectEnemyTauntSlotIndicesForPlayer(slots) {
+    if (!slots || slots.length < SLOT_COUNT) return [];
+    var tauntSlots = [];
+    for (var i = 1; i <= SLOT_COUNT; i++) {
+      var u = slots[i - 1];
+      if (!u) continue;
+      var hp = u.hp != null ? parseInt(u.hp, 10) : 1;
+      if (hp <= 0) continue;
+      var hasVoid = (u.buffs || []).some(function (b) {
+        return (b.id === '虚无' || b.name === '虚无') && (b.layers || 0) > 0;
+      });
+      if (hasVoid) continue;
+      var hasTaunt = (u.buffs || []).some(function (b) {
+        return (b.id === '嘲讽' || b.name === '嘲讽') && (b.layers || 0) > 0;
+      });
+      if (hasTaunt) tauntSlots.push(i);
+    }
+    return tauntSlots;
+  }
+
+  /**
+   * 我方选择敌方单体目标：若场上存在存活且带【嘲讽】的敌人（虚无除外），仅能选择这些槽位（与 getTargetableAllySlotsForEnemy 对称，嘲讽优先于占位）；否则同 getTargetableEnemySlotIndices。
+   */
+  function getTargetableEnemySlotIndicesForPlayer(slots) {
+    var tauntSlots = collectEnemyTauntSlotIndicesForPlayer(slots);
+    if (tauntSlots.length > 0) return tauntSlots;
+    return getTargetableEnemySlotIndices(slots);
+  }
+
   /**
    * 判断某槽位在当前敌方槽位状态下是否可作为攻击目标（敌方前排=1,3,5）
    * 仅当该槽位有存活单位时才算可目标；后排仅当前排无存活单位时可选。
@@ -5810,8 +6299,7 @@ yahei: 'font-yahei',
       id: '嘲讽',
       name: '嘲讽',
       desc: '被视为优先攻击的对象',
-      tooltip: '被视为优先攻击的对象。上限2层。',
-      maxLayers: 2,
+      tooltip: '被视为优先攻击的对象。无上限。',
       characterExclusive: '达芙妮 / 艾丽卡；敌方意图可自施',
     },
     {
@@ -5984,6 +6472,8 @@ yahei: 'font-yahei',
    * 与【眩晕】【魅惑】【沉默】【缴械】【混乱】一致。
    */
   var 镜花水月_CONTROL_DEBUFF_IDS = ['眩晕', '魅惑', '沉默', '缴械', '混乱'];
+  /** 韧性系统：视为「控制类」、施加时做韧性判定（含冻结、嘲讽） */
+  var TENACITY_CONTROL_BUFF_IDS = ['眩晕', '魅惑', '沉默', '缴械', '混乱', '冻结', '嘲讽'];
   /** 取 buff 的层数上限，无则返回 null（表示不封顶） */
   function getBuffMaxLayers(buffId) {
     var def = BUFF_DEFINITIONS.filter(function (x) {
@@ -6158,7 +6648,7 @@ yahei: 'font-yahei',
     if (!enemySlots || !Array.isArray(enemySlots) || typeof onTargetSelected !== 'function') return;
     exitSkillTargetMode();
     injectTargetableStyle();
-    var targetable = getTargetableEnemySlotIndices(enemySlots);
+    var targetable = getTargetableEnemySlotIndicesForPlayer(enemySlots);
     for (var i = 0; i < targetable.length; i++) {
       var slotIndex = targetable[i];
       if (enemySlots[slotIndex - 1] != null) {
@@ -6268,14 +6758,40 @@ yahei: 'font-yahei',
     exitSkillTargetMode();
     injectTargetableStyle();
     var rowLeftSlots = [1, 3, 5];
+    var tauntMode = collectEnemyTauntSlotIndicesForPlayer(enemySlots).length > 0;
+    function rowEnemyAlive(u) {
+      if (!u) return false;
+      var hp = u.hp != null ? parseInt(u.hp, 10) : 1;
+      return hp > 0;
+    }
+    function rowEnemyTaunt(u) {
+      if (!rowEnemyAlive(u)) return false;
+      if (
+        (u.buffs || []).some(function (b) {
+          return (b.id === '虚无' || b.name === '虚无') && (b.layers || 0) > 0;
+        })
+      )
+        return false;
+      return (u.buffs || []).some(function (b) {
+        return (b.id === '嘲讽' || b.name === '嘲讽') && (b.layers || 0) > 0;
+      });
+    }
     for (var i = 0; i < rowLeftSlots.length; i++) {
       var left = rowLeftSlots[i];
-      var unit = enemySlots[left - 1];
-      if (unit == null) continue;
-      var hp = unit.hp != null ? parseInt(unit.hp, 10) : 1;
-      if (hp <= 0) continue;
-      var el = document.querySelector('.slot[data-slot="enemy-' + left + '"]');
-      if (el) el.classList.add('skill-targetable');
+      var right = left + 1;
+      var uL = enemySlots[left - 1];
+      var uR = enemySlots[right - 1];
+      var rowAlive = rowEnemyAlive(uL) || rowEnemyAlive(uR);
+      if (!rowAlive) continue;
+      if (tauntMode && !rowEnemyTaunt(uL) && !rowEnemyTaunt(uR)) continue;
+      if (rowEnemyAlive(uL)) {
+        var elL = document.querySelector('.slot[data-slot="enemy-' + left + '"]');
+        if (elL) elL.classList.add('skill-targetable');
+      }
+      if (rowEnemyAlive(uR)) {
+        var elR = document.querySelector('.slot[data-slot="enemy-' + right + '"]');
+        if (elR) elR.classList.add('skill-targetable');
+      }
     }
     skillTargetState.active = true;
     skillTargetState.callback = onRowLeftSelected;
@@ -6284,7 +6800,8 @@ yahei: 'font-yahei',
       var slot = e.target.closest && e.target.closest('.slot.skill-targetable[data-slot^="enemy-"]');
       if (slot) {
         var slotNum = parseInt(slot.getAttribute('data-slot').replace('enemy-', ''), 10);
-        if (skillTargetState.callback) skillTargetState.callback(slotNum);
+        var rowLeft = slotNum % 2 === 1 ? slotNum : slotNum - 1;
+        if (skillTargetState.callback) skillTargetState.callback(rowLeft);
         exitSkillTargetMode();
       } else {
         exitSkillTargetMode();
@@ -6296,20 +6813,24 @@ yahei: 'font-yahei',
 
   // ---------- 回合阶段（大回合内四个子回合）----------
   var BATTLE_PHASE = {
+    PLAYER_START: 'player_start', // 玩家开始回合（行动前）
     PLAYER_ACTION: 'player_action', // 玩家行动回合
     PLAYER_RESOLUTION: 'player_resolution', // 玩家结算回合
+    ENEMY_START: 'enemy_start', // 敌方开始回合（行动前）
     ENEMY_ACTION: 'enemy_action', // 敌方行动回合
     ENEMY_RESOLUTION: 'enemy_resolution', // 敌方结算回合
   };
   var phaseOrder = [
+    BATTLE_PHASE.PLAYER_START,
     BATTLE_PHASE.PLAYER_ACTION,
     BATTLE_PHASE.PLAYER_RESOLUTION,
+    BATTLE_PHASE.ENEMY_START,
     BATTLE_PHASE.ENEMY_ACTION,
     BATTLE_PHASE.ENEMY_RESOLUTION,
   ];
   var battleState = {
     bigRound: 1,
-    phase: BATTLE_PHASE.PLAYER_ACTION,
+    phase: BATTLE_PHASE.PLAYER_START,
     erika奉献TriggeredThisRound: false,
     currentActingAllySlot: null,
     /** 凌遥仙：星辰定锚 / 星命逆转 / 命仪精准 每场各仅能使用一次，用后记入 id */
@@ -6347,7 +6868,7 @@ yahei: 'font-yahei',
       idx = 0;
     }
     battleState.phase = phaseOrder[idx];
-    if (battleState.phase === BATTLE_PHASE.PLAYER_ACTION) battleState.erika奉献TriggeredThisRound = false;
+    if (battleState.phase === BATTLE_PHASE.PLAYER_START) battleState.erika奉献TriggeredThisRound = false;
     return battleState.phase;
   }
 
@@ -6746,7 +7267,9 @@ yahei: 'font-yahei',
       var rollCrit = roll1To100();
       var critRate = isPlayerAttacker ? getPlayerCritRate(attacker) : getMonsterCritRate(attacker);
       var crit = opts && opts.forceCrit === true ? true : rollCrit <= critRate;
-      var critMult = opts && opts.critMult != null && opts.critMult > 0 ? opts.critMult : CRIT_MULT;
+      // 爆伤判定：基础伤害 × (200% + 爆伤buff)；200% 为倍率 2.0，残暴/乏力各 ±10%/层 直接加减在倍率上
+      var baseCritMult = opts && opts.critMult != null && opts.critMult > 0 ? opts.critMult : CRIT_MULT;
+      var critMult = baseCritMult;
       var 残暴L = 0;
       var 乏力L = 0;
       if (crit && attacker && attacker.buffs && attacker.buffs.length) {
@@ -6754,8 +7277,8 @@ yahei: 'font-yahei',
           if ((b.id || b.name) === '残暴') 残暴L = Math.min(5, parseInt(b.layers, 10) || 0);
           if ((b.id || b.name) === '乏力') 乏力L = Math.min(5, parseInt(b.layers, 10) || 0);
         });
-        if (残暴L > 0) critMult = critMult * (1 + 残暴L * 0.1);
-        if (乏力L > 0) critMult = Math.max(0.1, critMult * (1 - 乏力L * 0.1));
+        critMult = baseCritMult + 残暴L * 0.1 - 乏力L * 0.1;
+        if (critMult < 1) critMult = 1;
       }
       var rawDamage = crit ? baseDamage * critMult : baseDamage;
       var 虚弱L = 0;
@@ -7419,6 +7942,13 @@ yahei: 'font-yahei',
           typeof window !== 'undefined' && typeof window.buildHentaiDungeonPortraitUrl === 'function'
             ? window.buildHentaiDungeonPortraitUrl(ch, ch.avatar || '')
             : ch.avatar || '';
+        var portraitPixel =
+          typeof window !== 'undefined' && window.HENTAI_DUNGEON_TRANSPARENT_PIXEL_GIF
+            ? window.HENTAI_DUNGEON_TRANSPARENT_PIXEL_GIF
+            : 'data:image/gif;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA=';
+        var portraitDataAttr = String(portraitSrc || '')
+          .replace(/&/g, '&amp;')
+          .replace(/"/g, '&quot;');
         var renderKey =
           (ch.name || '') +
           '|' +
@@ -7455,6 +7985,25 @@ yahei: 'font-yahei',
           else slotEl.classList.remove('slot-void');
           if (hp <= 0) slotEl.classList.add('slot-defeated');
           else slotEl.classList.remove('slot-defeated', 'slot-defeated-shake');
+          if (
+            portraitSrc &&
+            typeof window.bindHentaiDungeonCachedPortrait === 'function'
+          ) {
+            var pImgKeep = slotEl.querySelector('.slot-char-portrait img');
+            var pixelKeep =
+              typeof window.HENTAI_DUNGEON_TRANSPARENT_PIXEL_GIF !== 'undefined'
+                ? window.HENTAI_DUNGEON_TRANSPARENT_PIXEL_GIF
+                : '';
+            if (
+              pImgKeep &&
+              (!pImgKeep.src ||
+                pImgKeep.src === pixelKeep ||
+                pImgKeep.src.indexOf('data:image/gif') === 0) &&
+              (!pImgKeep.src || pImgKeep.src.indexOf('blob:') !== 0)
+            ) {
+              window.bindHentaiDungeonCachedPortrait(pImgKeep, portraitSrc);
+            }
+          }
           continue;
         }
         slotEl.setAttribute('data-ally-render-key', renderKey);
@@ -7494,7 +8043,9 @@ yahei: 'font-yahei',
               SWAP_SVG +
               '</button>') +
           '<div class="slot-char-portrait"><img src="' +
-          portraitSrc +
+          portraitPixel +
+          '" data-hd-portrait="' +
+          portraitDataAttr +
           '" alt="' +
           (ch.name || '') +
           '"/></div>' +
@@ -7547,6 +8098,12 @@ yahei: 'font-yahei',
         }
         if (hasVoid) slotEl.classList.add('slot-void');
         else slotEl.classList.remove('slot-void');
+        var bindCached =
+          typeof window !== 'undefined' && typeof window.bindHentaiDungeonCachedPortrait === 'function';
+        if (bindCached && portraitSrc) {
+          var pImg = slotEl.querySelector('.slot-char-portrait img');
+          if (pImg) window.bindHentaiDungeonCachedPortrait(pImg, portraitSrc);
+        }
       }
     }
     function hasAnyLivingEnemy(enemies) {
@@ -7748,14 +8305,18 @@ yahei: 'font-yahei',
       fly.textContent = '+' + amount;
       showFlyOverSlot(slotEl, fly, 920);
     }
+    /** APNG/Slash 等资源加载超时(ms)：超时则跳过动画并在后台继续加载，避免 onComplete 永不触发导致战斗流程卡死 */
+    var APNG_LOAD_TIMEOUT_MS = 600;
     /** 在目标槽位上播放 Slash 动画：命中时卡片不动，未命中时卡片颤抖一次。结束后调用 onComplete */
     function playSlashOnSlot(slotEl, hit, onComplete) {
-      if (!slotEl || typeof onComplete !== 'function') {
-        onComplete();
+      if (!slotEl) {
+        if (typeof onComplete === 'function') onComplete();
         return;
       }
+      if (typeof onComplete !== 'function') return;
       var slashUrl = (window.ANIMATIONS && window.ANIMATIONS.Slash) || '';
       var durationMs = (window.ANIMATION_DURATIONS && window.ANIMATION_DURATIONS.Slash) || 520;
+      if (!(durationMs > 0) || durationMs !== durationMs) durationMs = 520;
       var overlay = document.createElement('div');
       overlay.className = 'slot-animation-overlay';
       if (slashUrl) {
@@ -7781,17 +8342,32 @@ yahei: 'font-yahei',
       }
       if (slashUrl && overlay.querySelector('img')) {
         var imgEl = overlay.querySelector('img');
-        if (imgEl.complete) startDurationTimer();
-        else {
-          imgEl.onload = startDurationTimer;
-          imgEl.onerror = startDurationTimer;
+        var loadTimeout = setTimeout(function () {
+          if (!done && imgEl && !imgEl.complete) {
+            if (slashUrl) {
+              var bg = new Image();
+              bg.src = slashUrl;
+            }
+            finish();
+          }
+        }, APNG_LOAD_TIMEOUT_MS);
+        if (imgEl.complete) {
+          clearTimeout(loadTimeout);
+          startDurationTimer();
+        } else {
+          imgEl.onload = function () {
+            clearTimeout(loadTimeout);
+            startDurationTimer();
+          };
+          imgEl.onerror = function () {
+            clearTimeout(loadTimeout);
+            startDurationTimer();
+          };
         }
       } else {
         setTimeout(finish, durationMs);
       }
     }
-    /** APNG 加载超时(ms)：超时则跳过动画并在后台继续加载。技能动画（如狼群围猎 ClawSpecial2）给足时间避免未加载即被跳过 */
-    var APNG_LOAD_TIMEOUT_MS = 600;
     /** 在目标槽位上播放指定动画（如 Recovery4 护盾），播完后调用 onComplete。APNG 最多等 100ms，超时则跳过并在后台预加载。 */
     function playAnimationOnSlot(slotEl, animationKey, onComplete) {
       if (!slotEl) {
@@ -8040,10 +8616,14 @@ yahei: 'font-yahei',
       el.scrollTop = el.scrollHeight;
     }
     function getPhaseLabel(phase) {
-      return phase === 'player_action'
+      return phase === 'player_start'
+        ? '玩家开始回合'
+        : phase === 'player_action'
         ? '玩家行动回合'
         : phase === 'player_resolution'
           ? '玩家结算回合'
+          : phase === 'enemy_start'
+            ? '敌方开始回合'
           : phase === 'enemy_action'
             ? '敌方行动回合'
             : phase === 'enemy_resolution'
@@ -8073,6 +8653,91 @@ yahei: 'font-yahei',
       wrap.style.display = t ? '' : 'none';
     }
     var PLAYER_BUFF_RESOLVE_MS = 100;
+    function clearUnitShield(unit) {
+      if (!unit) return;
+      unit.currentShield = 0;
+      if (unit.buffs && unit.buffs.length)
+        unit.buffs = unit.buffs.filter(function (b) {
+          return (b.id || b.name) !== '护盾';
+        });
+      if (unit._虚妄护盾一击) unit._虚妄护盾一击 = false;
+      if (unit._虚妄护盾镜面反射) unit._虚妄护盾镜面反射 = false;
+    }
+    function tickTauntAtStart(unit) {
+      if (!unit || !unit.buffs || !unit.buffs.length) return;
+      for (var i = 0; i < unit.buffs.length; i++) {
+        var b = unit.buffs[i];
+        var id = (b.id || b.name || '').trim();
+        if (id !== '嘲讽') continue;
+        var layers = Math.max(0, parseInt(b.layers, 10) || 0);
+        if (layers <= 0) continue;
+        b.layers = Math.max(0, layers - 1);
+      }
+      unit.buffs = unit.buffs.filter(function (x) {
+        return (x.layers != null ? parseInt(x.layers, 10) || 0 : 0) > 0;
+      });
+      capUnitBuffs(unit);
+    }
+
+    /** 玩家开始回合：清除己方护盾、嘲讽衰减，随后刷新 UI */
+    function resolvePlayerStart(onDone) {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      run虚无放逐Return();
+      run暗夜帷幕ATick();
+      resetAllTenacityToBase(party, enemies);
+      for (var i = 0; i < (party && party.length) ? party.length : 0; i++) {
+        var ch = party[i];
+        if (!ch) continue;
+        clearUnitShield(ch);
+        tickTauntAtStart(ch);
+        var maxAp = getEffectiveMaxApForAlly(ch);
+        ch.currentAp = maxAp;
+        if (ch.见切弹返) ch.见切弹返 = false;
+        if (ch.影舞反击) ch.影舞反击 = false;
+      }
+      // 原逻辑：玩家回合开始处理（昼墨心眼、清漓、丝伊德等）
+      if (party && party.length) {
+        for (var r = 0; r < party.length; r++) {
+          var uR = party[r];
+          if (
+            uR &&
+            uR.name === '昼墨' &&
+            uR.specialSkillsUnlocked &&
+            uR.specialSkillsUnlocked.indexOf('心眼') !== -1
+          ) {
+            addBuffLayers(uR, '攻势', '攻势', 2);
+            addBuffLayers(uR, '守势', '守势', 2);
+          }
+        }
+      }
+      run清漓玩家回合开始处理();
+      run丝伊德魔物孕育Lv5A玩家回合开始();
+      run丝伊德姬骑自动碧血魔剑玩家回合开始();
+      saveBattleData(party, enemies);
+      renderAllySlots(party);
+      injectEnemyIntentStyle();
+      planEnemyActionsForRound();
+      battleState.showEnemyIntentUI = true;
+      renderEnemySlots(enemies);
+      if (typeof onDone === 'function') onDone();
+    }
+
+    /** 敌方开始回合：清除敌方护盾、嘲讽衰减，随后刷新 UI */
+    function resolveEnemyStart(onDone) {
+      var party = getParty();
+      var enemies = getEnemyParty();
+      for (var i = 0; i < (enemies && enemies.length) ? enemies.length : 0; i++) {
+        var en = enemies[i];
+        if (!en) continue;
+        clearUnitShield(en);
+        tickTauntAtStart(en);
+      }
+      saveBattleData(party, enemies);
+      renderEnemySlots(enemies);
+      if (typeof onDone === 'function') onDone();
+    }
+
     /** 奉献：艾丽卡回合开始时对自身和敌方全体造成 Sta×1.0 神圣伤害。由打开技能弹窗时调用 tryTriggerErika奉献 触发。 */
     function tryTriggerErika奉献(allySlot) {
       var party = getParty();
@@ -8229,8 +8894,6 @@ yahei: 'font-yahei',
                 if (id === '重伤') heavyWoundDmg += layers;
                 curHp = Math.max(0, curHp - layers);
                 buff.layers = Math.max(0, layers - 5);
-              } else if (id === '嘲讽') {
-                buff.layers = Math.max(0, layers - 1);
               } else if (
                 id === '麻痹' ||
                 id === '冻结' ||
@@ -8614,13 +9277,7 @@ yahei: 'font-yahei',
       var atk = Math.max(0, parseInt(monster.atk, 10) || 0);
       var enemySlotEl = document.querySelector('.slot[data-slot="enemy-' + enemySlotNum + '"]');
       if (isTauntIntentLine(act, eff) && tgt === 'self') {
-        var tl = 2;
-        if (
-          typeof window !== 'undefined' &&
-          window.色色地牢_enemyDesign &&
-          window.色色地牢_enemyDesign.TAUNT_LAYERS_FIXED != null
-        )
-          tl = window.色色地牢_enemyDesign.TAUNT_LAYERS_FIXED;
+        var tl = 1;
         addBuffLayers(monster, '嘲讽', '嘲讽', tl);
         appendCombatLog(name + ' 对自身施加【嘲讽】' + tl + '层');
         function ft() {
@@ -9474,7 +10131,6 @@ yahei: 'font-yahei',
                       '层',
                   );
                 } else if (
-                  id === '嘲讽' ||
                   id === '麻痹' ||
                   id === '冻结' ||
                   id === '暗蚀' ||
@@ -11716,7 +12372,7 @@ yahei: 'font-yahei',
       }
       var shieldValue = Math.floor(def * 1.2) + Math.floor(def * 0.4) * enemyCount;
       shieldValue = Math.max(0, shieldValue);
-      addBuffLayers(attacker, '嘲讽', '嘲讽', 2);
+      addBuffLayers(attacker, '嘲讽', '嘲讽', 1);
       attacker.currentShield =
         (attacker.currentShield != null ? parseInt(attacker.currentShield, 10) || 0 : 0) + shieldValue;
       if (shieldValue > 0) addBuffLayers(attacker, '护盾', '护盾', shieldValue);
@@ -13977,7 +14633,7 @@ yahei: 'font-yahei',
       var adv = skill.advancement;
       var label =
         lv >= 5 && adv === 'A' ? '菌丝摇篮' : lv >= 5 && adv === 'B' ? '金粉帷幕' : '威吓';
-      addBuffLayers(attacker, '嘲讽', '嘲讽', 2);
+      addBuffLayers(attacker, '嘲讽', '嘲讽', 1);
       var shield = Math.max(0, Math.floor((getDisplayStat(attacker, 'def') || 0) * mult));
       attacker.currentShield =
         (attacker.currentShield != null ? parseInt(attacker.currentShield, 10) || 0 : 0) + shield;
@@ -14495,7 +15151,7 @@ yahei: 'font-yahei',
       var attackerSlotEl = document.querySelector('.slot[data-slot="ally-' + allySlot + '"]');
       function applyDamageAndLog() {
         attacker.currentAp = Math.max(0, curAp - skillAp);
-        addBuffLayers(attacker, '嘲讽', '嘲讽', 2);
+        addBuffLayers(attacker, '嘲讽', '嘲讽', 1);
         applyDamageToTarget(
           defender,
           result.finalDamage,
@@ -16363,7 +17019,7 @@ yahei: 'font-yahei',
       }
       var shieldValue = Math.floor(def * 1.2) + Math.floor(def * 0.4) * enemyCount;
       shieldValue = Math.max(0, shieldValue);
-      addBuffLayers(attacker, '嘲讽', '嘲讽', 2);
+      addBuffLayers(attacker, '嘲讽', '嘲讽', 1);
       attacker.currentShield =
         (attacker.currentShield != null ? parseInt(attacker.currentShield, 10) || 0 : 0) + shieldValue;
       if (shieldValue > 0) addBuffLayers(attacker, '护盾', '护盾', shieldValue);
@@ -16569,8 +17225,44 @@ yahei: 'font-yahei',
       appendCombatLog((attacker.name || '岚') + ' 死亡之眼：对目标施加 1 层【迟缓】与 1 次【流血】');
       attacker.死亡之眼目标 = null;
     }
+    /** 敌方 rank → 基础韧性：仆从/普通 0%，强力/精英 20%，首领 40% */
+    function getBaseTenacityForEnemyRank(rank) {
+      var k = (rank || '').toString().toLowerCase().trim();
+      if (k === 'boss') return 40;
+      if (k === 'strong' || k === 'elite') return 20;
+      return 0;
+    }
+    /** 确保 unit.baseTenacity / unit.tenacity 已初始化（己方默认 20%，敌方按 rank） */
+    function ensureUnitBaseTenacity(unit) {
+      if (!unit) return 0;
+      if (unit.baseTenacity == null) {
+        unit.baseTenacity = unit.rank != null && String(unit.rank).length > 0 ? getBaseTenacityForEnemyRank(unit.rank) : 20;
+      }
+      var base = Math.max(0, Math.min(100, num(unit.baseTenacity)));
+      unit.baseTenacity = base;
+      if (unit.tenacity == null) unit.tenacity = base;
+      return base;
+    }
+    /** 每个「玩家行动阶段」开始时：全员韧性恢复至基础值 */
+    function resetAllTenacityToBase(party, enemies) {
+      function one(u) {
+        if (!u) return;
+        var b = ensureUnitBaseTenacity(u);
+        u.tenacity = b;
+      }
+      var i;
+      if (party && party.length) for (i = 0; i < party.length; i++) one(party[i]);
+      if (enemies && enemies.length) for (i = 0; i < enemies.length; i++) one(enemies[i]);
+    }
+    function isTenacityControlBuffId(buffId) {
+      return TENACITY_CONTROL_BUFF_IDS.indexOf((buffId || '').trim()) !== -1;
+    }
+    function isUnitImmuneToControlForTenacity(unit) {
+      return (unit.name || '') === '丝伊德·白' && getUnitBuffLayers(unit, '姬骑') > 0;
+    }
     /** 给单位增加 buff 层数（若无该 buff 则新增）。会按 BUFF_DEFINITIONS 的 maxLayers 封顶；有上限的 buff 施加后也会统一校正。麻痹累计3层时消耗3层并施加1层眩晕。黯被动「暗影渗透」：对有【暗蚀】目标施加【流血】时层数+50%；对有【流血】目标施加【暗蚀】时额外+1层。 */
-    function addBuffLayers(unit, buffId, buffName, layers, fromChar) {
+    function addBuffLayers(unit, buffId, buffName, layers, fromChar, extraOpts) {
+      extraOpts = extraOpts || {};
       if (!unit || layers <= 0) return;
       unit.buffs = unit.buffs || [];
       if (
@@ -16613,6 +17305,19 @@ yahei: 'font-yahei',
       var maxL = getBuffMaxLayers(buffId);
       if (maxL != null) layers = Math.min(layers, maxL);
       if (layers <= 0) return;
+      // 韧性：控制成功率 = (1-当前韧性)%；掷骰后再无论成功与否韧性 +20%（上限 100%）；免疫控制时不施加层数但仍 +20%
+      if (extraOpts.skipTenacityCheck !== true && isTenacityControlBuffId(buffId)) {
+        ensureUnitBaseTenacity(unit);
+        var tBefore = Math.max(0, Math.min(100, unit.tenacity != null ? num(unit.tenacity) : num(unit.baseTenacity)));
+        var immuneCtrl = isUnitImmuneToControlForTenacity(unit);
+        var landed = false;
+        if (!immuneCtrl) {
+          var chanceT = Math.max(0, 100 - Math.min(100, tBefore));
+          landed = chanceT > 0 && roll1To100() <= chanceT;
+        }
+        unit.tenacity = Math.min(100, tBefore + 20);
+        if (immuneCtrl || !landed) return;
+      }
       var existing = unit.buffs.find(function (b) {
         return (b.id || b.name) === buffId;
       });
@@ -17376,24 +18081,9 @@ yahei: 'font-yahei',
     renderAllySlots();
     renderEnemySlots();
     updateBattlePhaseDisplay();
-    if (getBattlePhase() === BATTLE_PHASE.PLAYER_ACTION && getBigRound() === 1) {
-      var partyR1 = getParty();
-      var enemiesR1 = getEnemyParty();
-      if (partyR1 && partyR1.length) {
-        for (var r = 0; r < partyR1.length; r++) {
-          var uR = partyR1[r];
-          if (uR && uR.name === '昼墨' && uR.specialSkillsUnlocked && uR.specialSkillsUnlocked.indexOf('心眼') !== -1) {
-            addBuffLayers(uR, '攻势', '攻势', 2);
-            addBuffLayers(uR, '守势', '守势', 2);
-          }
-        }
-      }
-      run清漓玩家回合开始处理();
-      run丝伊德魔物孕育Lv5A玩家回合开始();
-      run丝伊德姬骑自动碧血魔剑玩家回合开始();
-      saveBattleData(partyR1, enemiesR1);
-      renderAllySlots(partyR1);
-      renderEnemySlots(enemiesR1);
+    // 初次进入战斗：若当前处于玩家开始回合，则自动执行一次开始回合并推进到玩家行动回合
+    if (getBattlePhase() === BATTLE_PHASE.PLAYER_START && getBigRound() === 1 && window.BattleGrid) {
+      window.BattleGrid.advanceBattlePhase(function () {});
     }
     var battleArea = document.querySelector('.battle-area');
     if (!battleArea) return;
@@ -18389,30 +19079,27 @@ yahei: 'font-yahei',
           updateBattlePhaseDisplay();
           if (typeof callback === 'function') callback();
         }
-        if (next === 'player_action') {
-          run虚无放逐Return();
-          run暗夜帷幕ATick();
-          var party = getParty();
-          for (var i = 0; i < (party && party.length) ? party.length : 0; i++) {
-            var ch = party[i];
-            if (!ch) continue;
-            var maxAp = getEffectiveMaxApForAlly(ch);
-            ch.currentAp = maxAp;
-            if (ch.见切弹返) ch.见切弹返 = false;
-            if (ch.影舞反击) ch.影舞反击 = false;
+        function autoAdvanceTo(targetPhase, cb) {
+          if (getBattlePhase() === targetPhase) {
+            if (typeof cb === 'function') cb();
+            return;
           }
-          run清漓玩家回合开始处理();
-          run丝伊德魔物孕育Lv5A玩家回合开始();
-          run丝伊德姬骑自动碧血魔剑玩家回合开始();
-          saveBattleData(party, getEnemyParty());
-          renderAllySlots(party);
-          injectEnemyIntentStyle();
-          planEnemyActionsForRound();
-          battleState.showEnemyIntentUI = true;
-          renderEnemySlots(getEnemyParty());
+          window.BattleGrid.advanceBattlePhase(function () {
+            autoAdvanceTo(targetPhase, cb);
+          });
+        }
+        if (next === 'player_start') {
+          resolvePlayerStart(function () {
+            autoAdvanceTo(BATTLE_PHASE.PLAYER_ACTION, done);
+          });
+        } else if (next === 'player_action') {
           done();
         } else if (next === 'player_resolution') resolvePlayerBuffs(done);
-        else if (next === 'enemy_action')
+        else if (next === 'enemy_start') {
+          resolveEnemyStart(function () {
+            autoAdvanceTo(BATTLE_PHASE.ENEMY_ACTION, done);
+          });
+        } else if (next === 'enemy_action')
           resolveEnemyActions(function () {
             battleState.showEnemyIntentUI = false;
             for (var pi = 0; pi < 6; pi++) battleState.plannedEnemyActions[pi] = null;
@@ -18511,6 +19198,7 @@ yahei: 'font-yahei',
       getTargetableSlotIndices: getTargetableSlotIndices,
       getTargetableAllySlotsForEnemy: getTargetableAllySlotsForEnemy,
       getTargetableEnemySlotIndices: getTargetableEnemySlotIndices,
+      getTargetableEnemySlotIndicesForPlayer: getTargetableEnemySlotIndicesForPlayer,
       canTargetSlot: canTargetSlot,
       canTargetEnemySlot: canTargetEnemySlot,
       enterSkillTargetMode: enterSkillTargetMode,
@@ -19019,6 +19707,12 @@ yahei: 'font-yahei',
       // 需求：怪物基础暴击率，范围 0%~100%
       return Math.floor(Math.random() * 101);
     }
+    function baseTenacityFromRank(rank) {
+      var k = (rank || '').toString().toLowerCase().trim();
+      if (k === 'boss') return 40;
+      if (k === 'strong' || k === 'elite') return 20;
+      return 0;
+    }
     for (var i = 0; i < plan.units.length; i++) {
       var u = plan.units[i];
       var slot = u.enemySlot | 0;
@@ -19040,6 +19734,8 @@ yahei: 'font-yahei',
         dodgeRate: rollBaseDodgeRate(),
         baseDamageReduction: rollBaseDamageReduction(),
         baseCritRate: rollBaseCritRate(),
+        baseTenacity: baseTenacityFromRank(u.rank),
+        tenacity: baseTenacityFromRank(u.rank),
         buffs: [],
         intents: u.intents || [],
         intentSummary: u.intentSummary,
@@ -21495,7 +22191,19 @@ yahei: 'font-yahei',
             var img = slot ? slot.querySelector('.slot-char-portrait img') : null;
             var nameEl = slot ? slot.querySelector('.slot-char-name') : null;
             var name = nameEl ? nameEl.textContent.trim() : '';
-            panelSlot.style.backgroundImage = img && img.src ? 'url(' + img.src + ')' : '';
+            var bgUrl = '';
+            if (img) {
+              var vis = img.src || '';
+              var pCanon = img.getAttribute('data-hd-portrait') || '';
+              var pixel =
+                typeof window !== 'undefined' && window.HENTAI_DUNGEON_TRANSPARENT_PIXEL_GIF
+                  ? window.HENTAI_DUNGEON_TRANSPARENT_PIXEL_GIF
+                  : '';
+              if (vis.indexOf('blob:') === 0) bgUrl = vis;
+              else if (pCanon) bgUrl = pCanon;
+              else if (vis && vis !== pixel) bgUrl = vis;
+            }
+            panelSlot.style.backgroundImage = bgUrl ? 'url(' + JSON.stringify(bgUrl) + ')' : '';
             panelSlot.title = name || '角色' + allySlot;
             panelSlot.classList.remove('empty');
             var dot = panelSlot.querySelector('.badge-dot');
@@ -22450,7 +23158,27 @@ yahei: 'font-yahei',
         var hpText = hpBar ? hpBar.textContent.trim() : '0/100';
         var expText = expBar ? expBar.textContent.trim() : '0/100';
         var apText = apEl ? apEl.textContent.trim() : '0';
-        var src = portrait && portrait.src ? portrait.src : '';
+        var canon =
+          portrait && portrait.getAttribute ? portrait.getAttribute('data-hd-portrait') || '' : '';
+        var rawSrc = portrait && portrait.src ? portrait.src : '';
+        var src = canon;
+        if (
+          !src &&
+          rawSrc &&
+          rawSrc.indexOf('blob:') !== 0 &&
+          rawSrc.indexOf('data:') !== 0
+        ) {
+          src = rawSrc;
+        }
+        if (!src) {
+          var partyForPortrait = getParty();
+          var chP = partyForPortrait[avatarIndex - 1];
+          if (chP && typeof window.buildHentaiDungeonPortraitUrl === 'function') {
+            src = window.buildHentaiDungeonPortraitUrl(chP, chP.avatar || '') || chP.avatar || '';
+          } else if (chP && chP.avatar) {
+            src = chP.avatar;
+          }
+        }
         var hpParts = hpText.split('/');
         var expParts = expText.split('/');
         var hp = parseInt(hpParts[0], 10) || 0;
@@ -23084,9 +23812,8 @@ yahei: 'font-yahei',
         var dmgUp = Math.max(50, Math.round((100 + 激励L * 5 - 虚弱L * 5) * 10) / 10);
         var baseDmgDown = ch && ch.baseDamageReduction != null ? Math.max(0, Math.min(50, Number(ch.baseDamageReduction) || 0)) : 0;
         var dmgDown = Math.max(0, Math.min(50, Math.round((baseDmgDown + 坚韧L * 5 - 脆弱L * 5) * 10) / 10));
-        var critDmgMult = 2;
-        if (残暴L > 0) critDmgMult = critDmgMult * (1 + 残暴L * 0.1);
-        if (乏力L > 0) critDmgMult = Math.max(0.1, critDmgMult * (1 - 乏力L * 0.1));
+        // 爆伤：基础 200%，残暴 +10%/层，乏力 -10%/层；下限 100%（倍率 ≥1）
+        var critDmgMult = Math.max(1, 2 + 残暴L * 0.1 - 乏力L * 0.1);
         var critDmgPct = Math.round(critDmgMult * 1000) / 10; // 1 位小数
 
         var sourceDmgUp = ch
@@ -23116,11 +23843,43 @@ yahei: 'font-yahei',
               return buildExpandGrid(lines);
             })()
           : null;
-        var tenacity =
-          ch && (ch.tenacity != null || ch.韧性 != null)
-            ? Number(ch.tenacity != null ? ch.tenacity : ch.韧性) || 0
-            : 0;
-        var sourceTenacity = ch ? '未定义来源时默认 0；后续可接入韧性字段/公式。' : null;
+        function getDisplayBaseTenacityForReport(unit) {
+          if (!unit) return 0;
+          if (unit.baseTenacity != null) return Math.max(0, Math.min(100, Number(unit.baseTenacity) || 0));
+          var rk = (unit.rank || '').toString().toLowerCase().trim();
+          if (rk === 'boss') return 40;
+          if (rk === 'strong' || rk === 'elite') return 20;
+          if (rk === 'fodder' || rk === 'normal') return 0;
+          return 20;
+        }
+        var baseTenacityReport = ch ? getDisplayBaseTenacityForReport(ch) : 0;
+        var tenacity = ch
+          ? Math.max(
+              0,
+              Math.min(
+                100,
+                ch.tenacity != null
+                  ? Number(ch.tenacity) || 0
+                  : ch.韧性 != null
+                    ? Number(ch.韧性) || 0
+                    : baseTenacityReport,
+              ),
+            )
+          : 0;
+        var sourceTenacity = ch
+          ? (function () {
+              var deltaCtrl = Math.max(0, Math.round((tenacity - baseTenacityReport) * 10) / 10);
+              var lines = [
+                { left: '基础', right: baseTenacityReport + '%', kind: 'neutral' },
+                {
+                  left: '本回合受到控制技能影响',
+                  right: (deltaCtrl > 0 ? '+' : '') + deltaCtrl + '%',
+                  kind: deltaCtrl > 0 ? 'pos' : 'neutral',
+                },
+              ];
+              return buildExpandGrid(lines);
+            })()
+          : null;
 
         function fmtPercentNoPlus(n) {
           var v = Number(n) || 0;
@@ -23135,7 +23894,7 @@ yahei: 'font-yahei',
           { label: '受到伤害减少', value: dmgDown + '%', source: sourceDmgDown },
           { label: '暴击率', value: (ch ? Math.round(critRate * 10) / 10 : 0) + '%', source: sourceCrit },
           { label: '暴击伤害', value: critDmgPct + '%', source: sourceCritDmg },
-          { label: '韧性', value: String(tenacity), source: sourceTenacity },
+          { label: '韧性', value: tenacity + '%', source: sourceTenacity },
         ];
         var dataReportHtml = reportRows
           .map(function (r) {
@@ -23193,6 +23952,10 @@ yahei: 'font-yahei',
               ) {
                 url = String(window.R2_PREFIX) + encodeURI(ch.name + '/' + o + '/完好-正常状态.png');
               }
+              var wPixel =
+                typeof window !== 'undefined' && window.HENTAI_DUNGEON_TRANSPARENT_PIXEL_GIF
+                  ? window.HENTAI_DUNGEON_TRANSPARENT_PIXEL_GIF
+                  : 'data:image/gif;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA=';
               return (
                 '<button type="button" class="wardrobe-item" data-outfit="' +
                 escapeHtml(o) +
@@ -23200,7 +23963,9 @@ yahei: 'font-yahei',
                 escapeHtml(o) +
                 '">' +
                 '<img src="' +
-                url +
+                wPixel +
+                '" data-hd-portrait="' +
+                escapeHtml(url) +
                 '" alt="' +
                 escapeHtml(o) +
                 '"/>' +
@@ -23223,6 +23988,17 @@ yahei: 'font-yahei',
             '</div>' +
             '</div>';
         }
+        var portraitPixel =
+          typeof window !== 'undefined' && window.HENTAI_DUNGEON_TRANSPARENT_PIXEL_GIF
+            ? window.HENTAI_DUNGEON_TRANSPARENT_PIXEL_GIF
+            : 'data:image/gif;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA=';
+        var portraitXlHtml = data.src
+          ? '<img src="' +
+            portraitPixel +
+            '" data-hd-portrait="' +
+            escapeHtml(data.src) +
+            '" alt="" class="portrait-xl">'
+          : '<div class="portrait-xl" style="background:#c4b8a8;display:flex;align-items:center;justify-content:center;color:#5c4a3a">无立绘</div>';
         return (
           '<div class="char-detail-grid">' +
           '<div class="col-base">' +
@@ -23230,9 +24006,7 @@ yahei: 'font-yahei',
           '<button type="button" class="detail-portrait-variant-btn" title="切换差分服装" aria-label="切换差分服装">' +
           SWAP_SVG +
           '</button>' +
-          (data.src
-            ? '<img src="' + data.src + '" alt="" class="portrait-xl">'
-            : '<div class="portrait-xl" style="background:#c4b8a8;display:flex;align-items:center;justify-content:center;color:#5c4a3a">无立绘</div>') +
+          portraitXlHtml +
           '</div>' +
           '<div class="char-name-box">' +
           (data.name || '角色') +
@@ -23317,6 +24091,9 @@ yahei: 'font-yahei',
       };
       function bindDetailActions(content, avatarIndex, ch, data) {
         if (!content || !ch) return;
+        if (typeof window.bindHentaiDungeonCachedPortraitsInRoot === 'function') {
+          window.bindHentaiDungeonCachedPortraitsInRoot(content);
+        }
         var portraitBtn = content.querySelector('.detail-portrait-variant-btn');
         if (portraitBtn) {
           portraitBtn.addEventListener('click', function () {
@@ -25962,4 +26739,3 @@ yahei: 'font-yahei',
     </script>
   </body>
 </html>
-```
