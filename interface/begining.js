@@ -6,62 +6,7 @@
 (function () {
   'use strict';
 
-  /** 全屏：顶层页用原生 API；iframe（酒馆）内用 CSS 伪全屏，避免 Permissions policy violation */
-  var PSEUDO_FS_CLASS = 'hentai-pseudo-fullscreen';
-  var PSEUDO_FS_SCROLL_CLASS = 'hentai-pseudo-fs-scroll-lock';
-  var PSEUDO_FS_TARGET_CLASS = 'hentai-pseudo-fullscreen-target';
-
-  function injectPseudoFullscreenStyles() {
-    if (document.getElementById('hentai-pseudo-fs-style')) return;
-    var styleEl = document.createElement('style');
-    styleEl.id = 'hentai-pseudo-fs-style';
-    styleEl.textContent =
-      'html.' +
-      PSEUDO_FS_SCROLL_CLASS +
-      ',html.' +
-      PSEUDO_FS_SCROLL_CLASS +
-      ' body{overflow:hidden!important;height:100%!important;}' +
-      'html.' +
-      PSEUDO_FS_CLASS +
-      ',html.' +
-      PSEUDO_FS_CLASS +
-      ' body{margin:0!important;padding:0!important;width:100%!important;min-height:100%!important;box-sizing:border-box!important;}' +
-      'html.' +
-      PSEUDO_FS_CLASS +
-      ' .game-frame.ornate-frame,' +
-      '#' +
-      'begining-overlay.' +
-      PSEUDO_FS_TARGET_CLASS +
-      '{position:fixed!important;inset:0!important;width:100%!important;max-width:none!important;height:100%!important;' +
-      'max-height:none!important;margin:0!important;z-index:99990!important;box-sizing:border-box!important;}';
-    document.head.appendChild(styleEl);
-  }
-
-  function isInIframe() {
-    try {
-      return window.self !== window.top;
-    } catch (e) {
-      return true;
-    }
-  }
-
-  /** 是否允许调用 requestFullscreen（iframe / 嵌入文档一律禁止，避免 Permissions policy violation） */
-  function isNativeFullscreenAllowed() {
-    if (isInIframe()) return false;
-    try {
-      if (window.frameElement) return false;
-    } catch (e) {}
-    try {
-      if (document.permissionsPolicy && typeof document.permissionsPolicy.allowsFeature === 'function') {
-        return document.permissionsPolicy.allowsFeature('fullscreen');
-      }
-      if (document.featurePolicy && typeof document.featurePolicy.allowsFeature === 'function') {
-        return document.featurePolicy.allowsFeature('fullscreen');
-      }
-    } catch (e) {}
-    return true;
-  }
-
+  /** 全屏切换（documentElement），供开局与主界面共用 */
   function getFullscreenElement() {
     return (
       document.fullscreenElement ||
@@ -71,79 +16,19 @@
       null
     );
   }
-  function isNativeFullscreen() {
+  function isFullscreen() {
     return !!getFullscreenElement();
   }
-  function isPseudoFullscreen() {
-    return document.documentElement.classList.contains(PSEUDO_FS_CLASS);
-  }
-  function isFullscreen() {
-    return isNativeFullscreen() || isPseudoFullscreen();
-  }
-
-  function getPseudoFullscreenTargets() {
-    var targets = [];
-    var overlay = document.getElementById('begining-overlay');
-    if (overlay) targets.push(overlay);
-    var game = document.querySelector('.game-frame.ornate-frame');
-    if (game) targets.push(game);
-    return targets;
-  }
-
-  function setPseudoFullscreen(on) {
-    var root = document.documentElement;
-    var body = document.body;
-    if (on) {
-      root.classList.add(PSEUDO_FS_CLASS, PSEUDO_FS_SCROLL_CLASS);
-      if (body) body.classList.add(PSEUDO_FS_CLASS);
-      getPseudoFullscreenTargets().forEach(function (el) {
-        el.classList.add(PSEUDO_FS_TARGET_CLASS);
-      });
-    } else {
-      root.classList.remove(PSEUDO_FS_CLASS, PSEUDO_FS_SCROLL_CLASS);
-      if (body) body.classList.remove(PSEUDO_FS_CLASS);
-      document.querySelectorAll('.' + PSEUDO_FS_TARGET_CLASS).forEach(function (el) {
-        el.classList.remove(PSEUDO_FS_TARGET_CLASS);
-      });
-    }
-  }
-
-  function exitNativeFullscreen() {
-    var d = document;
-    var exitFn = d.exitFullscreen || d.webkitExitFullscreen || d.mozCancelFullScreen || d.msExitFullscreen;
-    if (exitFn) return exitFn.call(d).catch(function () {});
-    return Promise.resolve();
-  }
-
   function toggleFullscreen() {
+    var root = document.documentElement;
     if (isFullscreen()) {
-      if (isNativeFullscreen()) exitNativeFullscreen();
-      if (isPseudoFullscreen()) setPseudoFullscreen(false);
-      syncFullscreenButtonIcons();
-      return;
+      var d = document;
+      var exitFn = d.exitFullscreen || d.webkitExitFullscreen || d.mozCancelFullScreen || d.msExitFullscreen;
+      if (exitFn) return exitFn.call(d).catch(function () {});
+    } else {
+      var req = root.requestFullscreen || root.webkitRequestFullscreen || root.mozRequestFullScreen || root.msRequestFullscreen;
+      if (req) return req.call(root).catch(function () {});
     }
-    if (isNativeFullscreenAllowed()) {
-      var root = document.documentElement;
-      var req =
-        root.requestFullscreen ||
-        root.webkitRequestFullscreen ||
-        root.mozRequestFullScreen ||
-        root.msRequestFullscreen;
-      if (req) {
-        req
-          .call(root)
-          .then(function () {
-            syncFullscreenButtonIcons();
-          })
-          .catch(function () {
-            setPseudoFullscreen(true);
-            syncFullscreenButtonIcons();
-          });
-        return;
-      }
-    }
-    setPseudoFullscreen(true);
-    syncFullscreenButtonIcons();
   }
   var FS_SVG_ENTER =
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>';
@@ -180,14 +65,6 @@
   }
   ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'].forEach(function (ev) {
     document.addEventListener(ev, syncFullscreenButtonIcons);
-  });
-  injectPseudoFullscreenStyles();
-  document.addEventListener('keydown', function (e) {
-    if (e.key !== 'Escape' || isNativeFullscreen()) return;
-    if (isPseudoFullscreen()) {
-      setPseudoFullscreen(false);
-      syncFullscreenButtonIcons();
-    }
   });
 
   const OVERLAY_ID = 'begining-overlay';
